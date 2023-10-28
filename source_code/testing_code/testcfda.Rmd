@@ -1,0 +1,1566 @@
+---
+title: "testcfda"
+author: "Xiaoxia Champon"
+date: "2022-11-09"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+
+```{r,echo=FALSE}
+library(mgcv)
+library(fda)
+library(fda.usc)
+library(RLRsim)
+```
+
+```{r,echo=FALSE}
+#Function to return the logit
+logit <- function(x){
+  return(log(x/(1-x)))
+}
+
+expit <- function(x){1/(1+exp(-x))}
+
+#####
+#Function: wrapper function for gam() which outputs the fitted values
+#
+#Inputs: 
+# z : index z = 1,...,N 
+# Curves : N x D matrix of observed binary series
+# tt : grid of timepoints going from 0 to 1 with D observations
+# k : number of basis functions
+# method: method used to evaluate the gam
+#
+#Output: 
+# Fitted values from the game function for subject z 
+#
+#####
+#get smoothed curves
+regression_g = function(z, Curves, tt, k=25, method="ML"){   #changed from 10 to 25
+  z1 = Curves[z,]
+  gam1 <- gam(z1~s(tt, bs = "cr", m=2, k = k),
+              family="binomial", method = method,control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),optimizer=c("outer","bfgs"))
+  return(gam1$fitted.values)
+}
+
+
+Z_ihat=function(Curves_train,tt){
+  N_train=dim(Curves_train)[1]
+  vec = matrix(1:(N_train), ncol = 1)
+  smoothed_x = logit(t(apply(vec, 1, function(x) regression_g(x, Curves_train, tt))))
+  smoothed_x
+}
+
+
+
+score=function(mu,sd){
+  rnorm(1,mean=mu,sd=sd)
+}
+
+#> x1 = rnorm(1000)           # some continuous variables 
+# x2 = rnorm(1000)
+#z = 1 + 2*x1 + 3*x2
+
+fl2f = function(t) {
+  fl2=c(0)
+  for (i in 1:length(t)){
+    #x1 = rnorm(1)
+    #x2 = rnorm(1)
+    # if (t[i] < 0.5) {
+    #fl2[i]=0.5-8/9
+  #}
+  #else {
+   #fl2[i]= t[i]-8/9
+  #}
+    #fl2[i]= 1+5*t[i]
+    #fl2[i]= 1 + 2*x1 + 3*x2
+    fl2[i]= t[i]-8/9
+  }
+  
+ fl2
+}
+
+fl3f = function(t) {
+  fl3=c(0)
+  for (i in 1:length(t)){
+    # if (t[i] < 0.5) {
+    #fl2[i]=0.5-8/9
+  #}
+  #else {
+   #fl2[i]= t[i]-8/9
+  #}
+    #x1 = rnorm(1)
+    #x2 = rnorm(1)
+    #fl3[i]= 1+t[i]-1.6**cos(2*pi*t[i])
+    #fl3[i]= 1 - 3*x1 + 0.5*x2
+    fl3[i]=0.5*t[i]
+  }
+  
+ fl3
+}
+
+fl3fn = function(t) {
+  fl3=c(0)
+  for (i in 1:length(t)){
+    # if (t[i] < 0.5) {
+    #fl2[i]=0.5-8/9
+  #}
+  #else {
+   #fl2[i]= t[i]-8/9
+  #}
+    #x1 = rnorm(1)
+    #x2 = rnorm(1)
+    #fl3[i]= 1+t[i]-1.6**cos(2*pi*t[i])
+    #fl3[i]= 1 - 3*x1 + 0.5*x2
+    fl3[i]=-3*t[i]^2+2*t[i]-0.9
+  }
+  
+ fl3
+}
+#n number of subjects
+#datapoints
+#sparse=1 yes   sparse=0 no
+#scorevar=2 bigger var , scorevar=1 smaller var
+#ps=1 find z1,z2,z3, find p1,p2,p3, logp1-logp3
+#ps=2 find z1,z2,z3, find p1,p2,p3=1-p1-p2 logp1-logp3
+#ps=3 find z1,z2 staicu find z1hat z2hat
+#ps=4 find z1,z2 staicu find z1hat z2hat but only use numerator
+#k  #number of eigen functions
+#q  #level of the categorical level
+
+generate_cfd_test=function(k,n,datapoints,sparse,scorevar,ps,seed=123,st,et,fl){
+  #k=3  #number of eigen functions
+  q=3  #level of the categorical level
+  
+  if(sparse==1){
+    mu_1=function(t){
+      3.8+4*t  #-0.64+4*t    #4.5+4*t   #sparse 3.8+4*t
+      
+    }
+    mu_2=function(t){
+      1.5+4*t^2    #0.97+6*t^2
+      
+    }
+    
+    
+    p_ihat=function(Z_i1app,Z_i2app){
+      denom=(1+exp(Z_i1app)+exp(Z_i2app))
+      p_i1h=exp(Z_i1app)/denom
+      p_i2h=exp(Z_i2app)/denom
+      p_i3h=1/denom
+      # p_i3h=1-p_i1h- p_i2h
+      return(list("p_1hatmatrix"=p_i1h,"p_2hatmatrix"=p_i2h,"p_3hatmatrix"=p_i3h))
+    }
+  }
+  
+  
+  if (sparse==0){
+    mu_1=function(t){
+      #3.8+4*t  
+      -0.64+4*t    #4.5+4*t   #sparse 3.8+4*t
+      
+    }
+    mu_2=function(t){
+      #1.5+4*t^2    
+      0.97+6*t^2
+      
+      
+    }
+    
+    p_ihat=function(Z_i1app,Z_i2app){
+      denom=(1+exp(Z_i1app)+exp(Z_i2app))
+      p_i1h=exp(Z_i1app)/denom
+      p_i2h=exp(Z_i2app)/denom
+      p_i3h=1- p_i1h- p_i2h
+      return(list("p_1hatmatrix"=p_i1h,"p_2hatmatrix"=p_i2h,"p_3hatmatrix"=p_i3h))
+    }
+    
+  }
+  
+  #####10/25/2022
+  if (sparse==3){
+    mu_1=function(t){
+      #3.8+4*t  
+      #-0.64+4*t    #4.5+4*t   #sparse 3.8+4*t
+      t+1
+      
+    }
+    mu_2=function(t){
+      #1.5+4*t^2    
+      #0.97+6*t^2
+      0.3*t
+      
+    }
+    
+    p_ihat=function(Z_i1app,Z_i2app){
+      denom=(1+exp(Z_i1app)+exp(Z_i2app))
+      p_i1h=exp(Z_i1app)/denom
+      p_i2h=exp(Z_i2app)/denom
+      p_i3h=1- p_i1h- p_i2h
+      return(list("p_1hatmatrix"=p_i1h,"p_2hatmatrix"=p_i2h,"p_3hatmatrix"=p_i3h))
+    }
+    
+  }
+  
+  
+  
+  if (sparse==4){
+    mu_1=function(t){
+      #3.8+4*t  
+      #-0.64+4*t    #4.5+4*t   #sparse 3.8+4*t
+      #10*t+1
+      t+1
+      
+    }
+    mu_2=function(t){
+      #1.5+4*t^2    
+      #0.97+6*t^2
+    #10*t+3
+      #t+3
+      t-1
+      
+    }
+    
+    p_ihat=function(Z_i1app,Z_i2app){
+      denom=(1+exp(Z_i1app)+exp(Z_i2app))
+      p_i1h=exp(Z_i1app)/denom
+      p_i2h=exp(Z_i2app)/denom
+      p_i3h=1- p_i1h- p_i2h
+      #p_i3h=1/denom
+      return(list("p_1hatmatrix"=p_i1h,"p_2hatmatrix"=p_i2h,"p_3hatmatrix"=p_i3h))
+    }
+    
+  }
+  
+  mu_vec=rep(0,k)
+  
+  
+  psi_fn=function(k){
+    
+    psi_k1=matrix(rep(1,length(t)*k),ncol=k)  
+    psi_k2=matrix(rep(1,length(t)*k),ncol=k) 
+    for (i in 1:k) {
+      psi_k1[,i]=sin(2*i*pi*t )
+      psi_k2[,i]=cos(2*i*pi*t )
+    }
+    list("psi_k1"=psi_k1,"psi_k2"=psi_k2)
+  }
+  
+  
+  t=seq(from = st,to = et, length=datapoints)
+  
+  X_i=array(0,dim=c(q,datapoints,n))  #multinormial results: row is level q, column is time points, n is the number of subjects, each column only has one row of 1 and every other rows are 0
+  X_nt=matrix(rep(1,n*length(t)),nrow=n,ncol=length(t))  #true observations of categorical-valued outcome, each row represent one subject, columns represent time points
+  score_matrix=matrix(rep(1,n*k),nrow=n,ncol=k)  #row is number of subjects, column is the number of eigen functions
+  psi_score_matrix_1=matrix(rep(1,n*length(t)),ncol=n)  #dim: length(t)*nsubjects
+  psi_score_matrix_2=matrix(rep(1,n*length(t)),ncol=n)
+  Z_i1=matrix(rep(1,n*length(t)),nrow=n)  #True latent curves1:row is n subjects, col is t time points
+  Z_i2=matrix(rep(1,n*length(t)),nrow=n) #True latent curve 2
+  p_i1=matrix(rep(0,n*length(t)),nrow=n)  #True p_i1
+  p_i2=matrix(rep(0,n*length(t)),nrow=n)  #True p_i2
+  p_i3=matrix(rep(0,n*length(t)),nrow=n)  #True p_i3
+  for (i in 1:n){
+    set.seed(seed+i)
+    
+    if (k==3){
+      if (scorevar==1){
+        #score varies based on i
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/2))
+        score_3=score(0,1/2)
+        
+      }
+      
+      if (scorevar==2){
+        #score varies based on i
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/3))
+        score_3=score(0,1/3)
+      }
+      
+      if (scorevar==3){
+        #score varies based on i
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/4))
+        score_3=score(0,1/4)
+      }
+      
+      
+      if (scorevar==4){
+        #score varies based on i
+        score_1=score(-0.5,1)
+        score_2=score(1,sqrt(1/2))
+        score_3=score(0.25,1/2)
+      }
+      
+      score_vector=cbind(score_1,score_2,score_3)
+    }
+    
+    
+    
+    if (k==4){
+      
+      if (scorevar==1){
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/2))
+        score_3=score(0,1/2)
+        score_4=score(0,sqrt(1/8))
+        # cpve=cumsum(c(1,sqrt(1/2),1/2,sqrt(1/8)))/sum(c(1,sqrt(1/2),1/2,sqrt(1/8)))
+        # cvar=c(1,sqrt(1/2),1/2,sqrt(1/8))
+      }
+      if (scorevar==2){
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/3))
+        score_3=score(0,1/3)
+        score_4=score(0,sqrt(1/27))
+        # cpve=cumsum(c(1,sqrt(1/3),1/3,sqrt(1/27)))/sum(c(1,sqrt(1/3),1/3,sqrt(1/27)))
+        # cvar=c(1,sqrt(1/3),1/3,sqrt(1/27))
+      }
+      
+      
+      
+      if (scorevar==3){
+        score_1=score(0,1)
+        score_2=score(0,sqrt(1/4))
+        score_3=score(0,1/4)
+        score_4=score(0,sqrt(1/64))
+        # cpve=cumsum(c(1,sqrt(1/4),1/4,sqrt(1/64)))/sum(c(1,sqrt(1/4),1/4,sqrt(1/64)))
+        # cvar=c(1,sqrt(1/4),1/4,sqrt(1/64))
+      }
+      score_vector=cbind(score_1,score_2,score_3,score_4)
+      
+    }
+    
+    
+    
+    
+    
+    
+    
+    psi_k1=psi_fn(k)$psi_k1
+    psi_k2=psi_fn(k)$psi_k2
+    
+    #Z varies based on i
+    #psi t*k, score: t*k,  psi%*%t(score)
+    psi_score_matrix_1[,i]=psi_k1%*%t(score_vector)
+    Z_i1[i,]=mu_1(t)+psi_score_matrix_1[,i]
+    
+    psi_score_matrix_2[,i]=psi_k2%*%t(score_vector)
+    Z_i2[i,]=mu_2(t)+psi_score_matrix_2[,i]
+    
+    
+    #p varies based on i
+    denominator=(1+exp(as.vector(Z_i1[i,]))+exp(as.vector(Z_i2[i,])))
+    p_i1[i,]=(exp(as.vector(Z_i1[i,])))/denominator
+    p_i2[i,]=(exp(as.vector(Z_i2[i,])))/denominator
+    p_i3[i,]=1-p_i1[i,]-p_i2[i,]
+    
+    
+    #X_i varies based on i
+    #X_i=matrix(rep(1,k*length(t)),nrow=k,ncol=length(t))
+    
+    for (j in 1:length(t)){
+      X_i[,j,i]=rmultinom(n=1, size=1, prob=c(p_i1[i,j],p_i2[i,j],p_i3[i,j]))
+    }
+    
+    #X_it varies based on i
+    X_it=c(1)
+    for (j in 1:length(t)){
+      X_it[j]=as.vector(which(X_i[,j,i] == 1))
+    }
+    X_nt[i,]=X_it
+    
+    #collect score matrix
+    score_matrix[i,]=score_vector
+  }
+  
+  #collect value and graph
+  #collect first two rows of observed binary curves
+  X_i1=t(X_i[1,,])  #all n row subjects , t columns values related to p1
+  X_i2=t(X_i[2,,]) #all n row subjects , t columns values related to p2
+  X_i3=t(X_i[3,,]) #all n row subjects , t columns values related to p3
+
+  #generate Fl functions
+  #Formof delta0(t ): (a) Scalar: , (b) Linear: 1+delta1t , (c) Trigonometric: 1+ t +delta2 cos(2pit )
+  ##################################################  
+  if(fl==1){
+    fl1=rep(0.45,datapoints)
+    fl2=rep(0.5,datapoints)
+    #fl2=matrix(fl2f(t),nrow=datapoints,ncol=1)
+    fl3=rep(-0.51,datapoints)
+  }
+  
+ if (fl==2){
+   # fl1=rep(-0.5,datapoints)
+   # fl2=matrix(fl2f(t)+0.1,nrow=datapoints,ncol=1)
+   # #fl2=rep(-0.3,datapoints)
+   # fl3=matrix(fl3f(t)-0.02,nrow=datapoints,ncol=1)
+   
+   
+    fl1=rep(-0.1,datapoints)
+   fl2=matrix(-0.1*fl2f(t),nrow=datapoints,ncol=1)
+   #fl2=rep(-0.3,datapoints)
+   fl3=matrix(fl3f(t),nrow=datapoints,ncol=1)
+   
+ }
+  #############################
+  #73, 27
+  # if (fl==3){
+  #  fl1=rep(-0.2,datapoints)
+  #  fl2=matrix(-0.1*fl2f(t),nrow=datapoints,ncol=1)
+  #  #fl2=rep(-0.3,datapoints)
+  #  fl3=matrix(fl3f(t),nrow=datapoints,ncol=1)
+  # }
+  
+  ##############################
+  #
+   if (fl==3){
+   fl1=rep(-0.2,datapoints)
+   fl2=matrix(-0.15*fl2f(t),nrow=datapoints,ncol=1)
+   #fl2=rep(-0.3,datapoints)
+   fl3=matrix(fl3f(t),nrow=datapoints,ncol=1)
+  }
+  
+  ####################
+   #
+   if (fl==4){
+   fl3=matrix(fl3fn(t),nrow=datapoints,ncol=1)
+   fl1=fl3-0.09
+   fl2=fl3+1.3145
+  }
+  
+  ####################
+  
+  flfn=list("fl1"=fl1,"fl2"=fl2,"fl3"=fl3)
+  
+  ###############################
+  #generate pi
+  vec=matrix(1:n,nrow=n,ncol=1)
+  #integral a function on a interval, returns a scalar
+  x1fl1=apply(vec,1, function (x) {int.simpson2(t, X_i1[x,]*fl1, equi = TRUE, method = "TRAPZ")})
+  x2fl2=apply(vec,1, function(x) {int.simpson2(t, X_i2[x,]*fl2, equi = TRUE, method = "TRAPZ")})
+  
+  x3fl3=apply(vec,1, function(x) {int.simpson2(t, X_i3[x,]*fl3, equi = TRUE, method = "TRAPZ")})
+  
+  pis=c(0)
+  z_lin=c(0)
+  for (i in 1:n){
+    #pi=beta0+xqfl1+x2fl2
+    z_lin[i]=0.02+sum(x1fl1,x2fl2,x3fl3)
+    pis[i]=expit(z_lin[i])
+    
+  }
+  
+  #############
+  #generate Yi
+  yis=c(0)
+   for (i in 1:n){
+    yis[i]=rbinom(1,1,pis[i])
+  }
+  
+  
+  truelist=list("TrueX1"=X_i1,"TrueX2"=X_i2,"TrueX3"=X_i3,"Truecatcurve"=X_nt,"fl"=flfn,"yis"=yis,"z_lin"=z_lin)
+  
+  ########get zistart
+   #recover Z_i1 hat using X_i[1,all j, all n] only related to p1
+  #Z_i1hat=Z_ihat(X_i1,t)
+  #recover Z_i2 hat using X_i[2,all j, all n] only related to p2 
+  ##Z_i2hat=Z_ihat(X_i2,t)
+  #Z_i3hat=Z_ihat(X_i3,t)
+  
+  #Z_i1hatstar=Z_i1hat+log(1+exp(Z_i3hat))-log(1+exp(Z_i1hat))-Z_i3hat
+  #Z_i2hatstar=Z_i2hat+log(1+exp(Z_i3hat))-log(1+exp(Z_i2hat))-Z_i3hat
+  
+  
+  #truel=list("TrueZ_i1"=Z_i1,"TrueZ_i2"=Z_i2)
+  #est=list("EstimateZ_i1"=Z_i1hatstar,"EstimateZ_i2"=Z_i2hatstar)
+  #return(list("true"=truelist,"est"=est))
+  return(list("true"=truelist))
+}
+
+```
+
+# beta0 not constant
+```{r,echo=FALSE}
+#generate_cfd_test=function(k,n,datapoints,sparse,scorevar,ps,seed=123,st,et,fl)
+#test 0  fl1=1 fl2=2
+hyp1=generate_cfd_test(3,100,250,0,1,1,seed=123,0.01,0.99,2) 
+table(hyp1$true$yis)
+```
+#beta0 not constant
+```{r}
+nsub=100
+datapoints=2000
+hyp3=generate_cfd_test(3,nsub,datapoints,0,1,1,seed=123,0.01,0.99,3) 
+table(hyp3$true$yis)
+
+```
+
+```{r}
+plot(hyp3$true$z_lin)
+```
+
+
+
+```{r}
+save(hyp3,hyp4,file="constant_function.RData")
+```
+
+
+#beta0 constant
+```{r}
+hyp4=generate_cfd_test(3,nsub,datapoints,0,1,1,seed=123,0.01,0.99,4) 
+table(hyp4$true$yis)
+```
+```{r}
+plot(hyp4$true$z_lin)
+```
+
+
+
+#test constant all 0
+```{r}
+#fl1=1 fl2=0*1(t<0.5)+(t-1/2)1(t>1/2)
+#hyp2=generate_cfd_test(3,100,500,1,1,1,seed=123,0.01,0.99,2)
+#table(hyp2$true$yis)
+```
+#dim
+```{r,echo=FALSE}
+datag=hyp3
+dim(datag$true$TrueX1)
+n=dim(datag$true$TrueX1)[1]
+numt=dim(datag$true$TrueX1)[2]
+```
+
+```{r}
+hyp3$true$yis
+t=seq(0,1,length=numt)
+par(mfrow=c(1,3))
+plot(t,hyp3$true$fl$fl1,xlab="Time",ylab=expression(F[1]))
+plot(t,hyp3$true$fl$fl2,xlab="Time",ylab=expression(F[2]))
+plot(t,hyp3$true$fl$fl3,xlab="Time",ylab=expression(F[2]))
+```
+#F1(t)=-0.2, F2(t)=-0.1*(t-8/9), F3(t)=0.5*t
+```{r}
+table(hyp3$true$yis)
+```
+#reflevel
+```{r}
+reflevel=which.min(table(hyp3$true$Truecatcurve)) ##catgory 3 is the reference level
+reflevel
+```
+#hyp4
+```{r}
+datag4=hyp4
+dim(datag4$true$TrueX1)
+n4=dim(datag4$true$TrueX1)[1]
+numt4=dim(datag4$true$TrueX1)[2]
+```
+#hyp4
+```{r}
+hyp4$true$yis
+t4=seq(0,1,length=numt4)
+par(mfrow=c(1,3))
+plot(t4,hyp4$true$fl$fl1,xlab="Time",ylab=expression(F[1]))
+plot(t4,hyp4$true$fl$fl2,xlab="Time",ylab=expression(F[2]))
+plot(t4,hyp4$true$fl$fl3,xlab="Time",ylab=expression(F[2]))
+```
+
+#hyp4
+```{r}
+reflevel4=which.min(table(hyp4$true$Truecatcurve)) ##catgory 3 is the reference level
+reflevel4
+```
+
+##reformulate with betatilda and xtilde
+```{r}
+st=0.01
+et=0.99
+t=seq(st,et,length=datapoints)
+bzerotilde4=rep(int.simpson2(t, hyp4$true$fl$fl3, equi = TRUE, method = "TRAPZ"),nsub)
+flonetilde4=hyp4$true$fl$fl1-hyp4$true$fl$fl3
+fltwotilde4=hyp4$true$fl$fl2-hyp4$true$fl$fl3
+```
+#plot
+```{r}
+plot(flonetilde4)
+plot(fltwotilde4)
+```
+
+#find Uli and betal,r
+
+#Bmat
+```{r}
+nbasis=30   #2*nbasis has to be less than n
+bbasis=create.bspline.basis(c(0,1), nbasis) #5 is the number of the basis
+Bmat = eval.basis(seq(0,1,length=numt),basisobj=bbasis)
+Smat=t(Bmat)%*%Bmat   #5*5
+```
+
+#derivatibe
+```{r}
+#https://rdrr.io/cran/fdasrvf/src/R/utils.R
+#derivative of a function, returns to a curve
+gradientfn=function (f, binsize) 
+{
+    n = nrow(f)
+    if (is.null(n)) {
+        f = as.vector(f)
+        n = length(f)
+        g = rep(0, n)
+        h = binsize * (1:n)
+        g[1] = (f[2] - f[1])/(h[2] - h[1])
+        g[n] = (f[n] - f[(n - 1)])/(h[length(h)] - h[(length(h) - 
+            1)])
+        h = h[3:n] - h[1:(n - 2)]
+        g[2:(n - 1)] = (f[3:n] - f[1:(n - 2)])/h[1]
+    }
+    else {
+        f = as.matrix(f)
+        p = ncol(f)
+        g = matrix(0, n, p)
+        h = binsize * (1:n)
+        g[1, ] = (f[2, ] - f[1, ])/(h[2] - h[1])
+        g[n, ] = (f[n, ] - f[(n - 1), ])/(h[length(h)] - h[(length(h) - 
+            1)])
+        h = h[3:n] - h[1:(n - 2)]
+        g[2:(n - 1), ] = (f[3:n, ] - f[1:(n - 2), ])/h[rep(1, 
+            p)]
+    }
+    return(g)
+}
+
+#returns to a curve
+ndims <- function(x){
+  return(length(dim(x)))
+}
+
+cumtrapzfn <- function(x,y,dims=1){
+    if ((dims-1)>0){
+        perm = c(dims:max(ndims(y),dims), 1:(dims-1))
+    } else {
+        perm = c(dims:max(ndims(y),dims))
+    }
+
+    if (ndims(y) == 0){
+        n = 1
+        m = length(y)
+    } else {
+        if (length(x) != dim(y)[dims])
+            stop('Dimension Mismatch')
+        y = aperm(y, perm)
+        m = nrow(y)
+        n = ncol(y)
+    }
+
+    if (n==1){
+        dt = diff(x)/2.0
+        z = c(0, cumsum(dt*(y[1:(m-1)] + y[2:m])))
+        dim(z) = c(m,1)
+    } else {
+        tmp = diff(x)
+        dim(tmp) = c(m-1,1)
+        dt = repmat(tmp/2.0,1,n)
+        z = rbind(rep(0,n), apply(dt*(y[1:(m-1),] + y[2:m,]),2,cumsum))
+        perm2 = rep(0, length(perm))
+        perm2[perm] = 1:length(perm)
+        z = aperm(z, perm2)
+    }
+
+    return(z)
+}
+#gamhat=cumtrapz(seq(0, 1, length.out = M), psihat * psihat)
+#returns to a number
+trapzfnum <- function(x,y,dims=1){
+    if ((dims-1)>0){
+        perm = c(dims:max(ndims(y),dims), 1:(dims-1))
+    } else {
+        perm = c(dims:max(ndims(y),dims))
+    }
+
+    if (ndims(y) == 0){
+        m = 1
+    } else {
+        if (length(x) != dim(y)[dims])
+            stop('Dimension Mismatch')
+        y = aperm(y, perm)
+        m = nrow(y)
+    }
+
+    if (m==1){
+        M = length(y)
+        out = sum(diff(x)*(y[-M]+y[-1])/2)
+    } else {
+        slice1 = y[as.vector(outer(1:(m-1), dim(y)[1]*( 1:prod(dim(y)[-1])-1 ), '+')) ]
+        dim(slice1) = c(m-1, length(slice1)/(m-1))
+        slice2 = y[as.vector(outer(2:m, dim(y)[1]*( 1:prod(dim(y)[-1])-1 ), '+'))]
+        dim(slice2) = c(m-1, length(slice2)/(m-1))
+        out = t(diff(x)) %*% (slice1+slice2)/2.
+        siz = dim(y)
+        siz[1] = 1
+        out = array(out, siz)
+        perm2 = rep(0, length(perm))
+        perm2[perm] = 1:length(perm)
+        out = aperm(out, perm2)
+        ind = which(dim(out) != 1)
+        out = array(out, dim(out)[ind])
+    }
+
+    return(out)
+}
+#trapz(time, (tmp - q0[, i])^2)
+##sintegral integral of penalty
+sintegral=function (x, fx, n.pts = max(256, length(x))) 
+{
+    if (class(fx) == "function") 
+        fx = fx(x)
+    n.x = length(x)
+    if (n.x != length(fx)) 
+        stop("Unequal input vector lengths")
+    ap = approx(x, fx, n = 2 * n.pts + 1)
+    h = diff(ap$x)[1]
+    integral = h * (ap$y[2 * (1:n.pts) - 1] + 4 * ap$y[2 * (1:n.pts)] + 
+        ap$y[2 * (1:n.pts) + 1])/3
+    results = list(value = sum(integral), cdf = list(x = ap$x[2 * 
+        (1:n.pts)], y = cumsum(integral)))
+    class(results) = "sintegral"
+    return(results)
+}
+```
+
+#first order derivative
+```{r}
+gradbmat=matrix(0,nrow=numt,ncol=nbasis)
+binsize <- mean(diff(seq(0,1,length=nbasis)))
+for (i in 1:nbasis) {
+        gradbmat[, i] = gradientfn(Bmat[, i], binsize)
+        gradSmat=t(gradbmat)%*%gradbmat
+}
+```
+#first derivative penalty
+```{r}
+Smatder=t(gradbmat)%*%gradbmat
+```
+
+#first derivative integral
+```{r}
+pd<-matrix(0,nrow=nbasis,ncol=nbasis) #empty
+for(row in 1:nbasis){
+      for(col in 1:nbasis){
+        pd[row,col]<-sintegral(seq(0,1,length=numt),gradbmat[,row]*gradbmat[,col])$value
+      }
+    }
+```
+#check eigen
+```{r}
+q1q2=eigen(pd)
+```
+
+
+
+#check stephanie
+```{r}
+#use fpca.face to generate eigen 5functions
+construct.knots <- function(argvals,knots,knots.option,p){
+    if(length(knots)==1){
+      allknots <- select.knots(argvals,knots,option=knots.option)
+    }
+    if(length(knots)>1){
+      K = length(knots)-1 
+      knots_left <- 2*knots[1]-knots[p:1+1]
+      knots_right <- 2*knots[K] - knots[K-(1:p)]
+      allknots <- c(knots_left,knots,knots_right)
+    }
+    return(allknots)
+  }
+  select.knots <- function(t,knots=27,p=3,option="equally-spaced"){
+    qs <- seq(0,1,length=knots+1)
+    if(option=="equally-spaced"){
+      knots <- (max(t)-min(t))*qs + min(t)
+    }
+    if(option=="quantile"){
+      knots <- as.vector(quantile(t,qs))
+    }
+    K <- length(knots)
+    knots_left <- 2*knots[1]-knots[p:1+1]
+    knots_right <- 2*knots[K] - knots[K-(1:p)]
+    return(c(knots_left,knots,knots_right))
+  }
+
+```
+#
+# genz
+```{r}
+#gen.Zs<-function(efuncs,times,ximat,ku=30,test){
+  gen.Zscfd<-function(Xil,times,ku=30,test){
+    knots<-construct.knots(times,knots=(ku-3),knots.option='equally-spaced')
+    bspline<-splineDesign(knots=knots,x=times,ord=4)
+    J<-matrix(0,nrow=nrow(Xil),ncol=ku) #empty
+    for(row in 1:nrow(J)){
+      for(col in 1:ncol(J)){
+        J[row,col]<-sintegral(times,Xil[row,]*bspline[,col])$value
+      }
+    }
+    constant<-sqrt(1/ku)*rep(1,ku) #Q2_1
+    range<-max(times)-min(times) #what is full scale
+    constant<-rep(1,ku)/range # unscaled
+    lin<-seq(min(times),max(times),length.out=ku)/range #unscaled
+    line<-sqrt(c(1/t(lin)%*%lin))*lin #Q2_2
+    
+    D<-diag(ncol(J))
+    if(test=='Inclusion'){
+      d=0
+      #return(list(Zmat=(ximat %*% J), X.g2=NULL,J=J,D=D))
+      return(list(Zmat=( J), X.g2=NULL,J=J,D=D))
+    }
+    # if(test=='Linearity'){ #Test for linearity
+    #   d=2
+    #   Q2=as.matrix(cbind(constant,lin))
+    # }
+    if(test=='Functional'){ #Test for functional form
+      d=1
+      Q2=as.matrix(constant)
+    }
+    D<-diff(D,differences=d)
+    P<- t(D)%*%D #penalty matrix
+    P2<-1/2*(P+t(P))
+    P.eigen<-eigen(P2)
+    evalues<-P.eigen$values[1:nrow(D)]
+    Q<-P.eigen$vectors
+    Lambda1.inv.half<-diag(sqrt(1/evalues))
+    #Q2<-Q[,(ku-d+1):ku]
+    # 
+    # Ztilde<- ximat %*% J %*% Q[,1:(ku-d)]
+    # X.g2<- ximat %*% J %*% Q2
+    Ztilde<- J %*% Q[,1:(ku-d)]
+    X.g2<- J %*% Q2
+    list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
+         J=J,D=D,phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half)
+  }
+```
+#test
+#standarize the glmmPQL.mod
+```{r}
+
+
+ glmmPQL.mod<-function (fixed, random, family, data, correlation, weights,
+                         control, niter = 50, verbose = TRUE)
+  {
+   
+   #try
+   # fixed=Y~0+X1+X2+X3
+   # random=list(Zmat_Func.mat.formula,Zmat_Func.mat3.formula)
+   # family=binomial
+   # data=datatestmat
+   # weights=rep(1,nrow(datatestmat))
+
+   
+   
+   
+   
+    if (!requireNamespace("nlme", quietly = TRUE))
+      stop("package 'nlme' is essential")
+    if (is.character(family))
+      family <- get(family)
+    if (is.function(family))
+      family <- family()
+    if (is.null(family$family)) {
+      print(family)
+      stop("'family' not recognized")
+    }
+    m <- mcall <- Call <- match.call()
+    nm <- names(m)[-1L]
+    keep <- is.element(nm, c("weights", "data", "subset", "na.action"))
+    for (i in nm[!keep]) m[[i]] <- NULL
+    allvars <- if (is.list(random))
+      allvars <- c(all.vars(fixed), names(random), unlist(lapply(random,
+                                                                 function(x) all.vars(formula(x)))))
+    else c(all.vars(fixed), all.vars(random))
+    Terms <- if (missing(data))
+      terms(fixed)
+    else terms(fixed, data = data)
+    off <- attr(Terms, "offset")
+    if (length(off <- attr(Terms, "offset")))
+      allvars <- c(allvars, as.character(attr(Terms, "variables"))[off +
+                                                                     1])
+    if (!missing(correlation) && !is.null(attr(correlation, "formula")))
+      allvars <- c(allvars, all.vars(attr(correlation, "formula")))
+    Call$fixed <- eval(fixed)
+    Call$random <- eval(random)
+    m$formula <- as.formula(paste("~", paste(allvars, collapse = "+")))
+    environment(m$formula) <- environment(fixed)
+    m$drop.unused.levels <- TRUE
+    m[[1L]] <- quote(stats::model.frame)
+    mf <- eval.parent(m)
+    off <- model.offset(mf)
+    if (is.null(off))
+      off <- 0
+    wts <- model.weights(mf)
+    if (is.null(wts))
+      wts <- rep(1, nrow(mf))
+    mf$wts <- wts
+    fit0 <- glm(formula = fixed, family = family, data = mf, #glm fit
+                weights = wts)
+    w <- fit0$prior.weights
+    eta <- fit0$linear.predictors
+    zz <- eta + fit0$residuals - off
+    wz <- fit0$weights
+    fam <- family
+    nm <- names(mcall)[-1L]
+    keep <- is.element(nm, c("fixed", "random", "data", "subset",
+                             "na.action", "control"))
+    for (i in nm[!keep]) mcall[[i]] <- NULL
+    fixed[[2L]] <- quote(zz)
+    mcall[["fixed"]] <- fixed
+    mcall[[1L]] <- quote(nlme::lme)
+    mcall$random <- random
+    mcall$method <- "REML" # changed to REML here
+    if (!missing(correlation))
+      mcall$correlation <- correlation
+    mcall$weights <- quote(nlme::varFixed(~invwt))
+    mf$zz <- zz
+    mf$invwt <- 1/wz
+    mcall$data <- mf
+    for (i in seq_len(niter)) {
+      if (verbose)
+        message(gettextf("iteration %d", i), domain = NA)
+      fit <- eval(mcall)
+      etaold <- eta
+      eta <- fitted(fit) + off
+      if (sum((eta - etaold)^2) < 1e-06 * sum(eta^2))
+        break
+      mu <- fam$linkinv(eta)
+      mu.eta.val <- fam$mu.eta(eta)
+      mf$zz <- eta + (fit0$y - mu)/mu.eta.val - off
+      wz <- w * mu.eta.val^2/fam$variance(mu)
+      mf$invwt <- 1/wz
+      mcall$data <- mf
+    }
+    attributes(fit$logLik) <- NULL
+    fit$call <- Call
+    fit$family <- family
+    fit$logLik <- as.numeric(NA)
+    oldClass(fit) <- c("glmmPQL", oldClass(fit))
+    return(list(fit=fit,mcall=mcall))
+  }
+
+#############################################################################
+
+std.glmmPQL<-function(fit.glmmPQL){
+    mcall.unstd<-fit.glmmPQL$mcall # not standardized
+    fit.unstd<-fit.glmmPQL$fit
+    unstd.data<-mcall.unstd$data
+    
+    W.half<-diag(sqrt(1/unstd.data$invwt)) # sqaure-root weight matrix
+    Ytilde<- W.half %*% unstd.data$zz # std responses
+    
+    # fixed effects
+    X.design<-data.frame(model.matrix(fit.unstd,data=unstd.data)) # fixed effects
+    Xtilde<- data.frame(W.half %*% as.matrix(X.design)) # std fixed effects
+    Xtilde.names<- c('0',names(Xtilde)) # what about auto intercept?
+    Xtilde.formula<-as.formula(paste("Ytilde~",paste(Xtilde.names,collapse="+"))) # new fixed formula
+    std.fixed<-data.frame(Ytilde=Ytilde,Xtilde)
+    
+    # random effects
+    group.names<-names(fit.unstd$groups) # grouping variables
+    extract.groups <- unstd.data[,(names(unstd.data) %in% c(group.names,'invwt'))] #doesn't keep names
+    n.grouping<-length(mcall.unstd$random)
+    std.rand.all<-list()
+    for(i in 1:n.grouping){ # std all r.effects
+      r.effects<-data.frame(model.matrix(formula(fit.unstd$modelStruct$reStr)[[i]],data=unstd.data))
+      std.rand<-data.frame(as.matrix(r.effects)*diag(W.half)) #
+      std.rand.all[[i]]<-std.rand
+    }
+    std.rand<-do.call(cbind,std.rand.all)
+    
+    std.data.full<-cbind(std.fixed,std.rand,extract.groups) # standardized data
+    
+    mcall.std<-mcall.unstd # update mcall
+    mcall.std$fixed<-Xtilde.formula # new fixed effects formula
+    mcall.std$data<-std.data.full # std data
+    mcall.std$weights<-NULL # iid errors
+    
+    return(mcall.std)
+}
+###################################################
+test.aRLRT<-function(fit.glmmPQL){
+    # Extract and standardize to Ytilde
+    mcall.orig<-fit.glmmPQL$mcall # lme call (X and Z haven't been adjusted to iid)
+    mcall.std<-std.glmmPQL(fit.glmmPQL) # updated mcall with standardized Ytilde, Xtilde, Ztilde
+    std.data<-mcall.std$data
+    
+    # refit under null and alt hypothesis
+    fit.alt<-try(eval(mcall.std),silent=T)
+    if('try-error' %in% class(fit.alt)){
+      stop('Error in lme model estimation under alternative. Consider simplifying
+           or rescaling variables.')
+    }
+    
+    if(length(mcall.std$random)==1){ # no nuisance random effects
+      fit.null<-try(lm(mcall.std$fixed,data=std.data)) # fixed effects only
+      if('try-error' %in% class(fit.null)){
+        stop('Error in lm model estimation under null. Consider simplifying
+             or rescaling variables.')
+      }
+      fit.test<-fit.alt # same as alternative model
+      } else { # nuisance r.effect
+        mcall.null<-mcall.test<-mcall.std # update from alt model fit
+        mcall.null$random<-mcall.std$random[2:length(mcall.std$random)] #only nuis
+        mcall.test$random<-mcall.std$random[1] # only test
+        fit.null<-try(eval(mcall.null),silent=T)
+        if('try-error' %in% class(fit.null)){
+          stop('Error in lme model estimation under null. Consider simplifying
+               or rescaling variables.')
+        }
+        fit.test<-try(eval(mcall.test),silent=T)
+        if('try-error' %in% class(fit.test)){
+          stop('Error in lme model estimation for testing variable. Consider rescaling.')
+        }
+        }
+    
+    # testing
+    aRLRT<-exactRLRT(m=fit.test,mA=fit.alt,m0=fit.null)
+    
+    return(list(aRLRT=aRLRT,std.data=std.data,fit.alt=fit.alt,fit.null=fit.null,fit.test=fit.test))
+}
+##########
+fit.glmmPQL<-function(test.mat,family,n,test.type,ku=30){
+    # can't automate the fixed effects :(
+    family.glmm=family
+    if(family=='bernoulli'){
+      family.glmm='binomial'
+    }
+    if(family.glmm=='binomial'){ # binomial, needs success and failures
+      test.mat$prop<-test.mat$Y/n
+      test.mat$n<-n
+      if(test.type=='Inclusion'){
+        Z.test.names<-c("0",paste0('Z.test',1:ku))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(prop~0+X1,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat,weights=n),silent=T)
+      }
+      if(test.type=='Functional'){
+        Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat,weights=n),silent=T)
+      }
+      if(test.type=='Linearity'){
+        Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat,weights=n),silent=T)
+      }
+      return(glmm.fit)
+    } else { # non-binomial (poisson or bernoulli)
+      if(test.type=='Inclusion'){
+        Z.test.names<-c("0",paste0('Z.test',1:ku))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(Y~0+X1,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat),silent=T)
+      }
+      if(test.type=='Functional'){
+        Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat),silent=T)
+      }
+      if(test.type=='Linearity'){
+        Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+        Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+        glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2+X3,
+                                  random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                  data=test.mat),silent=T)
+      }
+      return(glmm.fit)
+    }
+  }
+```
+
+
+#check j. hyp4 constant
+```{r}
+#gen.Zscfd<-function(Xil,times,ku=30,test)
+cfd2=hyp4$true$TrueX2
+cfd3=hyp4$true$TrueX3
+#x2z2=gen.Zscfd(cfd2,seq(0.01,0.99,length=numt),ku=30,"Functional")
+#x3z3=gen.Zscfd(cfd3,seq(0.01,0.99,length=numt),ku=30,"Functional")
+```
+#implement
+```{r}
+# Zmat_Inc<-gen.Z(efuncs,times,xi,ku=30,test='Inclusion')
+# Zmat_Inc.mat <- Zmat_Inc$Zmat
+
+Xmat_Inc<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func<-gen.Zscfd(cfd2,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func3<-gen.Zscfd(cfd3,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func.mat <- Zmat_Func$Zmat
+Zmat_Func.mat3 <- Zmat_Func3$Zmat
+Xmat_Func<-cbind(Xmat_Inc,Zmat_Func$X.g2,Zmat_Func3$X.g2)
+```
+#model
+```{r}
+#'bernoulli'
+      #if(family == 'bernoulli'){
+        #n = 1
+      #}
+# Purpose: Generate & Test functional predictor with generalized response
+# Includes proposed method only (using GAM)
+r=0
+n=1
+family = 'bernoulli'
+Y=hyp4$true$yis
+      # gam_Inc <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Inc + s(Zmat_Inc.mat, bs = 're'), family = 'binomial'), silent = F)
+      gam_Func <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Func + s(Zmat_Func.mat, bs = 're')+s(Zmat_Func.mat3, bs = 're'), family = 'binomial'), silent = F)
+      #gam_Lin <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Lin + s(Zmat_Lin.mat, bs = 're'), family = 'binomial'), silent = F)
+      if( 'try-error' %in% class(gam_Func)) {
+        next
+      }
+save<-c(seed,c(summary(gam_Func)$s.table[1:4]))
+write.table(save,paste(family,'_',nsub,'subj_r',r,'_M',datapoints,'.csv',sep=''),sep=',')  
+names(save)<-c('seed','func_edf','func_ref.df','func_chi.sq','func_p')
+save
+```
+#try hyp3
+```{r}
+cfd22=hyp3$true$TrueX2
+cfd33=hyp3$true$TrueX3
+Xmat_Inc2<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func2<-gen.Zscfd(cfd22,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func32<-gen.Zscfd(cfd33,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func.mat2 <- Zmat_Func2$Zmat
+Zmat_Func.mat32 <- Zmat_Func32$Zmat
+Xmat_Func2<-cbind(Xmat_Inc2,Zmat_Func2$X.g2,Zmat_Func32$X.g2)
+Y2=hyp3$true$yis
+
+```
+#check
+```{r}
+# n=1
+# r=0
+# seed=123
+# gam_Func2 <- try(gam(cbind(Y2, n - Y2) ~ 0 + Xmat_Func2 + s(Zmat_Func.mat2, bs = 're')+s(Zmat_Func.mat32, bs = 're'), family = 'binomial'), silent = F)
+#       #gam_Lin <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Lin + s(Zmat_Lin.mat, bs = 're'), family = 'binomial'), silent = F)
+#       if( 'try-error' %in% class(gam_Func2)) {
+#         next
+#       }
+# save2<-c(seed,c(summary(gam_Func2)$s.table[1:4]))
+# #write.table(save2,paste(family,'_',nsub,'subj_r',r,'_M',datapoints,'.csv',sep=''),sep=',')  
+# names(save2)<-c('seed','func_edf','func_ref.df','func_chi.sq','func_p')
+# save2
+```
+
+
+#use glmm.modd and test, expect fail to reject, it fails to reject 
+#constant fail to reject. hy4 is constant, test constant, expect to fail to reject
+```{r}
+# test.mat<-data.frame(Y=hyp4$true$yis,X=Xmat_Func,Z.test=Zmat_Func.mat,Z.test3=Zmat_Func.mat3)
+# names(test.mat)<-c('Y','X1','X2',paste0('Z.test',1:ncol(Zmat_Func.mat)),paste0('Z.test3',1:ncol(Zmat_Func.mat3)))
+
+
+# test.mat<-data.frame(Y=hyp4$true$yis,X=Xmat_Func,Z.test=Zmat_Func.mat,ones=rep(1,n4))
+# names(test.mat)<-c('Y','X1','X2',"X3",paste0('Z.test',1:ncol(Zmat_Func.mat)),"ones")
+
+test.mat<-data.frame(Y=hyp4$true$yis,X=Xmat_Func,Z.test=Zmat_Func.mat,Z.test3=Zmat_Func.mat3,ones=rep(1,nsub))
+names(test.mat)<-c('Y','X1','X2',"X3",paste0('Z.test',1:ncol(Zmat_Func.mat2)),paste0('Z.test3',1:ncol(Zmat_Func.mat2)),"ones")
+
+
+#PFR
+pro.alt.fit <-fit.glmmPQL(test.mat,'bernoulli',1,'Functional') 
+pro.test.Func <- try(test.aRLRT(pro.alt.fit),silent=T) # Functional only
+pro.test.Func$aRLRT$statistic
+pro.test.Func$aRLRT$p.value
+```
+#pfr on hyp3 expect to reject, it is rejecting , power is good
+```{r}
+cfd22=hyp3$true$TrueX2
+cfd33=hyp3$true$TrueX3
+Xmat_Inc2<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func2<-gen.Zscfd(cfd22,seq(0.01,0.99,length=datapoints),ku=30,test='Functional')
+Zmat_Func32<-gen.Zscfd(cfd33,seq(0.01,0.99,length=datapoints),ku=30,test='Functional')
+Zmat_Func.mat2 <- Zmat_Func2$Zmat
+Zmat_Func.mat32 <- Zmat_Func32$Zmat
+Xmat_Func2<-cbind(Xmat_Inc2,Zmat_Func2$X.g2,Zmat_Func32$X.g2)
+
+test.mat2<-data.frame(Y=hyp3$true$yis,X=Xmat_Func2,Z.test=Zmat_Func.mat2,Z.test3=Zmat_Func.mat32,ones=rep(1,nsub))
+names(test.mat2)<-c('Y','X1','X2',"X3",paste0('Z.test',1:ncol(Zmat_Func.mat2)),paste0('Z.test3',1:ncol(Zmat_Func.mat32)),"ones")
+
+#Pro
+pro.alt.fit2 <-fit.glmmPQL(test.mat2,'bernoulli',n,'Functional') 
+pro.test.Func2 <- try(test.aRLRT(pro.alt.fit2),silent=T) # Functional only
+pro.test.Func2$aRLRT$statistic
+pro.test.Func2$aRLRT$p.value
+```
+#Inclusion
+```{r}
+cfd22=hyp3$true$TrueX2
+cfd33=hyp3$true$TrueX3
+Xmat_Inc2<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func2<-gen.Zscfd(cfd22,seq(0.01,0.99,length=datapoints),ku=30,test='Inclusion')
+Zmat_Func32<-gen.Zscfd(cfd33,seq(0.01,0.99,length=datapoints),ku=30,test='Inclusion')
+Zmat_Func.mat2 <- Zmat_Func2$Zmat
+Zmat_Func.mat32 <- Zmat_Func32$Zmat
+Xmat_Func2<-cbind(Xmat_Inc2,Zmat_Func2$X.g2,Zmat_Func32$X.g2)
+
+test.mat2<-data.frame(Y=hyp3$true$yis,X=Xmat_Func2,Z.test=Zmat_Func.mat2,Z.test3=Zmat_Func.mat32,ones=rep(1,nsub))
+names(test.mat2)<-c('Y','X1',paste0('Z.test',1:ncol(Zmat_Func.mat2)),paste0('Z.test3',1:ncol(Zmat_Func.mat32)),"ones")
+
+#Pro
+pro.alt.fit2 <-fit.glmmPQL(test.mat2,'bernoulli',n,'Inclusion') 
+pro.test.Func2 <- try(test.aRLRT(pro.alt.fit2),silent=T) # Functional only
+pro.test.Func2$aRLRT$statistic
+pro.test.Func2$aRLRT$p.value
+```
+
+
+#expect to reject #0.28
+```{r}
+cfd11=hyp1$true$TrueX2
+cfd13=hyp1$true$TrueX3
+Xmat_Inc11<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func11<-gen.Zscfd(cfd11,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func311<-gen.Zscfd(cfd13,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func.mat11 <- Zmat_Func11$Zmat
+Zmat_Func.mat311 <- Zmat_Func311$Zmat
+Xmat_Func111<-cbind(Xmat_Inc11,Zmat_Func11$X.g2,Zmat_Func311$X.g2)
+
+test.mat11<-data.frame(Y=hyp1$true$yis,X=Xmat_Func111,Z.test=Zmat_Func.mat11,Z.test3=Zmat_Func.mat311,ones=rep(1,nsub))
+names(test.mat11)<-c('Y','X1','X2',"X3",paste0('Z.test',1:ncol(Zmat_Func.mat11)),paste0('Z.test3',1:ncol(Zmat_Func.mat311)),"ones")
+
+#Pro
+pro.alt.fit11 <-fit.glmmPQL(test.mat11,'bernoulli',n,'Functional') 
+pro.test.Func11 <- try(test.aRLRT(pro.alt.fit11),silent=T) # Functional only
+pro.test.Func11$aRLRT$statistic
+pro.test.Func11$aRLRT$p.value
+```
+```{r}
+plot(hyp1$true$fl$fl2-hyp1$true$fl$fl1)
+plot(hyp1$true$fl$fl3-hyp1$true$fl$fl1)
+```
+
+
+
+
+
+
+
+
+#proposed
+```{r}
+datatest=data.frame(Y=rep(hyp4$true$yis,each=dim(Zmat_Func.mat)[2]),X=matrix(rep(Xmat_Func,each=dim(Zmat_Func.mat)[2]),ncol=dim(Xmat_Func)[2]),Z.test=c(t(Zmat_Func.mat)),Z.test3=c(t(Zmat_Func.mat3)),id=rep(1:(dim(Zmat_Func.mat)[2]),n4))
+```
+#try
+```{r}
+#test functionality 
+#true: beta=constant. Ho:beta(t)=beta0 constant result: fail to reject as expected, reflect power
+# glmm.fit <- glmmPQL.mod(Mate~0+Cross, random=list(~0+int|Male),
+# data=salamander, family=binomial, weights=rep(1,nrow(salamander)))
+# Mate Cross Female Male
+# 1    1   R/R     10   10
+# 2    1   R/R     11   14
+# 3    1   R/R     12   11
+# 4    1   R/R     13   13
+# 5    1   R/R     14   12
+# 6    1   R/W     15   28
+
+#Z.test.formula=Zmat_Func.mat.formula
+
+# 
+# Zmat_Func.mat.names<-c("0",paste0('Z.test',1:(30-1)))
+# #Xmat_Func.names=c(paste0('X',1:(30-1))
+# Zmat_Func.mat.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+# 
+# Zmat_Func.mat3.names<-c("0",paste0('Z.test3',1:(30-1)))
+# #Xmat_Func.names=c(paste0('X',1:(30-1))
+# Zmat_Func.mat3.formula<-as.formula(paste("~",paste(Zmat_Func.mat3.names,collapse="+")))
+# 
+# 
+# datatestmat=data.frame(Y=hyp4$true$yis,X=Xmat_Func,Z.test=Zmat_Func.mat,Z.test3=Zmat_Func.mat3)
+# names(datatestmat)<-c('Y','X1','X2',"X3",paste0('Z.test',1:ncol(Zmat_Func.mat)),paste0('Z.test3',1:ncol(Zmat_Func.mat3)))
+# 
+# tst=Sys.time()
+# datatest$int <- rep(1:nsub,each=dim(Zmat_Func.mat)[2])
+# # glmm.fit <- glmmPQL.mod(Y~0+X.2+X.3+int+Z.test3, random=list(~0+Z.test|id),
+# # data=datatest, family=binomial, weights=rep(1,n4*dim(Zmat_Func.mat)[2]))
+# #glmm.fit<-glmmPQL.mod(Y~0+X.1+X.2+X.3,random=list(ones=pdIdent(Zmat_Func.mat.formula)),family=binomial,data=datatestmat,weights=nsub)
+#  glmm.fit<-glmmPQL.mod(Y~0+X1+X2+X3,random=list(Zmat_Func.mat.formula,Zmat_Func.mat3.formula|id),family=binomial,data=datatestmat,weights=rep(1,nrow(datatestmat)))
+# # #' # Test significance of random intercept for Male salamanders
+# aRLRT <- test.aRLRT(glmm.fit)
+# tet=Sys.time()
+# tlap=tet-tst
+# tlap
+# aRLRT$aRLRT
+```
+#try the test alpha
+```{r}
+#not useful
+#test functionality 
+#true: beta=1+2t. Ho:beta(t)=beta0 constant result: reject as expected, reflect alpha
+cfd22=hyp3$true$TrueX2
+cfd33=hyp3$true$TrueX3
+Xmat_Inc2<-matrix(rep(1,nsub),ncol=1)
+Zmat_Func2<-gen.Zscfd(cfd22,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func32<-gen.Zscfd(cfd33,seq(0.01,0.99,length=numt),ku=30,test='Functional')
+Zmat_Func.mat2 <- Zmat_Func2$Zmat
+Zmat_Func.mat32 <- Zmat_Func32$Zmat
+Xmat_Func2<-cbind(Xmat_Inc2,Zmat_Func2$X.g2,Zmat_Func32$X.g2)
+
+##############
+datatest2=data.frame(Y=rep(hyp3$true$yis,each=dim(Zmat_Func.mat2)[2]),X=matrix(rep(Xmat_Func2,each=dim(Zmat_Func.mat2)[2]),ncol=dim(Xmat_Func2)[2]),Z.test=c(t(Zmat_Func.mat2)),Z.test3=c(t(Zmat_Func.mat32)),id=rep(1:(dim(Zmat_Func.mat)[2]),n4))
+datatest2$int <- rep(1:nsub,each=dim(Zmat_Func.mat)[2])
+##############
+#list(schcode = ~1, minor = ~1, female = ~1, lowses = ~1)
+tst=Sys.time()
+glmm.fit2 <- glmmPQL.mod(Y~0+X.1+X.2+X.3+int+Z.test3, random=list(~0+Z.test|id),
+data=datatest2, family=binomial, weights=rep(1,n4*dim(Zmat_Func.mat2)[2]))
+# #' # Test significance of random intercept for Male salamanders
+aRLRT2 <- test.aRLRT(glmm.fit2)
+tet=Sys.time()
+tlap=tet-tst
+tlap
+aRLRT2$aRLRT
+```
+#example
+```{r}
+ library(glmm)
+ data(salamander) # load data
+salamander$int <- 1 # add column of 1s for random intercept
+#' # Fit alternative hypothesis
+glmm.fits <- glmmPQL.mod(Mate~0+Cross, random=list(~0+int|Male),
+data=salamander, family=binomial, weights=rep(1,nrow(salamander)))
+#' # Test significance of random intercept for Male salamanders
+aRLRTs <- test.aRLRT(glmm.fits)
+aRLRTs$aRLRT
+```
+
+
+
+
+#Functions needed
+#proposed methods with aRLRT
+```{r}
+###stephanie
+#https://github.com/stchen3
+library(devtools)
+install_github("stchen3/glmmVCtest")
+library("glmmVCtest")
+##example. using random effect linear mixed model
+# library(glmm)
+# library(RLRsim)
+#  data(salamander) # load data
+# salamander$int <- 1 # add column of 1s for random intercept
+# #' # Fit alternative hypothesis
+# glmm.fit <- glmmPQL.mod(Mate~0+Cross, random=list(~0+int|Male),
+# data=salamander, family=binomial, weights=rep(1,nrow(salamander)))
+# #' # Test significance of random intercept for Male salamanders
+# aRLRT <- test.aRLRT(glmm.fit)
+# aRLRT$aRLRT
+```
+
+#Uli
+```{r}
+reflevel=which.min(table(hyp3$true$Truecatcurve)) ##catgory 3 is the reference level
+Uli1=matrix(0,nrow=n,ncol=nbasis)
+for (i in 1:n){
+  t=seq(0,1,length=numt)
+  for (j in 1:nbasis){
+    Uli1[i,j]=int.simpson2(t,datag$true$TrueX1[i,]*Bmat[,j])
+  }
+}
+
+Uli2=matrix(0,nrow=n,ncol=nbasis)
+for (i in 1:n){
+  t=seq(0,1,length=numt)
+  for (j in 1:nbasis){
+    Uli2[i,j]=int.simpson2(t,datag$true$TrueX2[i,]*Bmat[,j])
+  }
+}
+
+#reference group
+# Uli3=matrix(0,nrow=n,ncol=nbasis)
+# for (i in 1:n){
+#   t=seq(0,1,length=numt)
+#   for (j in 1:nbasis){
+#     Uli3[i,j]=int.simpson2(t,hyp1$TrueX3[i,]*Bmat[,j])
+#   }
+# }
+```
+
+#find betalr
+```{r}
+#just use penalty to estimate
+#Umatrix=cbind(Uli1,Uli2)
+#PP <- list(X=list(rank=nbasis,Smat))
+#PPgrad=list(X=list(rank=nbasis,gradSmat))
+#fitbetalr=gam(datag$true$yis~Uli1+Uli2,family="binomial",method="REML",paraPen=PP)
+#fitbetalrp=gam(datag$true$yis~Uli1+Uli2,family="binomial",method="REML",paraPen=PPgrad)
+```
+###Find the Pd and reframe the functional model as GLMM
+```{r}
+#Get Bmat which is the basis functions t*r
+#nbasis=40   #2*nbasis has to be less than n
+#bbasis=create.bspline.basis(c(0,1), nbasis) #5 is the number of the basis
+#Bmat = eval.basis(seq(0,1,length=numt),basisobj=bbasis)
+#Smat=t(Bmat)%*%Bmat   #5*5
+
+  #gen.Z<-function(efuncs,times,ximat,ku=30,test){
+#times is the argval the time interval
+####catfd is for simulated data and check Uli1 for real data
+  gen.Z<-function(nbasis,times,catfd,test){
+    n=dim(catfd$true$TrueX1)[1]
+    numt=dim(catfd$true$TrueX1)[2]
+    #knots<-construct.knots(times,knots=(ku-3),knots.option='equally-spaced')
+    #bspline<-splineDesign(knots=knots,x=times,ord=4)
+    #J<-matrix(0,nrow=ncol(efuncs),ncol=ncol(bspline)) #empty
+    #for(row in 1:nrow(J)){
+      #for(col in 1:ncol(J)){
+        #J[row,col]<-sintegral(times,efuncs[,row]*bspline[,col])$value
+      #}
+    #}w 
+    
+    #nbasis=40   #2*nbasis has to be less than n
+ bbasis=create.bspline.basis(c(0,1), nbasis) #5 is the number of the basis
+ st=min(times)
+ et=max(times)
+  Bmat = eval.basis(seq(st,et,length=numt),basisobj=bbasis)
+  #####
+  reflevel=which.min(table(catfd$true$Truecatcurve)) ##catgory 3 is the reference level
+  Uli1=matrix(0,nrow=n,ncol=nbasis)
+  for (i in 1:n){
+  t=seq(st,et,length=numt)
+  for (j in 1:nbasis){
+    Uli1[i,j]=int.simpson2(t,catfd$true$TrueX1[i,]*Bmat[,j])
+  }
+}
+
+Uli2=matrix(0,nrow=n,ncol=nbasis)
+for (i in 1:n){
+  t=seq(st,et,length=numt)
+  for (j in 1:nbasis){
+    Uli2[i,j]=int.simpson2(t,catfd$true$TrueX2[i,]*Bmat[,j])
+  }
+}
+  
+  
+  
+    #constant<-sqrt(1/ku)*rep(1,ku) #Q2_1
+    range<-max(times)-min(times) #what is full scale
+    ku=nbasis
+    constant<-rep(1,ku)/range # unscaled
+    lin<-seq(min(times),max(times),length.out=ku)/range #unscaled
+    line<-sqrt(c(1/t(lin)%*%lin))*lin #Q2_2
+     #D<-diag(ncol(J)). #diagonal identity matrix, with predefined number of row and columns
+    D<-diag(ncol(Uli1))
+    #D2<-diag(ncol(Uli2))
+   
+    if(test=='Inclusion'){
+      d=0
+      #return(list(Zmat=(ximat %*% J), X.g2=NULL,J=J,D=D))
+      return(list(Zmat=(Uli1), X.g2=NULL,D=D))
+    }
+    #if(test=='Linearity'){ #Test for linearity
+      #d=2
+      #Q2=as.matrix(cbind(constant,lin))
+    #}
+    if(test=='Functional'){ #Test for functional form
+      d=1
+      Q2=as.matrix(constant)
+    }
+    D<-diff(D,differences=d)
+    P<- t(D)%*%D #penalty matrix
+    P2<-1/2*(P+t(P))
+    P.eigen<-eigen(P2)
+    evalues<-P.eigen$values[1:nrow(D)]
+    Q<-P.eigen$vectors
+    Lambda1.inv.half<-diag(sqrt(1/evalues))
+    #Q2<-Q[,(ku-d+1):ku]
+    
+    #Ztilde<- ximat %*% J %*% Q[,1:(ku-d)]
+    Ztilde<- Uli1 %*% Q[,1:(ku-d)]
+    #X.g2<- ximat %*% J %*% Q2
+    X.g2<- Uli1 %*% Q2
+    #list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
+        #J=J,D=D,phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half)
+    
+    list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
+         D=D,phi=Bmat,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half)
+  }
+  
+```
+#on simulated data
+```{r}
+#gen.Z<-function(nbasis,times,catfd,test)
+gz=gen.Z(40,seq(0,1,length=250),hyp3,"Inclusion")
+```
+
+
+#find coefficient
+```{r}
+fitcoef=fitbetalr$coefficients
+fitcoefp=fitbetalrp$coefficients
+```
+
+#gather betal by category l
+```{r}
+betal0=fitcoef[1]
+betal1=fitcoef[2:(nbasis+1)]
+betal2=fitcoef[(nbasis+2):length(fitcoef)]
+
+betal0p=fitcoefp[1]
+betal1p=fitcoefp[2:(nbasis+1)]
+betal2p=fitcoefp[(nbasis+2):length(fitcoefp)]
+```
+
+```{r}
+betal0
+plot(betal1)
+plot(betal2)
+betal0p
+plot(betal1p)
+plot(betal2p)
+```
+
+
+
+
+
+#use the estimate to recover the original equation
+$$
+log\frac{p_i}{1-p_i}=\beta_0+\sum_{l=1}^{L-1}\int \widetilde{X}_{l,i}\widetilde{F}_l(t)dt\\
+                    = \beta_0+\sum_{l=1}^{L-1}\int \widetilde{X}_{l,i}\sum_{r=1}^{R}\widehat{\beta}_{l,r}B_{r}(t)dt
+$$
+#get Zihat   or Zihatstar
+```{r}
+Z_i1hat=Z_ihat(datag$true$TrueX1,t)
+  #recover Z_i2 hat using X_i[2,all j, all n] only related to p2 
+Z_i2hat=Z_ihat(datag$true$TrueX2,t)
+```
+#re formulate with Zis
+$$
+log\frac{p_i}{1-p_i}=\beta_0+\sum_{l=1}^{L-1}\int \widetilde{X}_{l,i}\widetilde{F}_l(t)dt\\
+                    = \beta_0+\sum_{l=1}^{L-1}\int \widetilde{X}_{l,i}\sum_{r=1}^{R}\widehat{\beta}_{l,r}B_{r}(t)dt\\
+                    =\beta_0+\sum_{l=1}^{L-1}\int \widehat{Z}_{l,i}\sum_{r=1}^{R}\widehat{\beta}_{l,r}B_{r}(t)dt
+$$
+
+
+```{r}
+library(shiny)
+runGitHub("XiaoxiaChampon/ConvergenceConcepts") 
+```
+
+```{r}
+library(refund)
+fpca.face
+```
+
+
+
+
