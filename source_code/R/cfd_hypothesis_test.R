@@ -28,35 +28,6 @@
 #
 ##############################################################
 
-# ---- For: parallelization ----
-# For: foreach loop
-# library(foreach)
-
-# run_parallel <- TRUE
-# time_elapsed <- list()
-# if(run_parallel)
-# {
-#   print("RUNNING PARALLEL")
-#
-#   # For: makeCluster
-#   library(doParallel)
-#
-#   # For: %dorng% or registerDoRNG for reproducable parallel random number generation
-#   library(doRNG)
-#
-#   if(exists("initialized_parallel") && initialized_parallel == TRUE)
-#   {
-#     parallel::stopCluster(cl = my.cluster)
-#   }
-#   n.cores <- parallel::detectCores() - 1
-#   my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
-#   doParallel::registerDoParallel(cl = my.cluster)
-#   cat("Parellel Registered: ", foreach::getDoParRegistered(), "\n")
-#   initialized_parallel <- TRUE
-#
-#   # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
-# }
-
 #' Create directories
 if (!dir.exists("outputs")){
   dir.create("outputs")
@@ -147,7 +118,7 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   #   }
   # }
 
-  J_matrix <- foreach(this_row = 1:number_row) %dorng%
+  J_matrix <- foreach(this_row = 1:number_row) %do%
     {
       source("./R/integral_penalty_function.R")
 
