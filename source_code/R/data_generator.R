@@ -120,6 +120,7 @@ GenerateCategFuncData <- function(prob_curves)
     # we could have just passed these arguments ???
     num_indvs <- ncol(prob_curves$p1)
     timeseries_length <- nrow(prob_curves$p1)
+    cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
 
     # better names for W and X ???
     W <- matrix(0, ncol=num_indvs, nrow=timeseries_length)
@@ -313,9 +314,9 @@ generate_cfd_test <- function(klen, num_indvs, timeseries_length, time_interval,
     #generate pi
     vec=matrix(1:num_indvs,nrow=num_indvs,ncol=1)
     #integral a function on a interval, returns a scalar
-    x1fl1=apply(vec,1, function(x) {int.simpson2(t, X_i1[x,]*fl1, equi = TRUE, method = "TRAPZ")})
-    x2fl2=apply(vec,1, function(x) {int.simpson2(t, X_i2[x,]*fl2, equi = TRUE, method = "TRAPZ")})
-    x3fl3=apply(vec,1, function(x) {int.simpson2(t, X_i3[x,]*fl3, equi = TRUE, method = "TRAPZ")})
+    x1fl1=apply(vec,1, function(x) {fda.usc::int.simpson2(t, X_i1[x,]*fl1, equi = TRUE, method = "TRAPZ")})
+    x2fl2=apply(vec,1, function(x) {fda.usc::int.simpson2(t, X_i2[x,]*fl2, equi = TRUE, method = "TRAPZ")})
+    x3fl3=apply(vec,1, function(x) {fda.usc::int.simpson2(t, X_i3[x,]*fl3, equi = TRUE, method = "TRAPZ")})
 
     prob_for_indv=c(0)
     for (i in 1:num_indvs){
@@ -368,16 +369,16 @@ fl3fn = function(t) {
 GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                                       time_interval, fl_choice){
 
-    mns <- GetMuAndScore_2(3)
+    mns <- GetMuAndScore_2(klen)
 
-    generated_data <- GenerateDataTest(num_indvs = 100,
-                                      timeseries_length = 100,
+    generated_data <- GenerateDataTest(num_indvs = num_indvs,
+                                      timeseries_length = timeseries_length,
                                       mu_1 = mns$mu_1,
                                       mu_2 = mns$mu_2,
                                       score_vals = mns$score_vals,
                                       start_time = time_interval[1],
                                       end_time = tail(time_interval,1),
-                                      k = 3)
+                                      k = klen)
 
     prob_curves <- list(p1 = generated_data$p1, p2 = generated_data$p2, p3 = generated_data$p3)
     cat_data <- GenerateCategFuncData(prob_curves)
@@ -389,32 +390,35 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                             "fl3"=rep(-0.51,timeseries_length)),
 
                    "2"=list("fl1"=rep(-0.1,timeseries_length),
-                            "fl2"=matrix(-0.1*fl2f(t),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3f(t),nrow=timeseries_length,ncol=1)),
+                            "fl2"=matrix(-0.1*fl2f(time_interval),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
 
                    "3"=list("fl1"=rep(-0.2,timeseries_length),
-                            "fl2"=matrix(-0.15*fl2f(t),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3f(t),nrow=timeseries_length,ncol=1)),
+                            "fl2"=matrix(-0.15*fl2f(time_interval),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
 
-                   "4"=list("fl1"=matrix(fl3fn(t),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(fl3fn(t),nrow=timeseries_length,ncol=1)+1.3145,
-                            "fl3"=matrix(fl3fn(t),nrow=timeseries_length,ncol=1)),
+                   "4"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)+1.3145,
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
 
+
+
     # integral a function on a interval, returns a scalar
-    x1fl1 <- parApply(my.cluster, vec,1, function(x) {int.simpson2(t, X_i1[x,]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
-    x2fl2 <- parApply(my.cluster, vec,1, function(x) {int.simpson2(t, X_i2[x,]*flfn$fl2, equi = TRUE, method = "TRAPZ")})
-    x3fl3 <- parApply(my.cluster, vec,1, function(x) {int.simpson2(t, X_i3[x,]*flfn$fl3, equi = TRUE, method = "TRAPZ")})
+    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,1]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
+    x2fl2 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*flfn$fl2, equi = TRUE, method = "TRAPZ")})
+    x3fl3 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*flfn$fl3, equi = TRUE, method = "TRAPZ")})
 
     sum_int_xtft <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.02)
-    Y_indvs <- parApply(my.cluster, sum_int_xtft, 1, function(x){ rbinom(1,1, expit(x)) })
+
+    Y_indvs <- parApply(my.cluster, sum_int_xtft, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
 
 
-    truelist=list("TrueX1"=cat_data$X_array[,,1],
-                  "TrueX2"=cat_data$X_array[,,2],
-                  "TrueX3"=cat_data$X_array[,,3],
+    truelist=list("TrueX1"=cat_data$X[,,1],
+                  "TrueX2"=cat_data$X[,,2],
+                  "TrueX3"=cat_data$X[,,3],
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs)
@@ -447,8 +451,8 @@ cfdt <- GenerateCategoricalFDTest(klen=3,
                                   time_interval = timestamps01,
                                   fl_choice=2)
 
-result <- cfd_hypothesis_test(cfdt$yis,
-                            cfdt$Truecatcurve,
+result <- cfd_hypothesis_test(cfdt$true$yis,
+                            cfdt$true$Truecatcurve,
                             time_interval = timestamps01,
                             response_family='bernoulli',
                             test_type='Functional')
