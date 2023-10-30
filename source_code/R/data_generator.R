@@ -1,5 +1,12 @@
 
+library(mgcv)
+library(fda)
 library(fda.usc)
+library(devtools)
+install_github("stchen3/glmmVCtest")
+library("glmmVCtest")
+library(RLRsim)
+library(MASS)
 
 # ---- For: parallelization ----
 # For: foreach loop
@@ -363,7 +370,7 @@ fl3f = function(t) {
 }
 
 fl3fn = function(t) {
-    return(-3*t[i]^2 + 2*t[i] - 0.9)
+    return(-3*t^2 + 2*t - 0.9)
 }
 
 GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
@@ -407,7 +414,7 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
 
 
     # integral a function on a interval, returns a scalar
-    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,1]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
+    x1fl1 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,1]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
     x2fl2 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*flfn$fl2, equi = TRUE, method = "TRAPZ")})
     x3fl3 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*flfn$fl3, equi = TRUE, method = "TRAPZ")})
 
@@ -449,7 +456,7 @@ cfdt <- GenerateCategoricalFDTest(klen=3,
                                   num_indvs=100,
                                   timeseries_length = timeseries_length,
                                   time_interval = timestamps01,
-                                  fl_choice=2)
+                                  fl_choice=4)
 
 result <- cfd_hypothesis_test(cfdt$true$yis,
                             cfdt$true$Truecatcurve,

@@ -107,7 +107,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
                             X=Xmat_Func,
                             Z.test=Zmat_Func2$Zmat,
                             Z.test3=Zmat_Func3$Zmat,
-                            ones=rep(1,nsub))
+                            ones=rep(1,num_indivs))
   names(test_matrix) <- c('Y','X1','X2',"X3",
                           paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
                           paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
@@ -147,13 +147,13 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   #   }
   # }
 
-  J_matrix <- foreach(row = 1:number_row) %doRNG%
+  J_matrix <- foreach(this_row = 1:number_row) %dorng%
     {
       source("./R/integral_penalty_function.R")
 
-      temp <- array(-123,col)
-      for(col in 1:number_col){
-        temp[col] <- integral_penalty(time_interval,X_matrix[row,]*bspline[,col])$value
+      temp <- array(-123, number_col)
+      for(this_col in 1:number_col){
+        temp[this_col] <- integral_penalty(time_interval,X_matrix[this_row,]*bspline[,this_col])$value
       }
       return(temp)
     }
@@ -166,16 +166,16 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   line <- sqrt(c(1/t(lin)%*%lin))*lin #Q2_2
 
   D <- diag(ncol(J_matrix))
-  if(test=='Inclusion'){
+  if(test_type=='Inclusion'){
     difference_penalty=0
     #return(list(Zmat=(ximat %*% J_matrix), X.g2=NULL,J_matrix=J_matrix,D=D))
     return(list(Zmat=( J_matrix), X.g2=NULL,J=J_matrix,D=D))
   }
-  # if(test=='Linearity'){ #Test for linearity
+  # if(test_type=='Linearity'){ #Test for linearity
   #   d=2
   #   Q2=as.matrix(cbind(constant,lin))
   # }
-  if(test=='Functional'){ #Test for functional form
+  if(test_type=='Functional'){ #Test for functional form
     difference_penalty=1
     Q2=as.matrix(constant)
   }
@@ -190,7 +190,7 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   #
   # Ztilde <-  ximat %*% J_matrix %*% Q[,1:(number_basis-d)]
   # X.g2 <-  ximat %*% J_matrix %*% Q2
-  Ztilde <-  J_matrix %*% Q[,1:(number_basis-d)]
+  Ztilde <-  J_matrix %*% Q[,1:(number_basis-difference_penalty)]
   X.g2 <-  J_matrix %*% Q2
   return(list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
        J=J_matrix,D=D,phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half))
@@ -225,6 +225,62 @@ select.knots <- function(t,knots=27,p=3,option="equally-spaced"){
   return(c(knots_left,knots,knots_right))
 }
 
+fit.glmmPQL<-function(test.mat,family,n,test.type,ku=30){
+  # can't automate the fixed effects :(
+  family.glmm=family
+  if(family=='bernoulli'){
+    family.glmm='binomial'
+  }
+  if(family.glmm=='binomial'){ # binomial, needs success and failures
+    test.mat$prop<-test.mat$Y/n
+    test.mat$n<-n
+    if(test.type=='Inclusion'){
+      Z.test.names<-c("0",paste0('Z.test',1:ku))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(prop~0+X1,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat,weights=n),silent=T)
+    }
+    if(test.type=='Functional'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat,weights=n),silent=T)
+    }
+    if(test.type=='Linearity'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat,weights=n),silent=T)
+    }
+    return(glmm.fit)
+  } else { # non-binomial (poisson or bernoulli)
+    if(test.type=='Inclusion'){
+      Z.test.names<-c("0",paste0('Z.test',1:ku))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    if(test.type=='Functional'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    if(test.type=='Linearity'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2+X3,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    return(glmm.fit)
+  }
+}
 
 #
 # if(run_parallel)
