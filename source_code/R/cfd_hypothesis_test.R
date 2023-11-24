@@ -65,59 +65,42 @@ GetXFromW <- function(W)
 #' @return list: statistics is test statistics, pvalue
 cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type){
   # Y=Y_indvs
-  # X_cfd <- GetXFromW(cfd)
+  X_cfd <- GetXFromW(cfd)
+  
+  num_indvs <- length(Y)
 
   Zmat_Func2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
   Zmat_Func3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
 
-  num_indvs <- length(Y)
   Xmat_Inc<-matrix(rep(1, num_indvs),ncol=1)
   Xmat_Func <- cbind(Xmat_Inc, Zmat_Func2$X.g2, Zmat_Func3$X.g2)
   
+  if(test_type=="Inclusion"){
+    test_matrix <- data.frame(Y=Y,
+                              X=Xmat_Inc,
+                              Z.test=Zmat_Func2$Zmat,
+                              Z.test3=Zmat_Func3$Zmat,
+                              ones=rep(1,num_indvs))
+    names(test_matrix) <- c('Y','X1',
+                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
+                            "ones")
+  }
+  if (test_type=="Functional"){
+    test_matrix <- data.frame(Y=Y,
+                              X=Xmat_Func,
+                              Z.test=Zmat_Func2$Zmat,
+                              Z.test3=Zmat_Func3$Zmat,
+                              ones=rep(1,num_indvs))
+    names(test_matrix) <- c('Y','X1','X2',"X3",
+                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
+                            "ones")
+  }
   
-  ######################examples
-  # Zmat_Inc<-gen.Z(efuncs,times,xi,ku=30,test='Inclusion')
-  # Zmat_Inc.mat <- Zmat_Inc$Zmat
-  # Xmat_Inc<-matrix(rep(1,nsub),ncol=1)
-  # 
-  # Zmat_Func<-gen.Z(efuncs,times,xi,ku=30,test='Functional')
-  # Zmat_Func.mat <- Zmat_Func$Zmat
-  # Xmat_Func<-cbind(Xmat_Inc,Zmat_Func$X.g2)
-  # 
-  # if(family == 'bernoulli' | family == 'binomial'){
-  #   if(family == 'bernoulli'){
-  #     n = 1
-  #   }
-  #   gam_Inc <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Inc + s(Zmat_Inc.mat, bs = 're'), family = 'binomial'), silent = F)
-  #   gam_Func <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Func + s(Zmat_Func.mat, bs = 're'), family = 'binomial'), silent = F)
-  #   gam_Lin <- try(gam(cbind(Y, n - Y) ~ 0 + Xmat_Lin + s(Zmat_Lin.mat, bs = 're'), family = 'binomial'), silent = F)
-  #   if('try-error' %in% class(gam_Inc) | 'try-error' %in% class(gam_Func) | 'try-error' %in% class(gam_Lin)){
-  #     next
-  #   }
-  # }
-  # save<-rbind(save,c(seed,pick.NPC,
-  #                    c(summary(gam_Inc)$s.table[1:4]),
-  #                    c(summary(gam_Func)$s.table[1:4]),
-  #                    c(summary(gam_Lin)$s.table[1:4])))
-  # write.table(save,paste(family,seed.orig,'_',case,'_',nsub,'subj_r',r,'_M',M,'.csv',sep=''),sep=',')
-  ############################
-  
-  
-  
-  
+  alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
 
-  # test_matrix <- data.frame(Y=Y,
-  #                           X=Xmat_Func,
-  #                           Z.test=Zmat_Func2$Zmat,
-  #                           Z.test3=Zmat_Func3$Zmat,
-  #                           ones=rep(1,num_indvs))
-  # names(test_matrix) <- c('Y','X1','X2',"X3",
-  #                         paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
-  #                         paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
-  #                         "ones")
-  # alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
-  # 
-  # result <- try(test.aRLRT(alternative_fit), silent=T)$aRLRT # Functional only
+  result <- try(test.aRLRT(alternative_fit), silent=T)$aRLRT # Functional only
   
 
 
