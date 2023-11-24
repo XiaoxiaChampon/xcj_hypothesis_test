@@ -220,62 +220,62 @@ select.knots <- function(t,knots=27,p=3,option="equally-spaced"){
   return(c(knots_left,knots,knots_right))
 }
 
-# fit.glmmPQL<-function(test.mat,family,n,test.type,ku=30){
-#   # can't automate the fixed effects :(
-#   family.glmm=family
-#   if(family=='bernoulli'){
-#     family.glmm='binomial'
-#   }
-#   if(family.glmm=='binomial'){ # binomial, needs success and failures
-#     test.mat$prop<-test.mat$Y/n
-#     test.mat$n<-n
-#     if(test.type=='Inclusion'){
-#       Z.test.names<-c("0",paste0('Z.test',1:ku))
-#       Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#       glmm.fit<-try(glmmPQL.mod(prop~0+X1,
-#                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#                                 data=test.mat,weights=n),silent=T)
-#     }
-#     if(test.type=='Functional'){
-#       Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
-#       Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#       glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2,
-#                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#                                 data=test.mat,weights=n),silent=T)
-#     }
-#     # if(test.type=='Linearity'){
-#     #   Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
-#     #   Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#     #   glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
-#     #                             random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#     #                             data=test.mat,weights=n),silent=T)
-#     # }
-#     return(glmm.fit)
-#   } else { # non-binomial (poisson or bernoulli)
-#     if(test.type=='Inclusion'){
-#       Z.test.names<-c("0",paste0('Z.test',1:ku))
-#       Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#       glmm.fit<-try(glmmPQL.mod(Y~0+X1,
-#                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#                                 data=test.mat),silent=T)
-#     }
-#     if(test.type=='Functional'){
-#       Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
-#       Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#       glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2,
-#                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#                                 data=test.mat),silent=T)
-#     }
-#     if(test.type=='Linearity'){
-#       Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
-#       Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-#       glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2+X3,
-#                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-#                                 data=test.mat),silent=T)
-#     }
-#     return(glmm.fit)
-#   }
-# }
+fit.glmmPQL<-function(test.mat,family,n,test.type,ku=30){
+  # can't automate the fixed effects :(
+  family.glmm=family
+  if(family=='bernoulli'){
+    family.glmm='binomial'
+  }
+  if(family.glmm=='binomial'){ # binomial, needs success and failures
+    test.mat$prop<-test.mat$Y/n
+    test.mat$n<-n
+    if(test.type=='Inclusion'){
+      Z.test.names<-c("0",paste0('Z.test',1:ku))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(prop~0+X1,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat,weights=n),silent=T)
+    }
+    if(test.type=='Functional'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat,weights=n),silent=T)
+    }
+    # if(test.type=='Linearity'){
+    #   Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+    #   Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+    #   glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
+    #                             random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+    #                             data=test.mat,weights=n),silent=T)
+    # }
+    return(glmm.fit)
+  } else { # non-binomial (poisson or bernoulli)
+    if(test.type=='Inclusion'){
+      Z.test.names<-c("0",paste0('Z.test',1:ku))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    if(test.type=='Functional'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-1)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    if(test.type=='Linearity'){
+      Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+      glmm.fit<-try(glmmPQL.mod(Y~0+X1+X2+X3,
+                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+                                data=test.mat),silent=T)
+    }
+    return(glmm.fit)
+  }
+}
 
 #
 # if(run_parallel)
