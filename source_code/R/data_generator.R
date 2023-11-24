@@ -1,4 +1,30 @@
 
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the “Software”), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge,
+# publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+######################################################################
+#
+# Purpose: Functions to generate Categorical Functional Data Hypothesis Testing 
+#         
+# Author:  Xiaoxia Champon
+# Date: 10/26/2023
+#
+##############################################################
 library(mgcv)
 library(fda)
 library(fda.usc)
@@ -7,9 +33,10 @@ install_github("stchen3/glmmVCtest")
 library("glmmVCtest")
 library(RLRsim)
 library(MASS)
+#for splineDesign
 library(splines)
 
-source("./R/cfd_hypothesis_test.R")
+source("source_code/R/cfd_hypothesis_test.R")
 
 
 #' Get mu_1, mu_2 functions, and score_vals objects for a given context.
@@ -42,6 +69,8 @@ GetMuAndScore_2 <- function(klen)
 #' @param mu_2 description??
 #' @param score_vals description??
 #'
+
+
 GenerateDataTest <- function(num_indvs,
                             timeseries_length,
                             mu_1,
@@ -90,30 +119,99 @@ PsiFunc <- function(klen, timestamps01)
 
 GenerateCategFuncData <- function(prob_curves)
 {
-    curve_count <- length(prob_curves);
+  curve_count <- length(prob_curves);
+  
+  num_indvs <- ncol(prob_curves$p1)
+  timeseries_length <- nrow(prob_curves$p1)
+  cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
+  
+  
+  W <- matrix(0, ncol=num_indvs, nrow=timeseries_length)
+  X_array <- array(0, c(num_indvs, timeseries_length, curve_count))
+  
+  for(indv in c(1:num_indvs))
+  {
+    X <- sapply(c(1:timeseries_length),
+                function(this_time) rmultinom(n=1,
+                                              size=1,
+                                              prob = c(prob_curves$p1[this_time,indv],
+                                                       prob_curves$p2[this_time,indv],
+                                                       prob_curves$p3[this_time,indv]) ))
+    W[,indv] <- apply(X, 2, which.max)
+    X_array[indv,,] <- t(X)
+  }
+  
+  return(list(X=X_array, W=W)) # X_binary W_catfd
+}
 
-    # we could have just passed these arguments ???
-    num_indvs <- ncol(prob_curves$p1)
-    timeseries_length <- nrow(prob_curves$p1)
-    cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
 
-    # better names for W and X ???
-    W <- matrix(0, ncol=num_indvs, nrow=timeseries_length)
-    X_array <- array(0, c(num_indvs, timeseries_length, curve_count))
-
-    for(indv in c(1:num_indvs))
+GenerateCategFuncDataUpdate <- function(prob_curves)
+{
+    categ_func_data_list <- GenerateCategFuncData(prob_curves)
+     num_indvs <- ncol(prob_curves$p1)
+     timeseries_length <- nrow(prob_curves$p1)
+     cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
+    ##########add re generate W if one of the category is missing
+    Q_vals <- unique(c(categ_func_data_list$W))
+    if(is.numeric(Q_vals))
     {
-        X <- sapply(c(1:timeseries_length),
-                    function(this_time) rmultinom(n=1,
-                                                  size=1,
-                                                  prob = c(prob_curves$p1[this_time,indv],
-                                                           prob_curves$p2[this_time,indv],
-                                                           prob_curves$p3[this_time,indv]) ))
-        W[,indv] <- apply(X, 2, which.max)
-        X_array[indv,,] <- t(X)
+      Q_vals <- sort(Q_vals)
     }
-
-    return(list(X=X_array, W=W)) # X_binary W_catfd
+    #####################################
+    
+    
+    for(indv in c(1:num_indvs))
+    {##########add re generate W if one of the category is missing
+        tolcat <- table(categ_func_data_list$W[,indv])
+        catorder <- order(tolcat, decreasing = TRUE)
+        numcat <- length(catorder)
+        refcat <- catorder[numcat]
+        count_iter <- 0
+        while (count_iter < 100 && 
+               ( (numcat < length(Q_vals))
+                 ||(timeseries_length==300  && min(as.numeric(tolcat)) < 4)
+                 ||(timeseries_length==750  && min(as.numeric(tolcat)) < 10)
+               )
+        )
+        {
+          count_iter <- count_iter + 1
+          
+          mns <- GetMuAndScore_2(klen=3)
+          klen=3
+          time_interval=seq(0.01,0.99,length=timeseries_length)
+          generated_data <- GenerateDataTest(num_indvs = 5,
+                                             timeseries_length = timeseries_length,
+                                             mu_1 = mns$mu_1,
+                                             mu_2 = mns$mu_2,
+                                             score_vals = mns$score_vals,
+                                             start_time = time_interval[1],
+                                             end_time = tail(time_interval,1),
+                                             k = klen)
+          
+          new_prob_curves <-  list(p1 = generated_data$p1, p2 = generated_data$p2, p3 = generated_data$p3)
+          new_categ_func_data_list <- GenerateCategFuncData( new_prob_curves )
+          
+          categ_func_data_list$W[, indv] <- new_categ_func_data_list$W[, 3]
+          Z1[, indv] <- generated_data$Z1[, 3] # latent curves Z1 and Z2
+          #create empty series
+          categ_func_data_list$X[indv, , ] <- 0
+          Z2[, indv] <- generated_data$Z2[, 3]
+          
+          for (this_time in 1:timeseries_length)
+          {
+            categ_func_data_list$X[indv, this_time, which(Q_vals == categ_func_data_list$W[, indv][this_time])] <- 1
+          }
+          
+          tolcat <- table(categ_func_data_list$W[, indv])
+          catorder <- order(tolcat, decreasing = TRUE)
+          numcat <- length(catorder)
+          refcat <- catorder[numcat]
+        } # end while
+        #############################
+        
+    }
+    #W: t*n, X: n*t*Q
+    return(list(X=categ_func_data_list$X, W=categ_func_data_list$W)) # X_binary W_catfd
 }
 
 
@@ -147,7 +245,7 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                                       k = klen)
 
     prob_curves <- list(p1 = generated_data$p1, p2 = generated_data$p2, p3 = generated_data$p3)
-    cat_data <- GenerateCategFuncData(prob_curves)
+    cat_data <- GenerateCategFuncDataUpdate(prob_curves)
 
     flfn <- switch(fl_choice,
 
@@ -158,10 +256,14 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                    "2"=list("fl1"=rep(-0.1,timeseries_length),
                             "fl2"=matrix(-0.1*fl2f(time_interval),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
-
+                    #not constant
+                   # fll2=-10*sin((2*pi/25)*(time_interval-1))
+                   # fll3=-20*sin((2*pi/25)*(time_interval-1))-6
                    "3"=list("fl1"=rep(-0.2,timeseries_length),
-                            "fl2"=matrix(-0.15*fl2f(time_interval),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
+                            # "fl2"=matrix(-0.15*fl2f(time_interval),nrow=timeseries_length,ncol=1),
+                            # "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
+                            "fl2"=matrix(-10*sin((2*pi/25)*(time_interval-1)),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1)),
 
                    "4"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                             "fl2"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)+1.3145,
@@ -170,49 +272,33 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
 
-
-
-    # integral a function on a interval, returns a scalar
-    # x1fl1 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,1]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
-    # x2fl2 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*flfn$fl2, equi = TRUE, method = "TRAPZ")})
-    # x3fl3 <- parApply(my.cluster, vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*flfn$fl3, equi = TRUE, method = "TRAPZ")})
-    # 
-    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,1]*flfn$fl1, equi = TRUE, method = "TRAPZ")})
-    x2fl2 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*flfn$fl2, equi = TRUE, method = "TRAPZ")})
-    x3fl3 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*flfn$fl3, equi = TRUE, method = "TRAPZ")})
+   
+    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1-40, equi = TRUE, method = "TRAPZ")})
+    x2fl2 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(5)*(flfn$fl2+10), equi = TRUE, method = "TRAPZ")})
+    x3fl3 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(-4)*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
-    sum_int_xtft <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.02)
-
-    #Y_indvs <- parApply(my.cluster, sum_int_xtft, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
-    
+    #########
+    sum_int_xtft <- matrix(x1fl1 + x2fl2+ x3fl3 -1)
+   
+    ######
     Y_indvs <- apply(sum_int_xtft, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
-
-
+    #table(Y_indvs)
+    
+     linear_predictor=sum_int_xtft
+     prob_ind=1/(1+exp(-sum_int_xtft))
+   
+    
     truelist=list("TrueX1"=cat_data$X[,,1],
                   "TrueX2"=cat_data$X[,,2],
                   "TrueX3"=cat_data$X[,,3],
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
-                  "yis"=Y_indvs)
-
-    ########get zistart
-    #recover Z_i1 hat using X_i[1,all j, all num_indvs] only related to p1
-    #Z_i1hat=Z_ihat(X_i1,t)
-    #recover Z_i2 hat using X_i[2,all j, all num_indvs] only related to p2
-    ##Z_i2hat=Z_ihat(X_i2,t)
-    #Z_i3hat=Z_ihat(X_i3,t)
-
-    #Z_i1hatstar=Z_i1hat+log(1+exp(Z_i3hat))-log(1+exp(Z_i1hat))-Z_i3hat
-    #Z_i2hatstar=Z_i2hat+log(1+exp(Z_i3hat))-log(1+exp(Z_i2hat))-Z_i3hat
-
-
-    #truel=list("TrueZ_i1"=Z_i1,"TrueZ_i2"=Z_i2)
-    #est=list("EstimateZ_i1"=Z_i1hatstar,"EstimateZ_i2"=Z_i2hatstar)
-    #return(list("true"=truelist,"est"=est))
+                  "yis"=Y_indvs,
+                  "linear_predictor"=linear_predictor,
+                  "prob_ind"=prob_ind)
+   
     return(list("true"=truelist))
 }
-
-
 
 
 
@@ -236,9 +322,12 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
+
   return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
               "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
-              "W"=cfd_test_data$true$Truecatcurve))
+              "W"=cfd_test_data$true$Truecatcurve,
+              "linear_predictor"=cfd_test_data$true$linear_predictor,
+              "prob_ind"=cfd_test_data$true$prob_ind))
 }
 
 

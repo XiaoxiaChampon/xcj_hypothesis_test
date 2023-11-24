@@ -1,3 +1,34 @@
+
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the “Software”), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge,
+# publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+######################################################################
+#
+# Purpose: Simulations for Categorical Functional Data Hypothesis Testing
+#         
+# Author:  Xiaoxia Champon
+# Date: 10/26/2023
+#
+##############################################################
+
+
+
+
 library(mgcv)
 library(fda)
 library(fda.usc)
@@ -38,14 +69,17 @@ if(run_parallel)
   # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
 }
 
+
 cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
                                     num_indvs,fl_choice,response_family,test_type,
                                     klen=3){
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   
-  result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL, 
-                         packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %do% {
-    source("./R/data_generator.R")
+  result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
+                         packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
+    #set.seed(123 + 8 * number_simulation)
+    print(number_simulation)
+    source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
                           num_indvs,fl_choice,response_family,test_type, klen=3)
     return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics))
@@ -53,6 +87,67 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   return(result_all)
   
 }
+
+cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
+                                    num_indvs,fl_choice,response_family,test_type,
+                                    klen=3){
+  cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
+  source("source_code/R/data_generator.R")
+  p_value=c(0)
+  test_stats=c(0)
+  #browser("mystop")
+  for (i in 1:num_replicas){
+    print( i)
+    result <- cfd_testing(start_time, end_time, timeseries_length,
+                          num_indvs,fl_choice,response_family,test_type, klen=3)
+    p_value[i]=result$pvalue
+    test_stats[i]=result$test_statistics
+  }
+
+  return(list("pvalue"=p_value,"teststat"=test_stats))
+
+}
+
+######test
+timeKeeperStart("n100t2000")
+set.seed(123456)
+n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=50, start_time=0.01, end_time=0.99,
+                                    timeseries_length=2000,
+                                    num_indvs=100,fl_choice=3,
+                                    response_family='bernoulli',test_type='Functional',
+                                    klen=3)
+timeKeeperNext()
+powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
+
+
+timeKeeperStart("n100t2000")
+set.seed(123456)
+n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=50, start_time=0.01, end_time=0.99,
+                                                      timeseries_length=2000,
+                                                      num_indvs=100,fl_choice=4,
+                                                      response_family='bernoulli',test_type='Functional',
+                                                      klen=3)
+timeKeeperNext()
+powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
+powern100t2000
+############
+
+
+######test
+timeKeeperStart("n100t2000")
+set.seed(123456)
+n100t2000 <- cfd_testing_simulation(num_replicas=50, start_time=0.01, end_time=0.99,
+                                    timeseries_length=2000,
+                                    num_indvs=100,fl_choice=3,
+                                    response_family='bernoulli',test_type='Functional',
+                                    klen=3)
+timeKeeperNext()
+n100t2000_data=matrix(n100t2000,nrow=2,ncol=50)
+powern100t2000=mean(n100t2000_data[1,] < 0.05)
+############
+
+
+
 
 #record the time for one 
 time_elapsed <<- list()
@@ -137,14 +232,14 @@ test_statisticsn100t1350sd=sd(unlist(n100t1350_data[2,]))/sqrt(5000)
 
 ####
 timeKeeperStart("n100t2000")
-set.seed(1234)
-n100t2000 <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
+set.seed(123)
+n100t2000 <- cfd_testing_simulation(num_replicas=50, start_time=0.01, end_time=0.99,
                                     timeseries_length=2000,
                                     num_indvs=100,fl_choice=3,
                                     response_family='bernoulli',test_type='Functional',
                                     klen=3)
 timeKeeperNext()
-n100t2000_data=matrix(n100t2000,nrow=2,ncol=5000)
+n100t2000_data=matrix(n100t2000,nrow=2,ncol=4)
 powern100t2000=mean(n100t2000_data[1,] < 0.05)
 test_statisticsn100t2000=mean(unlist(n100t2000_data[2,]))
 test_statisticsn100t2000sd=sd(unlist(n100t2000_data[2,]))/sqrt(5000)
