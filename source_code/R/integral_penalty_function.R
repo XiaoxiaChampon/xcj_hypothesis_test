@@ -29,7 +29,13 @@
 ##############################################################
 
 #' Function to find integral of penalty
+#' #integral_penalty(time_interval,X_matrix[this_row,]*bspline[,this_col])$value
 integral_penalty <- function(time_interval, function_value) { 
+  #test
+  # x_app <- 1:10
+  # y_app <- rnorm(10)
+  # time_interval=x_app
+  # function_value=y_app
   number_points = max(256, length(time_interval))
   timeseries_length = length(time_interval)
   if (timeseries_length != length(function_value)) {stop("Unequal input vector lengths")}
