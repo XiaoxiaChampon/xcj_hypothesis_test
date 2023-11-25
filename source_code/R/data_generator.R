@@ -41,13 +41,18 @@ source("source_code/R/cfd_hypothesis_test.R")
 
 #' Get mu_1, mu_2 functions, and score_vals objects for a given context.
 #' @param klen number of points along the score decay axis
+#' @param mu1_coef 1D array, length 3
 #' @return A list that contains mu_1, mu_2, score_vals
 #'
-GetMuAndScore_2 <- function(klen)
+GetMuAndScore_2 <- function(klen,mu1_coef,mu2_coef)
 {
-    mu_1 <- function(t){ -0.64+4*t }
-
-    mu_2 <- function(t){ 0.97+6*t^2 }
+    # mu_1 <- function(t){ -0.64+4*t }
+    # 
+    # mu_2 <- function(t){ 0.97+6*t^2 }
+  
+    mu_1 <- function(t){ mu1_coef[1] + mu1_coef[2] * t + mu1_coef[3] * t^2 }
+    
+    mu_2 <- function(t){ mu2_coef[1] + mu2_coef[2] * t + mu2_coef[3] * t^2 }
 
     all_score_values <- rep(0, klen)
 
@@ -145,9 +150,10 @@ GenerateCategFuncData <- function(prob_curves)
 }
 
 
-GenerateCategFuncDataUpdate <- function(prob_curves)
+GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
 {
     categ_func_data_list <- GenerateCategFuncData(prob_curves)
+    W=categ_func_data_list$W
      num_indvs <- ncol(prob_curves$p1)
      timeseries_length <- nrow(prob_curves$p1)
      cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
@@ -176,7 +182,7 @@ GenerateCategFuncDataUpdate <- function(prob_curves)
         {
           count_iter <- count_iter + 1
           
-          mns <- GetMuAndScore_2(klen=3)
+          mns <- GetMuAndScore_2(klen=3,mu1_coef,mu2_coef)
           klen=3
           time_interval=seq(0.01,0.99,length=timeseries_length)
           generated_data <- GenerateDataTest(num_indvs = 5,
@@ -192,10 +198,10 @@ GenerateCategFuncDataUpdate <- function(prob_curves)
           new_categ_func_data_list <- GenerateCategFuncData( new_prob_curves )
           
           categ_func_data_list$W[, indv] <- new_categ_func_data_list$W[, 3]
-          Z1[, indv] <- generated_data$Z1[, 3] # latent curves Z1 and Z2
+          #Z1[, indv] <- generated_data$Z1[, 3] # latent curves Z1 and Z2
           #create empty series
           categ_func_data_list$X[indv, , ] <- 0
-          Z2[, indv] <- generated_data$Z2[, 3]
+          #Z2[, indv] <- generated_data$Z2[, 3]
           
           for (this_time in 1:timeseries_length)
           {
@@ -230,10 +236,11 @@ fl3fn = function(t) {
     return(-3*t^2 + 2*t - 0.9)
 }
 
-GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
+GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval, fl_choice){
 
-    mns <- GetMuAndScore_2(klen)
+    #mns <- GetMuAndScore_2(klen)
+    mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
     generated_data <- GenerateDataTest(num_indvs = num_indvs,
                                       timeseries_length = timeseries_length,
@@ -243,20 +250,18 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                                       start_time = time_interval[1],
                                       end_time = tail(time_interval,1),
                                       k = klen)
-
     prob_curves <- list(p1 = generated_data$p1, p2 = generated_data$p2, p3 = generated_data$p3)
-    cat_data <- GenerateCategFuncDataUpdate(prob_curves)
+    cat_data <- GenerateCategFuncDataUpdate(prob_curves,mu1_coef,mu2_coef)
 
     flfn <- switch(fl_choice,
-
                    "1"=list("fl1"=rep(0.45,timeseries_length),
                             "fl2"=rep(0.5,timeseries_length),
                             "fl3"=rep(-0.51,timeseries_length)),
-
+                   
                    "2"=list("fl1"=rep(-0.1,timeseries_length),
                             "fl2"=matrix(-0.1*fl2f(time_interval),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
-                    #not constant
+                   #not constant
                    # fll2=-10*sin((2*pi/25)*(time_interval-1))
                    # fll3=-20*sin((2*pi/25)*(time_interval-1))-6
                    "3"=list("fl1"=rep(-0.2,timeseries_length),
@@ -264,7 +269,7 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
                             # "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
                             "fl2"=matrix(-10*sin((2*pi/25)*(time_interval-1)),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1)),
-
+                   
                    "4"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                             "fl2"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)+1.3145,
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
@@ -273,19 +278,18 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
 
    
-    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1-40, equi = TRUE, method = "TRAPZ")})
-    x2fl2 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(5)*(flfn$fl2+10), equi = TRUE, method = "TRAPZ")})
-    x3fl3 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(-4)*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
+    x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1, equi = TRUE, method = "TRAPZ")})
+    x2fl2 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
+    x3fl3 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
     #########
-    sum_int_xtft <- matrix(x1fl1 + x2fl2+ x3fl3 -1)
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 -1)
    
     ######
-    Y_indvs <- apply(sum_int_xtft, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
+    Y_indvs <- apply(linear_predictor, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
     #table(Y_indvs)
     
-     linear_predictor=sum_int_xtft
-     prob_ind=1/(1+exp(-sum_int_xtft))
+     prob_ind=1/(1+exp(-linear_predictor))
    
     
     truelist=list("TrueX1"=cat_data$X[,,1],
@@ -303,7 +307,7 @@ GenerateCategoricalFDTest <- function(klen, num_indvs, timeseries_length,
 
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
-                        num_indvs,fl_choice,response_family,test_type,
+                        num_indvs, mu1_coef, mu2_coef, fl_choice,response_family,test_type,
                         klen=3){
   cat("CFD Testing Simulation\nNum Indvs:\t", num_indvs,
       "\nTimeseries Len:\t", timeseries_length,
@@ -311,11 +315,33 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
       "\nNtest_type:\t", test_type)
   
   timestamps01 <- seq(from = start_time, to = end_time, length=timeseries_length)
-  cfd_test_data <- GenerateCategoricalFDTest(klen=3,
-                                    num_indvs=num_indvs,
-                                    timeseries_length = timeseries_length,
-                                    time_interval = timestamps01,
-                                    fl_choice=fl_choice)
+  cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
+                                             num_indvs=num_indvs,
+                                             timeseries_length = timeseries_length,
+                                             time_interval = timestamps01,
+                                             fl_choice=fl_choice)
+  
+  #####add the stop criteria 11/24/2023
+  # repeat { 
+  #   cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
+  #                                              num_indvs=num_indvs,
+  #                                              timeseries_length = timeseries_length,
+  #                                              time_interval = timestamps01,
+  #                                              fl_choice=fl_choice)
+  #   linear_predictor=cfd_test_data$true$linear_predictor
+  #   Y_indvs=cfd_test_data$true$yis
+  #   prob_ind=cfd_test_data$true$prob_ind
+  #   data_sample=data.frame(linear_predictor,as.factor(Y_indvs),prob_ind)
+  #   mean_0=mean(data_sample[data_sample$Group=="0","linear_predictor"])
+  #   mean_1=mean(data_sample[data_sample$Group=="0","linear_predictor"])
+  #   abs_diff=abs(mean_0-mean_1)
+  #   colnames(data_sample)=c("linear_predictor","Group","Probability")
+  #   if((table(Y_indvs)[[1]]-table(Y_indvs)[[2]]<=10) && (abs_diff>=3)) {
+  #     break
+  #   }
+  # }
+  # 
+  ###################
   
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,

@@ -71,25 +71,27 @@ if(run_parallel)
 
 
 cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
+                                    mu1_coef, mu2_coef,
                                     num_indvs,fl_choice,response_family,test_type,
                                     klen=3){
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                         packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
+                        .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
+                          
     #set.seed(123 + 8 * number_simulation)
     print(number_simulation)
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
-                          num_indvs,fl_choice,response_family,test_type, klen=3)
-    return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics))
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
+    return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
   } 
   return(result_all)
   
 }
 
 cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
-                                    num_indvs,fl_choice,response_family,test_type,
+                                               mu1_coef,mu2_coef,num_indvs,fl_choice,response_family,test_type,
                                     klen=3){
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   source("source_code/R/data_generator.R")
@@ -99,7 +101,7 @@ cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_tim
   for (i in 1:num_replicas){
     print( i)
     result <- cfd_testing(start_time, end_time, timeseries_length,
-                          num_indvs,fl_choice,response_family,test_type, klen=3)
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
     p_value[i]=result$pvalue
     test_stats[i]=result$test_statistics
   }
@@ -108,18 +110,59 @@ cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_tim
 
 }
 
+
+################
+n100t2000_mu1mu2 <- cfd_testing_simulation(num_replicas=4, start_time=0.01, end_time=0.99,
+                                                      timeseries_length=2000,
+                                                      mu1_coef=c(1,2,3),
+                                                      mu2_coef=c(4,5,6),
+                                                      num_indvs=100,fl_choice=3,
+                                                      response_family='bernoulli',test_type='Functional',
+                                                      klen=3)
+
+
+n100t2000_mu1mu2 <- cfd_testing_simulation_no_paralel(num_replicas=4, start_time=0.01, end_time=0.99,
+                                           timeseries_length=2000,
+                                           mu1_coef=c(1,2,3),
+                                           mu2_coef=c(4,5,6),
+                                           num_indvs=100,fl_choice=3,
+                                           response_family='bernoulli',test_type='Functional',
+                                           klen=3)
+
+
 ######test
 timeKeeperStart("n100t2000")
 set.seed(123456)
-n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=50, start_time=0.01, end_time=0.99,
+n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
                                     timeseries_length=2000,
                                     num_indvs=100,fl_choice=3,
                                     response_family='bernoulli',test_type='Functional',
                                     klen=3)
 timeKeeperNext()
 powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
+################inclusion hypothesis test fl(t)=0, use fl3, which is not 0
+timeKeeperStart("n100t2000")
+set.seed(123456)
+n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
+                                                      timeseries_length=2000,
+                                                      num_indvs=100,fl_choice=3,
+                                                      response_family='bernoulli',test_type='Inclusion',
+                                                      klen=3)
+timeKeeperNext()
+powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
 
+################inclusion hypothesis test fl(t)=0, use fl1, which is 0, expect to fail to reject
+timeKeeperStart("n100t2000")
+set.seed(123456)
+n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
+                                                      timeseries_length=2000,
+                                                      num_indvs=100,fl_choice=1,
+                                                      response_family='bernoulli',test_type='Inclusion',
+                                                      klen=3)
+timeKeeperNext()
+powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
 
+##############################################
 timeKeeperStart("n100t2000")
 set.seed(123456)
 n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=50, start_time=0.01, end_time=0.99,
@@ -136,7 +179,7 @@ powern100t2000
 ######test
 timeKeeperStart("n100t2000")
 set.seed(123456)
-n100t2000 <- cfd_testing_simulation(num_replicas=50, start_time=0.01, end_time=0.99,
+n100t2000 <- cfd_testing_simulation(num_replicas=10, start_time=0.01, end_time=0.99,
                                     timeseries_length=2000,
                                     num_indvs=100,fl_choice=3,
                                     response_family='bernoulli',test_type='Functional',
