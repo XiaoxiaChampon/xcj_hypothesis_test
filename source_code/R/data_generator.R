@@ -156,7 +156,7 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
     W=categ_func_data_list$W
      num_indvs <- ncol(prob_curves$p1)
      timeseries_length <- nrow(prob_curves$p1)
-     cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
+     # cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
     ##########add re generate W if one of the category is missing
     Q_vals <- unique(c(categ_func_data_list$W))
     if(is.numeric(Q_vals))
@@ -320,11 +320,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
           min_occurrence <- min_occurrence - mc_step_size
         }
       }
-      cat("Y generation count:", count_iter, "\n")
+      # cat("Y generation count:", count_iter, "\n")
       return(ys)
     }
     Y_indvs <- generate_y_indvs(linear_predictor)
-    print(Y_indvs)
     
     prob_ind=1/(1+exp(-linear_predictor))
     
@@ -345,10 +344,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
 cfd_testing <- function(start_time, end_time, timeseries_length,
                         num_indvs, mu1_coef, mu2_coef, fl_choice,response_family,test_type,
                         klen=3){
-  cat("CFD Testing \nNum Indvs:\t", num_indvs,
-      "\nTimeseries Len:\t", timeseries_length,
-      "\nfl_choice:\t", fl_choice,
-      "\ntest_type:\t", test_type, "\n")
+  # cat("CFD Testing \nNum Indvs:\t", num_indvs,
+  #     "\nTimeseries Len:\t", timeseries_length,
+  #     "\nfl_choice:\t", fl_choice,
+  #     "\ntest_type:\t", test_type, "\n")
   
   timestamps01 <- seq(from = start_time, to = end_time, length=timeseries_length)
   cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
@@ -357,49 +356,21 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                              time_interval = timestamps01,
                                              fl_choice=fl_choice)
   
-  #####add the stop criteria 11/24/2023
-  # repeat { 
-  #   cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
-  #                                              num_indvs=num_indvs,
-  #                                              timeseries_length = timeseries_length,
-  #                                              time_interval = timestamps01,
-  #                                              fl_choice=fl_choice)
-  #   linear_predictor=cfd_test_data$true$linear_predictor
-  #   Y_indvs=cfd_test_data$true$yis
-  #   prob_ind=cfd_test_data$true$prob_ind
-  #   data_sample=data.frame(linear_predictor,as.factor(Y_indvs),prob_ind)
-  #   mean_0=mean(data_sample[data_sample$Group=="0","linear_predictor"])
-  #   mean_1=mean(data_sample[data_sample$Group=="0","linear_predictor"])
-  #   abs_diff=abs(mean_0-mean_1)
-  #   colnames(data_sample)=c("linear_predictor","Group","Probability")
-  #   if((table(Y_indvs)[[1]]-table(Y_indvs)[[2]]<=10) && (abs_diff>=3)) {
-  #     break
-  #   }
-  # }
-  # 
-  ###################
-  
-  if(is.atomic(cfd_test_data)){
-    print("CTData: IS ATOMIC!")
-    return(NULL)
-  }
-  print("Here5")
+  # print("Here5")
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
-  print("Here6")
-  if(is.atomic(cfd_test_data)){
-    print("CTData2: IS ATOMIC!")
-    return(NULL)
-  }
+  # print("Here6")
+  
+  return(list("pvalue"=result$pvalue))
 
-  return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
-              "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
-              "W"=cfd_test_data$true$Truecatcurve,
-              "linear_predictor"=cfd_test_data$true$linear_predictor,
-              "prob_ind"=cfd_test_data$true$prob_ind))
+  # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
+  #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
+  #             "W"=cfd_test_data$true$Truecatcurve,
+  #             "linear_predictor"=cfd_test_data$true$linear_predictor,
+  #             "prob_ind"=cfd_test_data$true$prob_ind))
 }
 
 
