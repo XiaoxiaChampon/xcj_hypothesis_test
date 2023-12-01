@@ -118,7 +118,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   result_try <- try(test.aRLRT(alternative_fit), silent=T)
 
   if(is.atomic(result_try)){
-    return(NULL)
+    return(list(statistics=NULL, pvalue=NULL))
   }
   
   result <- result_try$aRLRT 
