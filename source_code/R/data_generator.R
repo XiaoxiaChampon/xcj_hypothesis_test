@@ -29,7 +29,7 @@ library(mgcv)
 library(fda)
 library(fda.usc)
 library(devtools)
-install_github("stchen3/glmmVCtest")
+# install_github("stchen3/glmmVCtest")
 library("glmmVCtest")
 library(RLRsim)
 library(MASS)
@@ -88,7 +88,7 @@ GenerateDataTest <- function(num_indvs,
     timestamps01 <- seq(from = start_time, to = end_time, length=timeseries_length)
 
     # noise octaves
-    cat("octave", num_indvs, k, num_indvs * k, "\n")
+    # cat("octave", num_indvs, k, num_indvs * k, "\n")
     scores_standard <- matrix(rnorm(num_indvs * k), ncol = k)
     scores <- scores_standard %*% diag(sqrt(score_vals))
 
@@ -128,7 +128,7 @@ GenerateCategFuncData <- function(prob_curves)
   
   num_indvs <- ncol(prob_curves$p1)
   timeseries_length <- nrow(prob_curves$p1)
-  cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
+  # cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
   
   
   W <- matrix(0, ncol=num_indvs, nrow=timeseries_length)
@@ -238,8 +238,7 @@ fl3fn = function(t) {
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval, fl_choice){
-
-    #mns <- GetMuAndScore_2(klen)
+  
     mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
     generated_data <- GenerateDataTest(num_indvs = num_indvs,
@@ -269,28 +268,65 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                             # "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
                             "fl2"=matrix(-10*sin((2*pi/25)*(time_interval-1)),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1)),
+
+
                    
-                   "4"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)+1.3145,
+                   
+                   "4"=list("fl1"=rep(-0.2,timeseries_length),
+                            "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
+                   
+                   "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "7"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "8"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(10,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "9"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(15,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "10"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(20,timeseries_length),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
-
    
     x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1, equi = TRUE, method = "TRAPZ")})
-    x2fl2 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
-    x3fl3 <- apply( vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
+    x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
+    x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
     #########
     linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 -1)
+    linear_predictor_without <- matrix(x1fl1 + x3fl3 -1)
    
     ######
-    Y_indvs <- apply(linear_predictor, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
+    # Y_indvs <- apply(linear_predictor, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
     #table(Y_indvs)
+    generate_y_indvs <- function(lp){
+      ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+      count_iter <- 1
+      min_occurrence <- round(num_indvs * 0.2)
+      mc_step_size <- min_occurrence * 0.2
+      max_iterations <- 500
+      increment_every <- round(max_iterations * 0.2)
+      while (count_iter < max_iterations && (length(ys) - min_occurrence < sum(ys) || sum(ys) < min_occurrence)){
+        count_iter <- count_iter + 1
+        ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+        if(count_iter %% increment_every){
+          min_occurrence <- min_occurrence - mc_step_size
+        }
+      }
+      cat("Y generation count:", count_iter, "\n")
+      return(ys)
+    }
+    Y_indvs <- generate_y_indvs(linear_predictor)
+    print(Y_indvs)
     
-     prob_ind=1/(1+exp(-linear_predictor))
-   
+    prob_ind=1/(1+exp(-linear_predictor))
     
     truelist=list("TrueX1"=cat_data$X[,,1],
                   "TrueX2"=cat_data$X[,,2],
@@ -298,7 +334,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs,
-                  "linear_predictor"=linear_predictor,
+                  "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
                   "prob_ind"=prob_ind)
    
     return(list("true"=truelist))
@@ -309,10 +345,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
 cfd_testing <- function(start_time, end_time, timeseries_length,
                         num_indvs, mu1_coef, mu2_coef, fl_choice,response_family,test_type,
                         klen=3){
-  cat("CFD Testing Simulation\nNum Indvs:\t", num_indvs,
+  cat("CFD Testing \nNum Indvs:\t", num_indvs,
       "\nTimeseries Len:\t", timeseries_length,
       "\nfl_choice:\t", fl_choice,
-      "\nNtest_type:\t", test_type)
+      "\ntest_type:\t", test_type, "\n")
   
   timestamps01 <- seq(from = start_time, to = end_time, length=timeseries_length)
   cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
@@ -343,11 +379,21 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
   # 
   ###################
   
+  if(is.atomic(cfd_test_data)){
+    print("CTData: IS ATOMIC!")
+    return(NULL)
+  }
+  print("Here5")
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
+  print("Here6")
+  if(is.atomic(cfd_test_data)){
+    print("CTData2: IS ATOMIC!")
+    return(NULL)
+  }
 
   return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
               "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
