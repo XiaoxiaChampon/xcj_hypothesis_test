@@ -77,31 +77,28 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                        .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %do% {
-    print(number_simulation)
+                        .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
                           num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
-    # if(is.atomic(result)){
-    #   print("CTS : IS ATOMIC!")
-    #   return(NULL)
-    # }
+    
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
-    return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics))
+    return(list("pvalue"=result$pvalue))
   } 
   return(result_all)
-  
 }
 
 
 
 
 source("source_code/R/time_track_function.R")
-run_experiment_hypothesis <- function(num_indvs,
-                                       timeseries_length,
-                                       fl_choice,
-                                       test_type){
-  num_replicas=5000
+run_experiment_hypothesis <- function(exp_idx,
+                                      num_indvs,
+                                      timeseries_length,
+                                      fl_choice,
+                                      test_type,
+                                      num_replicas = 5000,
+                                      alpha = 0.05){
   mu1_coef=c(-6.67,-2.47,5.42)
   mu2_coef=c(-3.14,-0.99,3.91)
   exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
@@ -110,7 +107,7 @@ run_experiment_hypothesis <- function(num_indvs,
         "\n test_type:\t",test_type)
   writeLines(exp_str)
   timeKeeperStart(exp_str)
-  set.seed(123456)
+  
   simulation_scenarios <- cfd_testing_simulation(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
                                            timeseries_length=timeseries_length,
                                            mu1_coef=mu1_coef,
@@ -119,24 +116,33 @@ run_experiment_hypothesis <- function(num_indvs,
                                            response_family='bernoulli',test_type=test_type,
                                            klen=3)
   
-  # if(is.atomic(simulation_scenarios)){
-  #   print("IS ATOMIC!")
-  #   return(NULL)
-  # }
-  
-  
-  simulation_pvalues=matrix(simulation_scenarios,nrow=2,ncol=20)
-  power=mean(simulation_pvalues[1,] < 0.05)
-  power_se=sd(unlist(simulation_pvalues[1,]))/sqrt(num_replicas)
-  cat("\npower:", power,"\n", "power_se:", power_se, "\n")
+  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
+  save(simulation_pvalues, file = paste0("./outputs/simpvals",
+                                                    "_i", exp_idx,
+                                                    "_fl", fl_choice,
+                                                    "_ttype", test_type,
+                                                    "_n", num_indvs,
+                                                    "_tlen", timeseries_length,
+                                                    ".RData"))
+  non_null_count <- dim(simulation_pvalues)[2]
+  power <- mean(simulation_pvalues[1,] < alpha)
+  power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
-  return(list("power"=power,"se"=power_se))
+  return(list("power"=power,"se"=power_se, "NAs"=num_replicas - non_null_count))
 }
 
-# run_experiment_hypothesis(100, 180, "3", "Inclusion")
+# run_experiment_hypothesis( 0,
+#                            100,
+#                            300,
+#                            "6",
+#                            "Functional",
+#                            num_replicas = 50,
+#                            alpha = 0.05 )
 
+set.seed(123456)
 subjects_vector <- c(100, 500)
-time_length_vector <- c(90, 180, 300)
+time_length_vector <- c(300)
 fl_choice_vector <- c("6", "7", "8", "9", "10")
 test_type_vector <- c("Inclusion", "Functional")
 
@@ -149,13 +155,24 @@ for (row_index in 1:dim(ed_table)[1]){
   timeseries_length <- ed_table[row_index,]$num_timepoints
   fl_choice <- as.character(ed_table[row_index,]$fl_choice)
   test_type <- as.character(ed_table[row_index,]$test_type)
-  experiment_output <- run_experiment_hypothesis(num_indvs , 
-                                            timeseries_length,
-                                            fl_choice,
-                                            test_type)
+  experiment_output <- run_experiment_hypothesis( row_index,
+                                                  num_indvs , 
+                                                  timeseries_length,
+                                                  fl_choice,
+                                                  test_type )
+  save(experiment_output, file = paste0("./outputs/exp1_", 
+                                       "_i", row_index, 
+                                       "_fl", fl_choice, 
+                                       "_ttype", test_type, 
+                                       "_n", num_indvs, 
+                                       "_tlen", timeseries_length,
+                                       ".RData"))
   all_experiment_outputs <- rbind(all_experiment_outputs, experiment_output)
 }
 
+final_table <- cbind(ed_table, all_experiment_outputs)
+
+save(final_table, file = "EXP1_r5000_cfda2.RData")
 
 if(run_parallel)
 {
