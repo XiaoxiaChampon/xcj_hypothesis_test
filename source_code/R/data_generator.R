@@ -51,7 +51,7 @@ GetMuAndScore_2 <- function(klen,mu1_coef,mu2_coef)
     # mu_2 <- function(t){ 0.97+6*t^2 }
   
     mu_1 <- function(t){ mu1_coef[1] + mu1_coef[2] * t + mu1_coef[3] * t^2 }
-    
+
     mu_2 <- function(t){ mu2_coef[1] + mu2_coef[2] * t + mu2_coef[3] * t^2 }
 
     all_score_values <- rep(0, klen)
@@ -224,6 +224,14 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
 
 expit <- function(x){1/(1+exp(-x))}
 
+fl3_tilda = function(t){
+  return(-20*sin((2*pi/25)*(t-1))-6)
+}
+
+fl2_tilda = function(t){
+  return(-10*sin((2*pi/25)*(t-1)))
+}
+
 fl2f = function(t) {
     return(t - 8/9)
 }
@@ -234,6 +242,14 @@ fl3f = function(t) {
 
 fl3fn = function(t) {
     return(-3*t^2 + 2*t - 0.9)
+}
+
+flx789 <- function(t, x){
+  return(x[7] + x[8]*t + x[9]*t^2)
+}
+
+flx456 <- function(t, x){
+  return(x[4] + x[5]*t + x[6]*t^2)
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
@@ -269,8 +285,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                             "fl2"=matrix(-10*sin((2*pi/25)*(time_interval-1)),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1)),
 
-
-                   
+                   "100"=list("fl1"=rep(-0.2,timeseries_length),
+                            # "fl3"=matrix(fl3f(time_interval,),nrow=timeseries_length,ncol=1)),
+                            "fl2"=matrix(flx456(time_interval,mu2_coef),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(flx789(time_interval,mu2_coef),nrow=timeseries_length,ncol=1)),                  
                    
                    "4"=list("fl1"=rep(-0.2,timeseries_length),
                             "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
@@ -356,13 +374,11 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                              time_interval = timestamps01,
                                              fl_choice=fl_choice)
   
-  # print("Here5")
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
-  # print("Here6")
   
   return(list("pvalue"=result$pvalue))
 

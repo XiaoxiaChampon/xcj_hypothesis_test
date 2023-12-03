@@ -33,7 +33,7 @@ library(mgcv)
 library(fda)
 library(fda.usc)
 library(devtools)
-install_github("stchen3/glmmVCtest")
+# install_github("stchen3/glmmVCtest")
 library("glmmVCtest")
 library(RLRsim)
 library(MASS)
@@ -86,9 +86,27 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
     return(list("pvalue"=result$pvalue))
   } 
   return(result_all)
+  
 }
 
+cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
+                                               mu1_coef,mu2_coef,num_indvs,fl_choice,response_family,test_type,
+                                    klen=3){
+  # cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
+  source("source_code/R/data_generator.R")
+  p_value=c(0)
+  test_stats=c(0)
+  # browser("mystop")
+  for (i in 1:num_replicas){
+    print( i)
+    result <- cfd_testing(start_time, end_time, timeseries_length,
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
+    p_value[i]=result$pvalue
+    test_stats[i]=result$test_statistics
+  }
 
+  return(list("pvalue"=p_value,"teststat"=test_stats))
+}
 
 
 source("source_code/R/time_track_function.R")
@@ -115,6 +133,14 @@ run_experiment_hypothesis <- function(exp_idx,
                                            num_indvs=num_indvs,fl_choice=fl_choice,
                                            response_family='bernoulli',test_type=test_type,
                                            klen=3)
+
+# n100t2000_mu1mu2 <- cfd_testing_simulation_no_paralel(num_replicas=4, start_time=0.01, end_time=0.99,
+#                                            timeseries_length=2000,
+#                                            mu1_coef=c(1,2,3),
+#                                            mu2_coef=c(4,5,6,7,8,9,10,11,12),
+#                                            num_indvs=100,fl_choice=3,
+#                                            response_family='bernoulli',test_type='Functional',
+#                                            klen=3)
   
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
   save(simulation_pvalues, file = paste0("./outputs/simpvals",
