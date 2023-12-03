@@ -117,7 +117,9 @@ fitness_mufl <- function(x){
         result <- cfd_testing_part2(cfd_test_data)
         
         if(!is.null(result)){
-          p_value[i]=result$pvalue
+          if(!is.null(result$pvalue)){
+            p_value[i]=result$pvalue
+          }
         }
       }
     }
@@ -138,10 +140,10 @@ ga <- ga(type = "real-valued",
          fitness = fitness_mufl,
          lower = rep(-10, 12),
          upper = rep(10,12),
-         popSize = 10,
-         maxiter = 20,
-         run = 20,
-         parallel = FALSE,
+         popSize = 50,
+         maxiter = 100,
+         run = 200,
+         parallel = TRUE,
          monitor = TRUE)
 
 summary(ga)

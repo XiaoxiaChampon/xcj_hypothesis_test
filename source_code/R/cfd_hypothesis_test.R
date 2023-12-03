@@ -99,8 +99,14 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   }
   
   alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+  
+  return_val <- try(test.aRLRT(alternative_fit), silent=T)
+  
+  if(is.atomic(return_val)){
+    return(list(statistics=NULL, pvalue=NULL))
+  }
 
-  result <- try(test.aRLRT(alternative_fit), silent=T)$aRLRT # Functional only
+  result <- return_val$aRLRT # Functional only
   
 
 
