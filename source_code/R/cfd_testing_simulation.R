@@ -78,13 +78,12 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
                         .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
-                          
-    #set.seed(123 + 8 * number_simulation)
-    print(number_simulation)
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
                           num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
-    return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
+    
+    #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
+    return(list("pvalue"=result$pvalue))
   } 
   return(result_all)
   
@@ -107,284 +106,99 @@ cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_tim
   }
 
   return(list("pvalue"=p_value,"teststat"=test_stats))
-
 }
 
 
-################
-n100t2000_mu1mu2 <- cfd_testing_simulation(num_replicas=4, start_time=0.01, end_time=0.99,
-                                                      timeseries_length=2000,
-                                                      mu1_coef=c(1,2,3),
-                                                      mu2_coef=c(4,5,6),
-                                                      num_indvs=100,fl_choice=3,
-                                                      response_family='bernoulli',test_type='Functional',
-                                                      klen=3)
-
-
-n100t2000_mu1mu2 <- cfd_testing_simulation_no_paralel(num_replicas=4, start_time=0.01, end_time=0.99,
-                                           timeseries_length=2000,
-                                           mu1_coef=c(1,2,3),
-                                           mu2_coef=c(4,5,6,7,8,9,10,11,12),
-                                           num_indvs=100,fl_choice=3,
-                                           response_family='bernoulli',test_type='Functional',
+source("source_code/R/time_track_function.R")
+run_experiment_hypothesis <- function(exp_idx,
+                                      num_indvs,
+                                      timeseries_length,
+                                      fl_choice,
+                                      test_type,
+                                      num_replicas = 5000,
+                                      alpha = 0.05){
+  mu1_coef=c(-6.67,-2.47,5.42)
+  mu2_coef=c(-3.14,-0.99,3.91)
+  exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+        "\n timeserires_length:\t",timeseries_length,
+        "\n fl_choice:\t",fl_choice,
+        "\n test_type:\t",test_type)
+  writeLines(exp_str)
+  timeKeeperStart(exp_str)
+  
+  simulation_scenarios <- cfd_testing_simulation(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
+                                           timeseries_length=timeseries_length,
+                                           mu1_coef=mu1_coef,
+                                           mu2_coef=mu2_coef,
+                                           num_indvs=num_indvs,fl_choice=fl_choice,
+                                           response_family='bernoulli',test_type=test_type,
                                            klen=3)
 
-
-######test
-timeKeeperStart("n100t2000")
-set.seed(123456)
-n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
-                                    timeseries_length=2000,
-                                    num_indvs=100,fl_choice=3,
-                                    response_family='bernoulli',test_type='Functional',
-                                    klen=3)
-timeKeeperNext()
-powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
-################inclusion hypothesis test fl(t)=0, use fl3, which is not 0
-timeKeeperStart("n100t2000")
-set.seed(123456)
-n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
-                                                      timeseries_length=2000,
-                                                      num_indvs=100,fl_choice=3,
-                                                      response_family='bernoulli',test_type='Inclusion',
-                                                      klen=3)
-timeKeeperNext()
-powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
-
-################inclusion hypothesis test fl(t)=0, use fl1, which is 0, expect to fail to reject
-timeKeeperStart("n100t2000")
-set.seed(123456)
-n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=5, start_time=0.01, end_time=0.99,
-                                                      timeseries_length=2000,
-                                                      num_indvs=100,fl_choice=1,
-                                                      response_family='bernoulli',test_type='Inclusion',
-                                                      klen=3)
-timeKeeperNext()
-powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
-
-##############################################
-timeKeeperStart("n100t2000")
-set.seed(123456)
-n100t2000_nopara <- cfd_testing_simulation_no_paralel(num_replicas=50, start_time=0.01, end_time=0.99,
-                                                      timeseries_length=2000,
-                                                      num_indvs=100,fl_choice=4,
-                                                      response_family='bernoulli',test_type='Functional',
-                                                      klen=3)
-timeKeeperNext()
-powern100t2000=mean(n100t2000_nopara$pvalue<0.05)
-powern100t2000
-############
-
-
-######test
-timeKeeperStart("n100t2000")
-set.seed(123456)
-n100t2000 <- cfd_testing_simulation(num_replicas=10, start_time=0.01, end_time=0.99,
-                                    timeseries_length=2000,
-                                    num_indvs=100,fl_choice=3,
-                                    response_family='bernoulli',test_type='Functional',
-                                    klen=3)
-timeKeeperNext()
-n100t2000_data=matrix(n100t2000,nrow=2,ncol=50)
-powern100t2000=mean(n100t2000_data[1,] < 0.05)
-############
-
-
-
-
-#record the time for one 
-time_elapsed <<- list()
-# "Xiaoxia"=NULL, "univfpca"=NULL, "kmeans"=NULL, "fadp"=NULL, "dbscan"=NULL, "cfd"=NULL)
-last_time <- 0
-row_name <- NULL
-timeKeeperStart <- function(rn)
-{
-  row_name <<- rn
-  if(FALSE == row_name %in% names(time_elapsed))
-  {
-    time_elapsed[[row_name]] <<- NULL
-  }
-  last_time <<- Sys.time()
-}
-timeKeeperNext <- function()
-{
-  this_time <- Sys.time()
-  this_section_time <- this_time - last_time
-  cat(row_name, "calc time taken:", capture.output(this_section_time), "\n")
-  time_elapsed[[row_name]] <<- append(time_elapsed[[row_name]], this_section_time)
-  last_time <<- this_time
+# n100t2000_mu1mu2 <- cfd_testing_simulation_no_paralel(num_replicas=4, start_time=0.01, end_time=0.99,
+#                                            timeseries_length=2000,
+#                                            mu1_coef=c(1,2,3),
+#                                            mu2_coef=c(4,5,6,7,8,9,10,11,12),
+#                                            num_indvs=100,fl_choice=3,
+#                                            response_family='bernoulli',test_type='Functional',
+#                                            klen=3)
+  
+  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
+  save(simulation_pvalues, file = paste0("./outputs/simpvals",
+                                                    "_i", exp_idx,
+                                                    "_fl", fl_choice,
+                                                    "_ttype", test_type,
+                                                    "_n", num_indvs,
+                                                    "_tlen", timeseries_length,
+                                                    ".RData"))
+  non_null_count <- dim(simulation_pvalues)[2]
+  power <- mean(simulation_pvalues[1,] < alpha)
+  power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
+  timeKeeperNext()
+  return(list("power"=power,"se"=power_se, "NAs"=num_replicas - non_null_count))
 }
 
+# run_experiment_hypothesis( 0,
+#                            100,
+#                            300,
+#                            "6",
+#                            "Functional",
+#                            num_replicas = 50,
+#                            alpha = 0.05 )
 
-#hyp3 expect to reject, it is rejecting , needs to see power 
-# set.seed(1234)
-# #power
-timeKeeperStart("n100t300")
-set.seed(1234)
-n100t300 <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-                                                  timeseries_length=300,
-                                                  num_indvs=100,fl_choice=3,
-                                                  response_family='bernoulli',test_type='Functional',
-                                                  klen=3)
-timeKeeperNext()
-n100t300_data=matrix(n100t300,nrow=2,ncol=5000)
-powern100t300=mean(n100t300_data[1,] < 0.05)
-test_statisticsn100t300=mean(unlist(n100t300_data[2,]))
-test_statisticsn100t300sd=sd(unlist(n100t300_data[2,]))/sqrt(5000)
+set.seed(123456)
+subjects_vector <- c(100, 500)
+time_length_vector <- c(300)
+fl_choice_vector <- c("6", "7", "8", "9", "10")
+test_type_vector <- c("Inclusion", "Functional")
 
+ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
+colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")
 
-####
-timeKeeperStart("n100t750")
-set.seed(1234)
-n100t750 <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-                                   timeseries_length=750,
-                                   num_indvs=100,fl_choice=3,
-                                   response_family='bernoulli',test_type='Functional',
-                                   klen=3)
-timeKeeperNext()
-n100t750_data=matrix(n100t750,nrow=2,ncol=5000)
-powern100t750=mean(n100t750_data[1,] < 0.05)
-test_statisticsn100t750=mean(unlist(n100t750_data[2,]))
-test_statisticsn100t750sd=sd(unlist(n100t750_data[2,]))/sqrt(5000)
-####
-timeKeeperStart("n100t1050")
-set.seed(1234)
-n100t1050 <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-                                   timeseries_length=1050,
-                                   num_indvs=100,fl_choice=3,
-                                   response_family='bernoulli',test_type='Functional',
-                                   klen=3)
-timeKeeperNext()
-n100t1050_data=matrix(n100t1050,nrow=2,ncol=5000)
-powern100t1050=mean(n100t1050_data[1,] < 0.05)
-test_statisticsn100t1050=mean(unlist(n100t1050_data[2,]))
-test_statisticsn100t1050sd=sd(unlist(n100t1050_data[2,]))/sqrt(5000)
-####
-timeKeeperStart("n100t1350")
-set.seed(1234)
-n100t1350 <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-                                    timeseries_length=1350,
-                                    num_indvs=100,fl_choice=3,
-                                    response_family='bernoulli',test_type='Functional',
-                                    klen=3)
-timeKeeperNext()
-n100t1350_data=matrix(n100t1350,nrow=2,ncol=5000)
-powern100t1350=mean(n100t1350_data[1,] < 0.05)
-test_statisticsn100t1350=mean(unlist(n100t1350_data[2,]))
-test_statisticsn100t1350sd=sd(unlist(n100t1350_data[2,]))/sqrt(5000)
+all_experiment_outputs <- list()
+for (row_index in 1:dim(ed_table)[1]){
+  num_indvs <- ed_table[row_index,]$num_subjects
+  timeseries_length <- ed_table[row_index,]$num_timepoints
+  fl_choice <- as.character(ed_table[row_index,]$fl_choice)
+  test_type <- as.character(ed_table[row_index,]$test_type)
+  experiment_output <- run_experiment_hypothesis( row_index,
+                                                  num_indvs , 
+                                                  timeseries_length,
+                                                  fl_choice,
+                                                  test_type )
+  save(experiment_output, file = paste0("./outputs/exp1_", 
+                                       "_i", row_index, 
+                                       "_fl", fl_choice, 
+                                       "_ttype", test_type, 
+                                       "_n", num_indvs, 
+                                       "_tlen", timeseries_length,
+                                       ".RData"))
+  all_experiment_outputs <- rbind(all_experiment_outputs, experiment_output)
+}
 
-####
-timeKeeperStart("n100t2000")
-set.seed(123)
-n100t2000 <- cfd_testing_simulation(num_replicas=50, start_time=0.01, end_time=0.99,
-                                    timeseries_length=2000,
-                                    num_indvs=100,fl_choice=3,
-                                    response_family='bernoulli',test_type='Functional',
-                                    klen=3)
-timeKeeperNext()
-n100t2000_data=matrix(n100t2000,nrow=2,ncol=4)
-powern100t2000=mean(n100t2000_data[1,] < 0.05)
-test_statisticsn100t2000=mean(unlist(n100t2000_data[2,]))
-test_statisticsn100t2000sd=sd(unlist(n100t2000_data[2,]))/sqrt(5000)
+final_table <- cbind(ed_table, all_experiment_outputs)
 
-power_table=c(powern100t300,powern100t750,powern100t1050,
-              powern100t1350,powern100t2000)
-
-test_stat=c(test_statisticsn100t300,test_statisticsn100t750,
-            test_statisticsn100t1050,test_statisticsn100t1350,
-            test_statisticsn100t2000)
-test_statsd=c(test_statisticsn100t300sd,test_statisticsn100t750sd,
-            test_statisticsn100t1050sd,test_statisticsn100t1350sd,
-            test_statisticsn100t2000sd)
-save(power_table,test_stat,test_statsd,file="n100power.RData")
-######
-#hy4 is constant, test constant, expect to fail to reject
-#type I error rate
-# timeKeeperStart("n100t300")
-# set.seed(1234)
-# #check which is less 0.05 , type I error rate
-# n100t300p <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-#                                    timeseries_length=300,
-#                                    num_indvs=100,fl_choice=4,
-#                                    response_family='bernoulli',test_type='Functional',
-#                                    klen=3)
-# timeKeeperNext()
-# n100t300_datap=matrix(n100t300p,nrow=2,ncol=5000)
-# powern100t300p=mean(n100t300_datap[1,] < 0.05)
-# test_statisticsn100t300p=mean(unlist(n100t300_datap[2,]))
-# test_statisticsn100t300sdp=sd(unlist(n100t300_datap[2,]))/sqrt(5000)
-# 
-# 
-# ####
-# timeKeeperStart("n100t750")
-# set.seed(1234)
-# n100t750p <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-#                                    timeseries_length=750,
-#                                    num_indvs=100,fl_choice=4,
-#                                    response_family='bernoulli',test_type='Functional',
-#                                    klen=3)
-# timeKeeperNext()
-# n100t750_datap=matrix(n100t750p,nrow=2,ncol=5000)
-# powern100t750p=mean(n100t750_datap[1,] < 0.05)
-# test_statisticsn100t750p=mean(unlist(n100t750_datap[2,]))
-# test_statisticsn100t750sdp=sd(unlist(n100t750_datap[2,]))/sqrt(5000)
-# ####
-# timeKeeperStart("n100t1050")
-# set.seed(1234)
-# n100t1050p <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-#                                     timeseries_length=1050,
-#                                     num_indvs=100,fl_choice=4,
-#                                     response_family='bernoulli',test_type='Functional',
-#                                     klen=3)
-# timeKeeperNext()
-# n100t1050_datap=matrix(n100t1050p,nrow=2,ncol=5000)
-# powern100t1050p=mean(n100t1050_datap[1,] < 0.05)
-# test_statisticsn100t1050p=mean(unlist(n100t1050_datap[2,]))
-# test_statisticsn100t1050sdp=sd(unlist(n100t1050_datap[2,]))/sqrt(5000)
-# ####
-# timeKeeperStart("n100t1350")
-# set.seed(1234)
-# n100t1350p <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-#                                     timeseries_length=1350,
-#                                     num_indvs=100,fl_choice=4,
-#                                     response_family='bernoulli',test_type='Functional',
-#                                     klen=3)
-# timeKeeperNext()
-# n100t1350_datap=matrix(n100t1350p,nrow=2,ncol=5000)
-# powern100t1350p=mean(n100t1350_datap[1,] < 0.05)
-# test_statisticsn100t1350p=mean(unlist(n100t1350_datap[2,]))
-# test_statisticsn100t1350sdp=sd(unlist(n100t1350_datap[2,]))/sqrt(5000)
-# 
-# ####
-# timeKeeperStart("n100t2000")
-# set.seed(1234)
-# n100t2000p <- cfd_testing_simulation(num_replicas=5000, start_time=0.01, end_time=0.99,
-#                                     timeseries_length=2000,
-#                                     num_indvs=100,fl_choice=4,
-#                                     response_family='bernoulli',test_type='Functional',
-#                                     klen=3)
-# timeKeeperNext()
-# n100t2000_datap=matrix(n100t2000p,nrow=2,ncol=5000)
-# powern100t2000p=mean(n100t2000_datap[1,] < 0.05)
-# test_statisticsn100t2000p=mean(unlist(n100t2000_datap[2,]))
-# test_statisticsn100t2000sdp=sd(unlist(n100t2000_datap[2,]))/sqrt(5000)
-# 
-# power_tablep=c(powern100t300p,powern100t750p,powern100t1050p,
-#               powern100t1350p,powern100t2000p)
-# 
-# test_statp=c(test_statisticsn100t300p,test_statisticsn100t750p,
-#             test_statisticsn100t1050p,test_statisticsn100t1350p,
-#             test_statisticsn100t2000p)
-# test_statsdp=c(test_statisticsn100t300sdp,test_statisticsn100t750sdp,
-#               test_statisticsn100t1050sdp,test_statisticsn100t1350sdp,
-#               test_statisticsn100t2000sdp)
-# save(power_tablep,test_statp,test_statsdp,file="n100typeIerror.RData")
-###########
-
-# set.seed(123)
-# hy3test=cfd_testing (start_time=0.01, end_time=0.99, timeseries_length=2000,
-#                         num_indvs=100,fl_choice=3,response_family="'bernoulli'",test_type='Functional',
-#                         klen=3)
+save(final_table, file = "EXP1_r5000_cfda2.RData")
 
 if(run_parallel)
 {

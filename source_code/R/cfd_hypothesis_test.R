@@ -85,6 +85,16 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
                             paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
                             paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
                             "ones")
+    
+    # test_matrix_m <- data.frame(Y=Y,
+    #                               X=Xmat_Inc,
+    #                               Z.test=Zmat_Func2$Zmat,
+    #                               ones=rep(1,num_indvs))
+    # names(test_matrix_m) <- c('Y','X1',
+    #                             paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+    #                             "ones")
+    
+    
   }
   if (test_type=="Functional"){
     test_matrix <- data.frame(Y=Y,
@@ -98,18 +108,21 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
                             "ones")
   }
   
+  #For testing in models with multiple variance
+  #' components, the fitted model \code{m} must contain \bold{only} the random
+  #' effect set to zero under the null hypothesis, while \code{mA} and \code{m0}
+  #' are the models under the alternative and the null, respectively. 
+  
   alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
   
-  return_val <- try(test.aRLRT(alternative_fit), silent=T)
-  
-  if(is.atomic(return_val)){
+  result_try <- try(test.aRLRT(alternative_fit), silent=T)
+
+  if(is.atomic(result_try)){
     return(list(statistics=NULL, pvalue=NULL))
   }
-
-  result <- return_val$aRLRT # Functional only
   
-
-
+  result <- result_try$aRLRT 
+  
   return(list(statistics=result$statistic, pvalue=result$p.value))
 }
 
