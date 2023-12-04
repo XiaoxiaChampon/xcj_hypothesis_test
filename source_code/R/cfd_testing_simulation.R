@@ -33,7 +33,7 @@ library(mgcv)
 library(fda)
 library(fda.usc)
 library(devtools)
-# install_github("stchen3/glmmVCtest")
+install_github("stchen3/glmmVCtest")
 library("glmmVCtest")
 library(RLRsim)
 library(MASS)
@@ -143,7 +143,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            klen=3)
   
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
-  save(simulation_pvalues, file = paste0("./outputs/simpvals",
+  save(simulation_pvalues, file = paste0("./outputs/simpvals2",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -169,7 +169,7 @@ run_experiment_hypothesis <- function(exp_idx,
 set.seed(123456)
 subjects_vector <- c(100, 500)
 time_length_vector <- c(300)
-fl_choice_vector <- c("6", "7", "8", "9", "10")
+fl_choice_vector <- c("11", "12", "13", "14", "15")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
@@ -198,7 +198,7 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP1_r5000_cfda2.RData")
+save(final_table, file = "EXP2_r5000_cfda2.RData")
 
 if(run_parallel)
 {
