@@ -309,6 +309,22 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "10"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                             "fl2"=matrix(rep(20,timeseries_length),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  
+                  "11"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1 + 0 * time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "12"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1 + 20 * time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "13"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1 + 40 * time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "14"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1 + 60 * time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "15"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1 + 80 * time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
