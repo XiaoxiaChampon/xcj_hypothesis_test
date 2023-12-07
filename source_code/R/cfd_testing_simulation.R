@@ -34,7 +34,7 @@ library(fda)
 library(fda.usc)
 library(devtools)
 # install_github("stchen3/glmmVCtest")
-library("glmmVCtest")
+#library("glmmVCtest")
 library(RLRsim)
 library(MASS)
 library(splines)
@@ -77,10 +77,11 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                        .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
+                        .packages=c("splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
-                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,
+                          test_type, klen=3)
     
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
     return(list("pvalue"=result$pvalue))
@@ -126,7 +127,7 @@ run_experiment_hypothesis <- function(exp_idx,
   writeLines(exp_str)
   timeKeeperStart(exp_str)
   
-  simulation_scenarios <- cfd_testing_simulation(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
+  simulation_scenarios <- cfd_testing_simulation_no_paralel(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
                                            timeseries_length=timeseries_length,
                                            mu1_coef=mu1_coef,
                                            mu2_coef=mu2_coef,
@@ -143,7 +144,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            klen=3)
   
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
-  save(simulation_pvalues, file = paste0("./outputs/simpvals",
+  save(simulation_pvalues, file = paste0("./outputs/simpvals2",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -161,15 +162,15 @@ run_experiment_hypothesis <- function(exp_idx,
 # run_experiment_hypothesis( 0,
 #                            100,
 #                            300,
-#                            "6",
+#                            "11",
 #                            "Functional",
 #                            num_replicas = 50,
 #                            alpha = 0.05 )
 
 set.seed(123456)
-subjects_vector <- c(100, 500)
-time_length_vector <- c(300)
-fl_choice_vector <- c("6", "7", "8", "9", "10")
+subjects_vector <- c(300, 500,1000)
+time_length_vector <- c(90)
+fl_choice_vector <- c("6", "7", "8", "9", "10","21", "22", "23", "24", "25")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
@@ -186,7 +187,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                   timeseries_length,
                                                   fl_choice,
                                                   test_type )
-  save(experiment_output, file = paste0("./outputs/exp1_", 
+  save(experiment_output, file = paste0("./outputs/exp2_", 
                                        "_i", row_index, 
                                        "_fl", fl_choice, 
                                        "_ttype", test_type, 
@@ -198,7 +199,7 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP1_r5000_cfda2.RData")
+save(final_table, file = "EXP2_r5000_cfda2.RData")
 
 if(run_parallel)
 {
