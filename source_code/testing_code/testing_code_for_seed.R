@@ -4,40 +4,156 @@ start_time=0.01
 end_time=0.99
 timeseries_length=90
 time_interval=seq(start_time,end_time,length=timeseries_length)
-num_indvs=100
+num_indvs=500
 #fl_choice=3 #not constant, expect to reject
-fl_choice=10 #not constant, expect to reject
+fl_choice=8 #not constant, expect to reject
 response_family='bernoulli'
 test_type='Functional'
 klen=3
 mu1_coef=c(-6.67,-2.47,5.42)
 mu2_coef=c(-3.14,-0.99,3.91)
 ###############################################
+MAGIC_NUM_DUM_DUM <<- 0.6206897
 source("source_code/R/data_generator.R")
+
 set.seed(123456) #working
 test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
                             num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
-                            klen=3)
+                            klen=3, MAGIC_NUM_DUM_DUM)
 test_noconstant$pvalue
 linear_predictor_w=test_noconstant$linear_predictor$linearw
 linear_predictor_wo=test_noconstant$linear_predictor$linearwo
 linear_predictor=c(linear_predictor_w,linear_predictor_wo)
-indicator <- c(rep(1,length(linear_predictor_w)), rep(0, length(linear_predictor_wo)))
+indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
 Y_indvs=test_noconstant$yis
-table(Y_indvs)
+
+Y_without = apply(linear_predictor_wo, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+#table(Y_without)
+Y_perc_wo = table(Y_without)/sum(table(Y_without))
+Y_perc_wo
+
+#table(Y_indvs)
+Y_perc_w = table(Y_indvs)/sum(table(Y_indvs))
+Y_perc_w
+
+
+
+intercept_values <- seq(-2,2,length.out=30)
+result_y <- foreach (intercept_index = 1:length(intercept_values), .combine = cbind, .init = NULL) %dorng% {
+  source("source_code/R/data_generator.R")
+  
+  set.seed(123456) #working
+  test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
+                              num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
+                              klen=3, intercept_values[intercept_index])
+  test_noconstant$pvalue
+  linear_predictor_w=test_noconstant$linear_predictor$linearw
+  linear_predictor_wo=test_noconstant$linear_predictor$linearwo
+  linear_predictor=c(linear_predictor_w,linear_predictor_wo)
+  indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
+  Y_indvs=test_noconstant$yis
+  
+  Y_without = apply(linear_predictor_wo, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+  #table(Y_without)
+  Y_perc_wo = table(Y_without)/sum(table(Y_without))
+  
+  #table(Y_indvs)
+  Y_perc_w = table(Y_indvs)/sum(table(Y_indvs))
+  return(list("with" = Y_perc_w, "without" = Y_perc_wo ))
+}
+result_compare = cbind(unlist(result_y[1,]),
+                       unlist(result_y[2,]))
+result_compare 
+
+result_compare[,1]-0.5<0.2
+
+intercept_values[20]
+
+
+
+#old use intercept -1
+#Y_indvs
+#0   1 
+#383 117 
+#Y_indvs
+#0     1 
+#0.766 0.234 
 prob_ind=test_noconstant$prob_ind
 data_sample=data.frame(linear_predictor,as.factor(indicator),prob_ind)
 colnames(data_sample)=c("linear_predictor","Group","Probability")
+
+save(data_sample,file="data_sample_lineargroup_pie_beta0is1.RData")
+
+save(data_sample,file="data_sample_lineargroup_pie.RData")
+load("data_sample_lineargroup_pie.RData")
+#odd beta0=-1
+data_sample_non_linear =matrix(data_sample[data_sample$Group=="Without",]$linear_predictor,ncol=1)
+Y_without_old = apply(data_sample_non_linear, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+table(Y_without_old)
+table(Y_without_old)/sum(table(Y_without_old))
+
+
 library(ggplot2)
 linear_group=ggplot( data_sample, aes(x = linear_predictor, fill=Group, colour = Group)) +
     geom_histogram(position = "dodge")+
     #theme(axis.title.x=element_blank())+
     theme(text = element_text(size = 20))+
-    labs(x = "Linear Predictor")
+    labs(x = "Linear Predictor")+
+    theme(
+    legend.position = c(.95, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6)
+    )
 linear_group
+ggsave("linear_group.png")
+
+linear_group_square
+ggsave("linear_group_square.png")
+
+linear_group_square_1=ggplot( data_sample, aes(x = linear_predictor, fill=Group, colour = Group)) +
+  geom_histogram(position = "dodge")+
+  #theme(axis.title.x=element_blank())+
+  theme(text = element_text(size = 20))+
+  labs(x = "Linear Predictor")+
+  theme(
+    legend.position = c(.95, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6)
+  )
+linear_group_square_1
+ggsave("linear_group_square1.png")
 cfd=test_noconstant$W
 
+##pie chart for   W
+pie_data_cc=table(cfd)
+cc_pie_zero=as.data.frame(pie_data_cc)
+cc_pie_zero$pct=round(cc_pie_zero$Freq/(sum(cc_pie_zero$Freq)),2)
+cc_pie_zero$labels= scales::percent(cc_pie_zero$pct)
+colnames(cc_pie_zero)[colnames(cc_pie_zero) == "cfd"] <- "Category"
 
+pie_w=ggplot(cc_pie_zero, aes(x = "", y = pct, fill = Category)) +
+  geom_col() +
+  geom_text(aes(label = labels),size=8,
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")+ggtitle("")+theme(plot.title = element_text(hjust = 0.5))+
+  theme(text=element_text(size = 20))
+pie_w
+ggsave("pie_w.png")
+
+
+pie_w1=ggplot(cc_pie_zero, aes(x = "", y = pct, fill = Category)) +
+  geom_col() +
+  geom_text(aes(label = labels),size=8,
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")+ggtitle("")+theme(plot.title = element_text(hjust = 0.5))+
+  theme(text=element_text(size = 20))
+pie_w1
+ggsave("pie_w1.png")
+library(gridExtra)
+#grid.arrange(linear_group, pie_w, ncol = 2)
+grid.arrange(linear_group_square_1, pie_w1, ncol = 2)
 ################################
 set.seed(123) #notworking
 test_noconstant_not=cfd_testing(start_time, end_time, timeseries_length,
