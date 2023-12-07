@@ -127,7 +127,7 @@ run_experiment_hypothesis <- function(exp_idx,
   writeLines(exp_str)
   timeKeeperStart(exp_str)
   
-  simulation_scenarios <- cfd_testing_simulation_no_paralel(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
+  simulation_scenarios <- cfd_testing_simulation(num_replicas=num_replicas, start_time=0.01, end_time=0.99,
                                            timeseries_length=timeseries_length,
                                            mu1_coef=mu1_coef,
                                            mu2_coef=mu2_coef,
