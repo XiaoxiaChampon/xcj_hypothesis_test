@@ -342,7 +342,6 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "25"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                             "fl2"=matrix(1+80*time_interval,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
-                  
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
