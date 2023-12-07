@@ -29,7 +29,7 @@ library(mgcv)
 library(fda)
 library(fda.usc)
 library(devtools)
-# install_github("stchen3/glmmVCtest")
+#install_github("stchen3/glmmVCtest")
 library("glmmVCtest")
 library(RLRsim)
 library(MASS)
@@ -295,20 +295,54 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                             "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
                    
                    "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                             "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    "7"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(rep(5,timeseries_length),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                             "fl2"=matrix(rep(5,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    "8"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(rep(10,timeseries_length),nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                             "fl2"=matrix(rep(10,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    "9"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(rep(15,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl2"=matrix(rep(15,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "10"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                             "fl2"=matrix(rep(20,timeseries_length),nrow=timeseries_length,ncol=1),
+                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   
+                   
+                   "11"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+0*time_interval,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
-                  "10"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
-                            "fl2"=matrix(rep(20,timeseries_length),nrow=timeseries_length,ncol=1),
+                   "12"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+20*time_interval,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "13"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+40*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   "14"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+60*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "15"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+80*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  
+                  "21"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+0*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "22"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+20*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "23"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+40*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "24"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+60*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "25"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(1+80*time_interval,nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
@@ -317,13 +351,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
-    #########
-    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 -1)
-    linear_predictor_without <- matrix(x1fl1 + x3fl3 -1)
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.6206897 )
+    linear_predictor_without <- matrix(x1fl1 + x3fl3+ 0.6206897 )
    
-    ######
-    # Y_indvs <- apply(linear_predictor, 1, function(x){ rbinom(1,1, 1/(1+exp(-x))) })
-    #table(Y_indvs)
+   
     generate_y_indvs <- function(lp){
       ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
       count_iter <- 1
@@ -380,13 +411,13 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 response_family=response_family,
                                 test_type=test_type)
   
-  return(list("pvalue"=result$pvalue))
+  #return(list("pvalue"=result$pvalue))
 
-  # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
-  #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
-  #             "W"=cfd_test_data$true$Truecatcurve,
-  #             "linear_predictor"=cfd_test_data$true$linear_predictor,
-  #             "prob_ind"=cfd_test_data$true$prob_ind))
+  return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
+              "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
+              "W"=cfd_test_data$true$Truecatcurve,
+              "linear_predictor"=cfd_test_data$true$linear_predictor,
+              "prob_ind"=cfd_test_data$true$prob_ind))
 }
 
 
