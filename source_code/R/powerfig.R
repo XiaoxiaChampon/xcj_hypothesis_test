@@ -170,8 +170,11 @@ n100n500t90fl21fl25_plot=ggplot(n100n500t90fl21tofl25,
 n100n500t90fl21fl25_plot
 ggsave("n100n500t90fl21fl25_plot.png")
 
-
-
+########100to500 t90 fl21tofl25
+load("EXP4_r5000_cfda2t90.RData")
+library(xtable)
+n100ton500t90fl21tofl25_deltaneg1 = xtable(final_table,digits=4)
+save(n100ton500t90fl21tofl25_deltaneg1,file="n100ton500t90fl21tofl25_deltaneg1.RData")
 
 
 
