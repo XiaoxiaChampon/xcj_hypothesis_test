@@ -78,6 +78,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   Xmat_Inc<-matrix(rep(1, num_indvs),ncol=1)
   Xmat_Func <- cbind(Xmat_Inc, Zmat_Func2$X.g2, Zmat_Func3$X.g2)
   
+  
   if(test_type=="Inclusion"){
     test_matrix <- data.frame(Y=Y,
                               X=Xmat_Inc,
