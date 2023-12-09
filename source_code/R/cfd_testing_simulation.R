@@ -171,9 +171,9 @@ run_experiment_hypothesis <- function(exp_idx,
 #                            alpha = 0.05 )
 
 set.seed(123456)
-subjects_vector <- c(300, 500,1000)
-time_length_vector <- c(90)
-fl_choice_vector <- c("6", "7", "8", "9", "10","21", "22", "23", "24", "25")
+subjects_vector <- c(100,300, 500)
+time_length_vector <- c(90,180)
+fl_choice_vector <- c("6", "7", "8", "9", "10","21", "22", "23", "24", "25","26")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
