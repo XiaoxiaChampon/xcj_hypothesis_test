@@ -144,7 +144,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            klen=3)
   
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
-  save(simulation_pvalues, file = paste0("./outputs/simpvals2",
+  save(simulation_pvalues, file = paste0("./outputs/simpvals3",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -170,10 +170,12 @@ run_experiment_hypothesis <- function(exp_idx,
 #                            num_replicas = 50,
 #                            alpha = 0.05 )
 
+begin_exp_time <- Sys.time()
+
 set.seed(123456)
-subjects_vector <- c(100,300, 500)
-time_length_vector <- c(90,180)
-fl_choice_vector <- c("6", "7", "8", "9", "10","21", "22", "23", "24", "25","26")
+subjects_vector <- c(300, 1000)
+time_length_vector <- c(180)
+fl_choice_vector <- c("7", "200")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
@@ -190,7 +192,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                   timeseries_length,
                                                   fl_choice,
                                                   test_type )
-  save(experiment_output, file = paste0("./outputs/exp2_", 
+  save(experiment_output, file = paste0("./outputs/exp3_", 
                                        "_i", row_index, 
                                        "_fl", fl_choice, 
                                        "_ttype", test_type, 
@@ -202,7 +204,13 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP2_r5000_cfda2.RData")
+save(final_table, file = "EXP3_r5000_cfda2.RData")
+
+end_exp_time <- Sys.time()
+
+cat("\n====================\n",
+    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time), 
+    "\n====================\n")
 
 if(run_parallel)
 {
