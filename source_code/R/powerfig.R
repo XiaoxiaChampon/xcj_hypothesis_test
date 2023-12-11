@@ -209,4 +209,18 @@ for (i in 1:list_number){
     return (list(power_for_01,power_for_005))
 }
 
+#################fl5tofl10 new slope last trial including funciontal for fl=5
+load("EXP2_r5000_cfda2outputstypeI.RData")
+library(xtable)
+xtable(final_table,digits=4)
+n100n500fl678212226 =final_table[,1:6]
+n100n500fl678212226
+save(n100n500fl678212226,file="n100n500fl678212226.RData")
+################ 180 points
+load("EXP2_r5000_cfda2outputstypeI180.RData")
+xtable(final_table,digits=4)
+n100n500t180fl678212226 =final_table[,1:6]
+n100n500t180fl678212226
+save(n100n500t180fl678212226,file="n100n500t180fl678212226.RData")
+###########################
 
