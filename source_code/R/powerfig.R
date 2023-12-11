@@ -176,6 +176,51 @@ library(xtable)
 n100ton500t90fl21tofl25_deltaneg1 = xtable(final_table,digits=4)
 save(n100ton500t90fl21tofl25_deltaneg1,file="n100ton500t90fl21tofl25_deltaneg1.RData")
 
+##############new final table, new slope with every combination
+load("EXP2NewIntercept_r5000_cfda2.RData")
+xtable(final_table,digits=4)
 
+###
+my_files <- list.files(path = "EXP2NewIntercept_r5000_cfda2_outputs", pattern = "*.RData", full.names = T)
 
+# all_data <- lapply(my_files, load, .GlobalEnv)
+# library(dplyr)
+# data_newslope = bind_rows(mget(unlist(all_data)))
+load(my_files[1])
+mean(simulation_pvalues[1,] < 0.05)
+mean(simulation_pvalues[1,] < 0.1)
+
+load(my_files[2])
+mean(simulation_pvalues[1,] < 0.05)
+mean(simulation_pvalues[1,] < 0.1)
+
+load(my_files[3])
+mean(simulation_pvalues[1,] < 0.05)
+mean(simulation_pvalues[1,] < 0.1)
+
+###########not working
+list_number =  length(my_files )
+power_for_01=c(0)
+power_for_005=c(0)
+for (i in 1:list_number){
+    file_sample = load(my_files[i])
+    power_for_005[i] = mean(simulation_pvalues[1,] < 0.05)
+    power_for_01[i] = mean(simulation_pvalues[1,] < 0.1)
+    return (list(power_for_01,power_for_005))
+}
+
+#################fl5tofl10 new slope last trial including funciontal for fl=5
+load("EXP2_r5000_cfda2outputstypeI.RData")
+library(xtable)
+xtable(final_table,digits=4)
+n100n500fl678212226 =final_table[,1:6]
+n100n500fl678212226
+save(n100n500fl678212226,file="n100n500fl678212226.RData")
+################ 180 points
+load("EXP2_r5000_cfda2outputstypeI180.RData")
+xtable(final_table,digits=4)
+n100n500t180fl678212226 =final_table[,1:6]
+n100n500t180fl678212226
+save(n100n500t180fl678212226,file="n100n500t180fl678212226.RData")
+###########################
 
