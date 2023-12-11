@@ -72,10 +72,10 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   Zmat_test_type_2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
   Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
 
-  if(test_type=="Inclusion"){
-    Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
-  } else if (test_type=="Functional"){
-    Xmat_test_type <- cbind(Xmat_Inc, Zmat_test_type_2$X.g2, Zmat_test_type_3$X.g2)
+  Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
+  
+  if (test_type=="Functional"){
+    Xmat_test_type <- cbind(Xmat_test_type, Zmat_test_type_2$X.g2, Zmat_test_type_3$X.g2)
   }
   
   test_matrix <- data.frame(Y=Y,
