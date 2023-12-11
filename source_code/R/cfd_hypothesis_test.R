@@ -28,35 +28,6 @@
 #
 ##############################################################
 
-# ---- For: parallelization ----
-# For: foreach loop
-# library(foreach)
-
-# run_parallel <- TRUE
-# time_elapsed <- list()
-# if(run_parallel)
-# {
-#   print("RUNNING PARALLEL")
-#
-#   # For: makeCluster
-#   library(doParallel)
-#
-#   # For: %dorng% or registerDoRNG for reproducable parallel random number generation
-#   library(doRNG)
-#
-#   if(exists("initialized_parallel") && initialized_parallel == TRUE)
-#   {
-#     parallel::stopCluster(cl = my.cluster)
-#   }
-#   n.cores <- parallel::detectCores() - 1
-#   my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
-#   doParallel::registerDoParallel(cl = my.cluster)
-#   cat("Parellel Registered: ", foreach::getDoParRegistered(), "\n")
-#   initialized_parallel <- TRUE
-#
-#   # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
-# }
-
 #' Create directories
 if (!dir.exists("outputs")){
   dir.create("outputs")
@@ -93,30 +64,65 @@ GetXFromW <- function(W)
 #' @param test_type, "Function" or "constant"
 #' @return list: statistics is test statistics, pvalue
 cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type){
-
+  # Y=Y_indvs
   X_cfd <- GetXFromW(cfd)
+  
+  num_indvs <- length(Y)
 
   Zmat_Func2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
   Zmat_Func3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
 
-  num_indivs <- length(Y)
-  Xmat_Inc<-matrix(rep(1, num_indivs),ncol=1)
+  Xmat_Inc<-matrix(rep(1, num_indvs),ncol=1)
   Xmat_Func <- cbind(Xmat_Inc, Zmat_Func2$X.g2, Zmat_Func3$X.g2)
+  
+  if(test_type=="Inclusion"){
+    test_matrix <- data.frame(Y=Y,
+                              X=Xmat_Inc,
+                              Z.test=Zmat_Func2$Zmat,
+                              Z.test3=Zmat_Func3$Zmat,
+                              ones=rep(1,num_indvs))
+    names(test_matrix) <- c('Y','X1',
+                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
+                            "ones")
+    
+    # test_matrix_m <- data.frame(Y=Y,
+    #                               X=Xmat_Inc,
+    #                               Z.test=Zmat_Func2$Zmat,
+    #                               ones=rep(1,num_indvs))
+    # names(test_matrix_m) <- c('Y','X1',
+    #                             paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+    #                             "ones")
+    
+    
+  }
+  if (test_type=="Functional"){
+    test_matrix <- data.frame(Y=Y,
+                              X=Xmat_Func,
+                              Z.test=Zmat_Func2$Zmat,
+                              Z.test3=Zmat_Func3$Zmat,
+                              ones=rep(1,num_indvs))
+    names(test_matrix) <- c('Y','X1','X2',"X3",
+                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
+                            "ones")
+  }
+  
+  #For testing in models with multiple variance
+  #' components, the fitted model \code{m} must contain \bold{only} the random
+  #' effect set to zero under the null hypothesis, while \code{mA} and \code{m0}
+  #' are the models under the alternative and the null, respectively. 
+  
+  alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+  
+  result_try <- try(test.aRLRT(alternative_fit), silent=T)
 
-  test_matrix <- data.frame(Y=Y,
-                            X=Xmat_Func,
-                            Z.test=Zmat_Func2$Zmat,
-                            Z.test3=Zmat_Func3$Zmat,
-                            ones=rep(1,num_indivs))
-  names(test_matrix) <- c('Y','X1','X2',"X3",
-                          paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
-                          paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
-                          "ones")
-
-  alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indivs, test_type)
-
-  result <- try(test.aRLRT(alternative_fit), silent=T)$aRLRT # Functional only
-
+  if(is.atomic(result_try)){
+    return(list(statistics=NULL, pvalue=NULL))
+  }
+  
+  result <- result_try$aRLRT 
+  
   return(list(statistics=result$statistic, pvalue=result$p.value))
 }
 
@@ -131,13 +137,18 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
 #'               J_matrix,D_difference_matrix,
 #'               phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half
 get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
-
+  #test
+  ######
+  #test_type="Functional"
+  #X_matrix=X_cfd[,,2]
+  #setequal(X_matrix,X_matrix_not)
+  ######
   knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
   bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
-
+  
   number_row <- nrow(X_matrix)
   number_col <- number_basis
-
+  
   ##parallel use each row of X to multiple each column of bspline
 
   # J_matrix <- matrix(0,nrow=nrow(X_matrix),ncol=number_basis) #empty
@@ -147,9 +158,9 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   #   }
   # }
 
-  J_matrix <- foreach(this_row = 1:number_row) %dorng%
+  J_matrix <- foreach(this_row = 1:number_row) %do%
     {
-      source("./R/integral_penalty_function.R")
+      source("source_code/R/integral_penalty_function.R")
 
       temp <- array(-123, number_col)
       for(this_col in 1:number_col){
@@ -159,7 +170,7 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
     }
   J_matrix <- do.call(rbind, J_matrix)
 
-  constant <- sqrt(1/number_basis)*rep(1,number_basis) #Q2_1
+  #constant <- sqrt(1/number_basis)*rep(1,number_basis) #Q2_1
   range_time_interval <- max(time_interval)-min(time_interval) #what is full scale
   constant <- rep(1,number_basis)/range_time_interval # unscaled
   lin <- seq(min(time_interval),max(time_interval),length.out=number_basis)/range_time_interval #unscaled
@@ -186,12 +197,15 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   evalues <- P.eigen$values[1:nrow(D)]
   Q <- P.eigen$vectors
   Lambda1.inv.half <- diag(sqrt(1/evalues))
-  #Q2 <- Q[,(number_basis-d+1):number_basis]
+  #Q2 <- Q[,(number_basis-difference_penalty+1):number_basis]
   #
   # Ztilde <-  ximat %*% J_matrix %*% Q[,1:(number_basis-d)]
   # X.g2 <-  ximat %*% J_matrix %*% Q2
   Ztilde <-  J_matrix %*% Q[,1:(number_basis-difference_penalty)]
   X.g2 <-  J_matrix %*% Q2
+  
+  
+
   return(list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
        J=J_matrix,D=D,phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half))
 }
@@ -248,13 +262,13 @@ fit.glmmPQL<-function(test.mat,family,n,test.type,ku=30){
                                 random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
                                 data=test.mat,weights=n),silent=T)
     }
-    if(test.type=='Linearity'){
-      Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
-      Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
-      glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
-                                random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
-                                data=test.mat,weights=n),silent=T)
-    }
+    # if(test.type=='Linearity'){
+    #   Z.test.names<-c("0",paste0('Z.test',1:(ku-2)))
+    #   Z.test.formula<-as.formula(paste("~",paste(Z.test.names,collapse="+")))
+    #   glmm.fit<-try(glmmPQL.mod(prop~0+X1+X2+X3,
+    #                             random=list(ones=pdIdent(Z.test.formula)),family=family.glmm,
+    #                             data=test.mat,weights=n),silent=T)
+    # }
     return(glmm.fit)
   } else { # non-binomial (poisson or bernoulli)
     if(test.type=='Inclusion'){
