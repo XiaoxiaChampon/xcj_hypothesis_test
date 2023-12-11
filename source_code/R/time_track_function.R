@@ -28,24 +28,33 @@
 #
 ##############################################################
 
-#' Function to find integral of penalty
-#' #integral_penalty(time_interval,X_matrix[this_row,]*bspline[,this_col])$value
-integral_penalty <- function(time_interval, function_value) { 
-  #test
-  # x_app <- 1:10
-  # y_app <- rnorm(10)
-  # time_interval=x_app
-  # function_value=y_app
-  number_points = max(256, length(time_interval))
-  timeseries_length = length(time_interval)
-  if (timeseries_length != length(function_value)) {stop("Unequal input vector lengths")}
-  approx_value <- approx(time_interval, function_value, n = 2 * number_points + 1)
-  delta_h = diff(approx_value$x)[1]
-  integral = delta_h * (approx_value$y[2 * (1:number_points) - 1] + 4 * approx_value$y[2 * (1:number_points)] + 
-                          approx_value$y[2 * (1:number_points) + 1])/3
-  results = list(value = sum(integral), cdf = list(
-    x = approx_value$x[2 * (1:number_points)], 
-    y = cumsum(integral))
-  )
-  return(results)
+
+time_elapsed <<- list()
+last_time <<- 0
+row_name <<- NULL
+
+
+#' Function to start recording the time for one task
+#' @param task_name : task name that needs to track the time
+timeKeeperStart <- function(task_name)
+{
+    row_name <<- task_name
+    if(FALSE == row_name %in% names(time_elapsed))
+    {
+        time_elapsed[[row_name]] <<- NULL
+    }
+    last_time <<- Sys.time()
+}
+
+
+#' Function to print the time taken by the task 
+timeKeeperNext <- function()
+{
+    this_time <- Sys.time()
+    this_section_time <- this_time - last_time
+    cat("\n--------------------\n",
+        row_name, "\n\ttook:", capture.output(this_section_time), 
+        "\n====================\n")
+    time_elapsed[[row_name]] <<- append(time_elapsed[[row_name]], this_section_time)
+    last_time <<- this_time
 }
