@@ -77,10 +77,11 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
   
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                        .packages=c("splines","mgcv","fda","fda.usc","devtools","glmmVCtest","RLRsim","MASS")) %dorng% {
+                        .packages=c("splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
-                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,
+                          test_type, klen=3)
     
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
     return(list("pvalue"=result$pvalue))
@@ -143,7 +144,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            klen=3)
   
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
-  save(simulation_pvalues, file = paste0("./outputs/simpvals",
+  save(simulation_pvalues, file = paste0("./outputs/simpvals3",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -153,23 +154,28 @@ run_experiment_hypothesis <- function(exp_idx,
   non_null_count <- dim(simulation_pvalues)[2]
   power <- mean(simulation_pvalues[1,] < alpha)
   power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  ############
+  power_01 <- mean(simulation_pvalues[1,] < 0.1)
+  ##############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
-  return(list("power"=power,"se"=power_se, "NAs"=num_replicas - non_null_count))
+  return(list("power"=power,"se"=power_se,"power_01"=power_01 , "NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
 #                            100,
 #                            300,
-#                            "6",
+#                            "11",
 #                            "Functional",
 #                            num_replicas = 50,
 #                            alpha = 0.05 )
 
+begin_exp_time <- Sys.time()
+
 set.seed(123456)
-subjects_vector <- c(100, 500)
-time_length_vector <- c(300)
-fl_choice_vector <- c("6", "7", "8", "9", "10")
+subjects_vector <- c(300, 1000)
+time_length_vector <- c(180)
+fl_choice_vector <- c("7", "200")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
@@ -186,7 +192,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                   timeseries_length,
                                                   fl_choice,
                                                   test_type )
-  save(experiment_output, file = paste0("./outputs/exp1_", 
+  save(experiment_output, file = paste0("./outputs/exp3_", 
                                        "_i", row_index, 
                                        "_fl", fl_choice, 
                                        "_ttype", test_type, 
@@ -198,7 +204,13 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP1_r5000_cfda2.RData")
+save(final_table, file = "EXP3_r5000_cfda2.RData")
+
+end_exp_time <- Sys.time()
+
+cat("\n====================\n",
+    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time), 
+    "\n====================\n")
 
 if(run_parallel)
 {

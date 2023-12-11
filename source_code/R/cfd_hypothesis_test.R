@@ -57,56 +57,45 @@ GetXFromW <- function(W)
 
 #' Funciton to do the hypothesis testing on categorical functional data
 #' @param Y: 1D array, length num_indvs, class membership for num_indvs individuals
-#' @param cfd: 2d array, num_indvs* timeseries_length, categorical functional data
+#' @param cfd: 2d array,timeseries_length* num_indvs, categorical functional data
 #'              observed for num_indvs individuals and timeseries_length time points
 #' @param time_interval, 1D array, observational time
 #' @param response_family, currently only support 'bernoulli'
 #' @param test_type, "Function" or "constant"
 #' @return list: statistics is test statistics, pvalue
 cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type){
-  # Y=Y_indvs
+  #X will be n*t*Q
   X_cfd <- GetXFromW(cfd)
   
   num_indvs <- length(Y)
 
-  Zmat_Func2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
-  Zmat_Func3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
+  Zmat_test_type_2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
+  Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
 
-  Xmat_Inc<-matrix(rep(1, num_indvs),ncol=1)
-  Xmat_Func <- cbind(Xmat_Inc, Zmat_Func2$X.g2, Zmat_Func3$X.g2)
+  Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
   
-  if(test_type=="Inclusion"){
-    test_matrix <- data.frame(Y=Y,
-                              X=Xmat_Inc,
-                              Z.test=Zmat_Func2$Zmat,
-                              Z.test3=Zmat_Func3$Zmat,
-                              ones=rep(1,num_indvs))
-    names(test_matrix) <- c('Y','X1',
-                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
-                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
-                            "ones")
-    
-    # test_matrix_m <- data.frame(Y=Y,
-    #                               X=Xmat_Inc,
-    #                               Z.test=Zmat_Func2$Zmat,
-    #                               ones=rep(1,num_indvs))
-    # names(test_matrix_m) <- c('Y','X1',
-    #                             paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
-    #                             "ones")
-    
-    
-  }
   if (test_type=="Functional"){
-    test_matrix <- data.frame(Y=Y,
-                              X=Xmat_Func,
-                              Z.test=Zmat_Func2$Zmat,
-                              Z.test3=Zmat_Func3$Zmat,
-                              ones=rep(1,num_indvs))
+    Xmat_test_type <- cbind(Xmat_test_type, Zmat_test_type_2$X.g2, Zmat_test_type_3$X.g2)
+  }
+  
+  test_matrix <- data.frame(Y=Y,
+                            X=Xmat_test_type,
+                            Z.test=Zmat_test_type_2$Zmat,
+                            Z.test3=Zmat_test_type_3$Zmat,
+                            ones=rep(1,num_indvs))
+ 
+  if(test_type=="Inclusion"){
+    names(test_matrix) <- c('Y','X1',
+                            paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
+                            "ones")
+  } else if (test_type=="Functional"){
     names(test_matrix) <- c('Y','X1','X2',"X3",
-                            paste0('Z.test',1:ncol(Zmat_Func2$Zmat)),
-                            paste0('Z.test3',1:ncol(Zmat_Func3$Zmat)),
+                            paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                            paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
                             "ones")
   }
+  
   
   #For testing in models with multiple variance
   #' components, the fitted model \code{m} must contain \bold{only} the random
