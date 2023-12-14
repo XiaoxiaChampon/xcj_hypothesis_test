@@ -153,13 +153,15 @@ run_experiment_hypothesis <- function(exp_idx,
                                                     ".RData"))
   non_null_count <- dim(simulation_pvalues)[2]
   power <- mean(simulation_pvalues[1,] < alpha)
-  power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  # power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  power_se <- sqrt(power*(1 - power))/sqrt(non_null_count)
   ############
   power_01 <- mean(simulation_pvalues[1,] < 0.1)
+  power_se_01 <- sqrt(power_01*(1 - power_01))/sqrt(non_null_count)
   ##############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
-  return(list("power"=power,"se"=power_se,"power_01"=power_01 , "NAs"=num_replicas - non_null_count))
+  return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se_01"=power_se_01, "NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
