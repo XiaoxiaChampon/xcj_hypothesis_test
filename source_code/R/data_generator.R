@@ -296,6 +296,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                    "4"=list("fl1"=rep(-0.2,timeseries_length),
                             "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
+                   "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   
                    
                    "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                              "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
@@ -378,6 +382,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
       return(ys)
     }
     Y_indvs <- generate_y_indvs(linear_predictor)
+    Y_indvs_without <- generate_y_indvs(linear_predictor_without)
     
     prob_ind=1/(1+exp(-linear_predictor))
     
@@ -387,12 +392,12 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs,
+                  "yis_without" = Y_indvs_without,
                   "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
                   "prob_ind"=prob_ind)
    
     return(list("true"=truelist))
 }
-
 
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
