@@ -289,6 +289,9 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                             # "fl3"=matrix(fl3f(time_interval,),nrow=timeseries_length,ncol=1)),
                             "fl2"=matrix(flx456(time_interval,mu2_coef),nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(flx789(time_interval,mu2_coef),nrow=timeseries_length,ncol=1)),                  
+                   "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                    
                    "4"=list("fl1"=rep(-0.2,timeseries_length),
                             "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
@@ -418,13 +421,13 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 response_family=response_family,
                                 test_type=test_type)
   
-  #return(list("pvalue"=result$pvalue))
+  return(list("pvalue"=result$pvalue))
 
-  return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
-              "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
-              "W"=cfd_test_data$true$Truecatcurve,
-              "linear_predictor"=cfd_test_data$true$linear_predictor,
-              "prob_ind"=cfd_test_data$true$prob_ind))
+  # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
+  #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
+  #             "W"=cfd_test_data$true$Truecatcurve,
+  #             "linear_predictor"=cfd_test_data$true$linear_predictor,
+  #             "prob_ind"=cfd_test_data$true$prob_ind))
 }
 
 
