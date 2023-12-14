@@ -2,11 +2,11 @@
 #check
 start_time=0.01
 end_time=0.99
-timeseries_length=90
+timeseries_length=180
 time_interval=seq(start_time,end_time,length=timeseries_length)
 num_indvs=500
 #fl_choice=3 #not constant, expect to reject
-fl_choice=8 #not constant, expect to reject
+fl_choice=6 #not constant, expect to reject
 response_family='bernoulli'
 test_type='Functional'
 klen=3
@@ -37,12 +37,11 @@ Y_perc_w = table(Y_indvs)/sum(table(Y_indvs))
 Y_perc_w
 
 
-
-intercept_values <- seq(-2,2,length.out=30)
+#####################
+set.seed(123456) #working
+intercept_values <- seq(-2,2,length.out=100)
 result_y <- foreach (intercept_index = 1:length(intercept_values), .combine = cbind, .init = NULL) %dorng% {
   source("source_code/R/data_generator.R")
-  
-  set.seed(123456) #working
   test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
                               num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
                               klen=3, intercept_values[intercept_index])
@@ -53,7 +52,7 @@ result_y <- foreach (intercept_index = 1:length(intercept_values), .combine = cb
   indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
   Y_indvs=test_noconstant$yis
   
-  Y_without = apply(linear_predictor_wo, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+  Y_without = test_noconstant$yis_without
   #table(Y_without)
   Y_perc_wo = table(Y_without)/sum(table(Y_without))
   
