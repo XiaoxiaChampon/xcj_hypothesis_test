@@ -1,76 +1,15 @@
-
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the “Software”), to deal in the Software without restriction,
-# including without limitation the rights to use, copy, modify, merge,
-# publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included
-# in all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
-# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-######################################################################
+##################################
 #
-# Purpose: Simulations for Categorical Functional Data Hypothesis Testing
-#         
-# Author:  Xiaoxia Champon
-# Date: 10/26/2023
+# Genetic Algorithm Based Optimization for finding mu1, mu2, and lp_intercept values.
 #
-##############################################################
 
+library(rmoo)
 
-
-
-library(mgcv)
-library(fda)
-library(fda.usc)
-library(devtools)
-# install_github("stchen3/glmmVCtest")
-library("glmmVCtest")
-library(RLRsim)
-library(MASS)
-library(splines)
-
-library(GA)
-
-
-# ---- For: parallelization ----
-# For: foreach loop
-# library(foreach)
-# 
-# run_parallel <- TRUE
-# time_elapsed <- list()
-# if(run_parallel)
-# {
-#   print("RUNNING PARALLEL")
-#   
-#   # For: makeCluster
-#   library(doParallel)
-#   
-#   # For: %dorng% or registerDoRNG for reproducable parallel random number generation
-#   library(doRNG)
-#   
-#   if(exists("initialized_parallel") && initialized_parallel == TRUE)
-#   {
-#     parallel::stopCluster(cl = my.cluster)
-#   }
-#   n.cores <- parallel::detectCores() - 1
-#   my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
-#   doParallel::registerDoParallel(cl = my.cluster)
-#   cat("Parellel Registered: ", foreach::getDoParRegistered(), "\n")
-#   initialized_parallel <- TRUE
-#   
-#   # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
-# }
-
+library(cdata)
+library(reshape2)
+library(rgl)
+library(ecr)
+library(emoa)
 
 source("source_code/R/data_generator.R")
 
@@ -79,10 +18,13 @@ begin_exp_time <- Sys.time()
 timeseries_length = 180
 timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
 
-mu1_coef=c(-6.67,-2.47,5.42)
-mu2_coef=c(-3.14,-0.99,3.91)
+# mu1_coef=c(-6.67,-2.47,5.42)
+# mu2_coef=c(-3.14,-0.99,3.91)
 
-run_test <- function(mu1_coef, mu2_coef, intercept, flc){
+run_test <- function(x, flc){
+  mu1_coef <- x[1:3]
+  mu2_coef <- x[4:6]
+  intercept <- x[7]
   results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
   
   tab_y <- table(results$true$yis)
@@ -91,61 +33,116 @@ run_test <- function(mu1_coef, mu2_coef, intercept, flc){
   tab_y_without <- table(results$true$yis_without)
   tab_y_without <- tab_y_without / sum(tab_y_without)
   
-  if(length(tab_y) < 2 || length(tab_y_without) < 2){
-    # return(list("tab_y"=tab_y, "tab_y_without"=tab_y_without, "val"=1.0))
-    return(1.0)
+  # balance01 is a measure of balance between 0s and 1s in the Ys.
+  # It is the absolute difference of the fraction of 0s and 1s.
+  # 0 <= balance01 <= 1
+  # We prefer when it is minimal. 0 is the best value. 1 is the worst.
+  # We will be happy if balance01 <= 0.3
+  balance01 <- 1.0
+  if(length(tab_y) >= 2 && length(tab_y_without) >= 2){
+    balance01 <- max(abs(tab_y[[1]] - tab_y[[2]]), abs(tab_y_without[[1]] - tab_y_without[[2]]))
   }
   
-  val <- max(abs(tab_y[[1]] - tab_y[[2]]), abs(tab_y_without[[1]] - tab_y_without[[2]]))
+  # We give high penalty when balance01 > 0.3
+  # 0 <= balance_penalty < 10
+  balance_penalty <- balance01
+  # if(balance01 > 0.3){
+  #   balance_penalty <- balance01 * 10
+  # }
   
-  # return(list("tab_y"=tab_y, "tab_y_without"=tab_y_without, "val"=val))
-  return(val)
+  # lp_distance is the absolute distance between LP means.
+  # Theoretically: 0 <= lp_distance < infinity
+  # We prefer when lp_distance is maximum.
+  # We will be happy if lp_distance >= 1
+  lp_distance <- abs(mean(results$true$linear_predictor$linearw) - mean(results$true$linear_predictor$linearwo))
+  
+  # We take the negative of the lp_distance as the penalty since we are minimizing
+  # We give high penalty when lp_distance < 1
+  distance_penalty <- lp_distance * -1.0
+  # if(lp_distance >= 1){
+  #   distance_penalty <- lp_distance * -1.0 - 1.1
+  # }
+  
+  minimizing_fitness <- cbind(balance01, balance_penalty, lp_distance, distance_penalty)
+  return(list("yw"=tab_y, "ywo"=tab_y_without, "fit"=minimizing_fitness))
+}
+
+evaluate_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
+
+  tab_y <- table(results$true$yis)
+  tab_y <- tab_y / sum(tab_y)
+
+  tab_y_without <- table(results$true$yis_without)
+  tab_y_without <- tab_y_without / sum(tab_y_without)
+
+  # balance01 is a measure of balance between 0s and 1s in the Ys.
+  # It is the absolute difference of the fraction of 0s and 1s.
+  # 0 <= balance01 <= 1
+  # We prefer when it is minimal. 0 is the best value. 1 is the worst.
+  # We will be happy if balance01 <= 0.3
+  balance01 <- 1.0
+  if(length(tab_y) >= 2 && length(tab_y_without) >= 2){
+    balance01 <- max(abs(tab_y[[1]] - tab_y[[2]]), abs(tab_y_without[[1]] - tab_y_without[[2]]))
+  }
+  
+  # We give high penalty when balance01 > 0.3
+  # 0 <= balance_penalty < 10
+  balance_penalty <- balance01
+  # if(balance01 > 0.3){
+  #   balance_penalty <- balance01 * 10
+  # }
+  
+  # lp_distance is the absolute distance between LP means.
+  # Theoretically: 0 <= lp_distance < infinity
+  # We prefer when lp_distance is maximum.
+  # We will be happy if lp_distance >= 1
+  lp_distance <- abs(mean(results$true$linear_predictor$linearw) - mean(results$true$linear_predictor$linearwo))
+  
+  # We take the negative of the lp_distance as the penalty since we are minimizing
+  # We give high penalty when lp_distance < 1
+  distance_penalty <- lp_distance * -1.0
+  # if(lp_distance >= 1){
+  #   distance_penalty <- lp_distance * -1.0 - 1.1
+  # }
+
+  minimizing_fitness <- cbind(balance_penalty, distance_penalty)
+  return(minimizing_fitness)
 }
 
 set.seed(123)
 
-# run_test(mu1_coef, mu2_coef, 1, "6")
-
-# ed_table <- expand.grid(seq(-5,5, length.out = 10), c("6", "7", "8", "9", "10", "200"))
-# colnames(ed_table) <- c("intercept", "fl_choice")
-# print(ed_table)
-# 
-# results <- foreach (row_index = 1:dim(ed_table)[1], .combine = cbind, .init = NULL) %dorng% {
-#   res_list <- list()
-#   for (replica_num in c(1:5)) {
-#     res <- run_test(mu1_coef, mu2_coef, ed_table[row_index,]$intercept, as.character(ed_table[row_index,]$fl_choice))
-#     res_list <- rbind(res_list, res)
-#   }
-#   return(median(unlist(res_list)))
-# }
-# 
-# print(array(results[1,]))
-# plot(array(results[1,]))
+# evaluate_fitness(mu1_coef, mu2_coef, 1, "6")
 
 fitness_func <- function(x){
+  if (is.null(dim(x))) {
+    x <- matrix(x, ncol = 1)
+  }
   flc_result <- list()
   for(flc in c("6", "8", "10")){
     res_list <- list()
     for (replica_num in c(1:3)) {
-      res <- run_test(x[1:3], x[4:6], x[7], flc)
+      res <- evaluate_fitness(x[1:3], x[4:6], x[7], flc)
       res_list <- rbind(res_list, res)
     }
-    meanval <- median(unlist(res_list))
-    flc_result <- rbind(meanval, flc_result)
+    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, median)
+    flc_result <- rbind(flc_result, median_results)
   }
-  return(-median(unlist(flc_result)))
+  
+  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, median)
+  return(median_fitness)
 }
 
-
-ga <- ga(type = "real-valued",
-         fitness = fitness_func,
-         lower = rep(-10, 7),
-         upper = rep(10,7),
-         popSize = 10,
-         maxiter = 10,
-         run = 10,
-         parallel = TRUE,
-         monitor = TRUE)
+ga <- rmoo::nsga2(type = "real-valued",
+            fitness = fitness_func,
+            nObj = 2,
+            lower = rep(-1,7),
+            upper = rep(1,7),
+            popSize = 24,
+            summary = TRUE,
+            monitor = TRUE,
+            parallel = TRUE,
+            maxiter = 10)
 
 summary(ga)
 plot(ga)
@@ -153,11 +150,6 @@ plot(ga)
 end_exp_time <- Sys.time()
 
 cat("\n====================\n",
-    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time), 
+    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time),
     "\n====================\n")
 
-# if(run_parallel)
-# {
-#   parallel::stopCluster(cl = my.cluster)
-#   initialized_parallel <- FALSE
-# }
