@@ -3,6 +3,12 @@
 # Genetic Algorithm Based Optimization for finding mu1, mu2, and lp_intercept values.
 #
 
+
+library(foreach)
+library(doParallel)
+library(doRNG)
+
+
 library(rmoo)
 
 library(cdata)
@@ -115,7 +121,7 @@ set.seed(123)
 # evaluate_fitness(mu1_coef, mu2_coef, 1, "6")
 
 fitness_func <- function(x){
-  if (is.null(dim(x))) {
+  if(is.null(dim(x))) {
     x <- matrix(x, ncol = 1)
   }
   flc_result <- list()
