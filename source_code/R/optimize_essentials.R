@@ -1,7 +1,4 @@
 
-library(foreach)
-library(doRNG)
-  
 # library(profvis)
 # 
 # profvis({
@@ -131,22 +128,25 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
   }
   #####################################
   
-  
+  count_iter_indv <<- 0
+  # print("INDV_CHECKING")
   for(indv in c(1:num_indvs))
-  {##########add re generate W if one of the category is missing
+  {
+    ##########add re generate W if one of the category is missing
     tolcat <- table(categ_func_data_list$W[,indv])
     catorder <- order(tolcat, decreasing = TRUE)
     numcat <- length(catorder)
     refcat <- catorder[numcat]
-    count_iter <- 0
-    while (count_iter < 100 && 
+    # print("W_StartWhile")
+    while (count_iter_indv < 200 && 
            ( (numcat < length(Q_vals))
              ||(timeseries_length==300  && min(as.numeric(tolcat)) < 4)
              ||(timeseries_length==750  && min(as.numeric(tolcat)) < 10)
            )
     )
     {
-      count_iter <- count_iter + 1
+      # cat(count_iter_indv, indv, "\n")
+      count_iter_indv <<- count_iter_indv + 1
       
       mns <- GetMuAndScore_2(klen=3,mu1_coef,mu2_coef)
       klen=3
@@ -179,9 +179,11 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
       numcat <- length(catorder)
       refcat <- catorder[numcat]
     } # end while
+    # print("W_EndWhile")
     #############################
     
   }
+  # print("INDV_CHECKED")
   #W: t*n, X: n*t*Q
   return(list(X=categ_func_data_list$X, W=categ_func_data_list$W)) # X_binary W_catfd
 }
@@ -217,7 +219,7 @@ flx456 <- function(t, x){
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice, lp_intercept=0.6206897){
+                                      time_interval, fl_choice, lp_intercept){
   
   mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
   
@@ -328,14 +330,14 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
   linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
   
   
+  count_iter_ys <<- 0
   generate_y_indvs <- function(lp){
     ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
     leastOccr <- min(sum(ys), length(ys) - sum(ys))
-    count_iter <- 1
     min_occurrence <- round(num_indvs * 0.2)
-    max_iterations <- 100
-    while (count_iter < max_iterations && (length(ys) - sum(ys) < min_occurrence || sum(ys) < min_occurrence)){
-      count_iter <- count_iter + 1
+    # print("Y_StartWhile")
+    while (count_iter_ys < 20 && (length(ys) - sum(ys) < min_occurrence || sum(ys) < min_occurrence)){
+      count_iter_ys <<- count_iter_ys + 1
       candidate <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
       num1s <- sum(candidate)
       num0s <- length(ys) - num1s
@@ -344,7 +346,8 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
         leastOccr <- min(num0s, num1s)
       }
     }
-    # cat("Y generation count:", count_iter, "\n")
+    # cat("Y generation count:", count_iter_ys, "\n")
+    # print("Y_EndWhile")
     return(ys)
   }
   Y_indvs <- generate_y_indvs(linear_predictor)
@@ -352,17 +355,49 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
   
   prob_ind=1/(1+exp(-linear_predictor))
   
-  truelist=list("TrueX1"=cat_data$X[,,1],
-                "TrueX2"=cat_data$X[,,2],
-                "TrueX3"=cat_data$X[,,3],
-                "Truecatcurve"=cat_data$W,
-                "fl"=flfn,
-                "yis"=Y_indvs,
-                "yis_without" = Y_indvs_without,
-                "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
-                "prob_ind"=prob_ind)
+  # truelist=list("TrueX1"=cat_data$X[,,1],
+  #               "TrueX2"=cat_data$X[,,2],
+  #               "TrueX3"=cat_data$X[,,3],
+  #               "Truecatcurve"=cat_data$W,
+  #               "fl"=flfn,
+  #               "yis"=Y_indvs,
+  #               "yis_without" = Y_indvs_without,
+  #               "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
+  #               "prob_ind"=prob_ind)
+  # 
+  # return(list("true"=truelist))
   
-  return(list("true"=truelist))
+  truelist=list("yis"=Y_indvs,
+                "yis_without" = Y_indvs_without,
+                "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without))
+  
+  return(truelist)
+}
+
+my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
+  timeseries_length = 180
+  timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
+  
+  tab_y <- table(results$yis)
+  tab_y <- tab_y / sum(tab_y)
+  
+  tab_y_without <- table(results$yis_without)
+  tab_y_without <- tab_y_without / sum(tab_y_without)
+  
+  balance01 <- 1.0
+  if(length(tab_y) >= 2 && length(tab_y_without) >= 2){
+    balance01 <- max(abs(tab_y[[1]] - tab_y[[2]]), abs(tab_y_without[[1]] - tab_y_without[[2]]))
+  }
+  
+  balance_penalty <- balance01
+  
+  lp_distance <- abs(mean(results$linear_predictor$linearw) - mean(results$linear_predictor$linearwo))
+  
+  distance_penalty <- -lp_distance
+  
+  minimizing_fitness <- cbind(balance_penalty, distance_penalty)
+  return(minimizing_fitness)
 }
 
 # begin_exp_time <- Sys.time()

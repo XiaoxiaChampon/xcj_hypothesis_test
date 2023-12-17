@@ -3,7 +3,7 @@
 # For: foreach loop
 library(foreach)
 
-run_parallel <- FALSE
+run_parallel <- TRUE
 time_elapsed <- list()
 if(run_parallel)
 {
@@ -13,7 +13,7 @@ if(run_parallel)
   library(doParallel)
   
   # For: %dorng% or registerDoRNG for reproducable parallel random number generation
-  library(doRNG)
+  # library(doRNG)
   
   if(exists("initialized_parallel") && initialized_parallel == TRUE)
   {
@@ -31,53 +31,59 @@ if(run_parallel)
 
 library(rmoo)
 
-source("source_code/R/optimize_essentials.R")
-
-timeseries_length = 90
-timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
-
-my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
-
-  tab_y <- table(results$true$yis)
-  tab_y <- tab_y / sum(tab_y)
-
-  tab_y_without <- table(results$true$yis_without)
-  tab_y_without <- tab_y_without / sum(tab_y_without)
-
-  balance01 <- 1.0
-  if(length(tab_y) >= 2 && length(tab_y_without) >= 2){
-    balance01 <- max(abs(tab_y[[1]] - tab_y[[2]]), abs(tab_y_without[[1]] - tab_y_without[[2]]))
-  }
-
-  balance_penalty <- balance01
-  
-  lp_distance <- abs(mean(results$true$linear_predictor$linearw) - mean(results$true$linear_predictor$linearwo))
-
-  distance_penalty <- -lp_distance
-
-  minimizing_fitness <- cbind(balance_penalty, distance_penalty)
-  return(minimizing_fitness)
-}
-
 fitness_func <- function(x){
   if(is.null(dim(x))) {
     x <- matrix(x, ncol = 1)
   }
-  flc_result <- list()
-  for(flc in c("6", "8", "10")){
-    res_list <- list()
-    for (replica_num in c(1:3)) {
-      res <- my_fitness(x[1:3], x[4:6], x[7], flc)
-      res_list <- rbind(res_list, res)
-    }
-    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, max)
-    flc_result <- rbind(flc_result, median_results)
-  }
-
-  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, max)
+  print(t(x))
+  
+  # ####################################################################
+  # flc_result <- list()
+  # for(flc in c("6", "8", "10")){
+  #   res_list <- list()
+  #   for (replica_num in c(1:3)) {
+  #     # res <- my_fitness(x[1:3], x[4:6], x[7], flc)
+  #     res <- testness(x[1:3], x[4:6], x[7], flc)
+  #     res_list <- rbind(res_list, res)
+  #   }
+  #   median_results <- apply(matrix(unlist(res_list), ncol=2), 2, max)
+  #   flc_result <- rbind(flc_result, median_results)
+  # }
+  # median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, max)
+  # ####################################################################
+  # flc_result2 <- foreach(flc = c("6", "8", "10"), .combine = rbind, .init = NULL) %do% {
+  #     res_list <- list()
+  #     for (replica_num in c(1:3)) {
+  #       # res <- my_fitness(x[1:3], x[4:6], x[7], flc)
+  #       res <- testness(x[1:3], x[4:6], x[7], flc)
+  #       res_list <- rbind(res_list, res)
+  #     }
+  #     median_results <- apply(matrix(unlist(res_list), ncol=2), 2, max)
+  #   }
+  # median_fitness2 <- apply(matrix(unlist(flc_result2), ncol=2), 2, max)
+  # ####################################################################
+  flcs <- c("6", "7", "8", "9", "10")
+  rng <- rngtools::RNGseq( 5 * 3, 1234)
+  
+  flc_result3 <- foreach(flcidx = 1:5, .combine = rbind) %:%
+    foreach(replica_num = 1:3, .combine = cbind, r=rng[(flcidx-1)*5 + 1:5]) %dopar% {
+        rngtools::setRNG(r)
+        source("source_code/R/optimize_essentials.R")
+        my_fitness(x[1:3], x[4:6], x[7], flcs[flcidx])
+      }
+  
+  median_fitness <- apply(matrix(apply(flc_result3, 2, mean), ncol=3), 1, mean)
+  ####################################################################
+  
+  print(median_fitness)
   return(median_fitness)
 }
+
+known_candidates <- rbind(cbind(-40.2339963, -5.3899194, -3.1525938, 40.3651894, -38.1102743, 1.0417336, 0.2908304),
+                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 0.1),
+                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 1.0),
+                          cbind(1,2,3,1,2,3,1),
+                          cbind(1,2,3,1,2,3,0))
 
 begin_exp_time <- Sys.time()
 
@@ -86,13 +92,13 @@ set.seed(123)
 ga <- nsga2(type = "real-valued",
             fitness = fitness_func,
             nObj = 2,
-            lower = rep(-50.0,7),
-            upper = rep(50.0,7),
+            lower = rep(-100.0,7),
+            upper = rep(100.0,7),
             popSize = 100,
-            summary = TRUE,
-            monitor = TRUE,
+            summary = FALSE,
             parallel = FALSE,
-            maxiter = 10)
+            suggestions = known_candidates,
+            maxiter = 100)
 
 summary(ga)
 plot(ga)
