@@ -1,3 +1,34 @@
+
+# ---- For: parallelization ----
+# For: foreach loop
+library(foreach)
+
+run_parallel <- FALSE
+time_elapsed <- list()
+if(run_parallel)
+{
+  print("RUNNING PARALLEL")
+  
+  # For: makeCluster
+  library(doParallel)
+  
+  # For: %dorng% or registerDoRNG for reproducable parallel random number generation
+  library(doRNG)
+  
+  if(exists("initialized_parallel") && initialized_parallel == TRUE)
+  {
+    parallel::stopCluster(cl = my.cluster)
+  }
+  n.cores <- parallel::detectCores() - 1
+  my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
+  doParallel::registerDoParallel(cl = my.cluster)
+  cat("Parellel Registered: ", foreach::getDoParRegistered(), "\n")
+  initialized_parallel <- TRUE
+  
+  # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
+}
+
+
 library(rmoo)
 
 source("source_code/R/optimize_essentials.R")
@@ -6,7 +37,7 @@ timeseries_length = 180
 timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
 
 my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 100, timeseries_length, timestamps01, flc, intercept)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
 
   tab_y <- table(results$true$yis)
   tab_y <- tab_y / sum(tab_y)
@@ -42,24 +73,31 @@ fitness_func <- function(x){
       res <- my_fitness(x[1:3], x[4:6], x[7], flc)
       res_list <- rbind(res_list, res)
     }
-    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, median)
+    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, max)
     flc_result <- rbind(flc_result, median_results)
   }
 
-  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, median)
+  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, max)
   return(median_fitness)
 }
 
 ga <- nsga2(type = "real-valued",
             fitness = fitness_func,
             nObj = 2,
-            lower = rep(-50.0,7),
-            upper = rep(50.0,7),
+            lower = rep(-10000.0,7),
+            upper = rep(10000.0,7),
             popSize = 10,
             summary = FALSE,
-            monitor = FALSE,
-            parallel = TRUE,
+            monitor = TRUE,
+            parallel = FALSE,
             maxiter = 2)
 
 summary(ga)
-# plot(ga)
+plot(ga)
+
+if(run_parallel)
+{
+  parallel::stopCluster(cl = my.cluster)
+  initialized_parallel <- FALSE
+}
+

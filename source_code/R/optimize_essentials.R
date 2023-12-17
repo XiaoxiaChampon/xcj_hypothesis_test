@@ -1,4 +1,10 @@
 
+library(foreach)
+library(doRNG)
+  
+# library(profvis)
+# 
+# profvis({
   
 GetMuAndScore_2 <- function(klen,mu1_coef,mu2_coef)
 {
@@ -76,10 +82,10 @@ GenerateCategFuncData <- function(prob_curves)
   timeseries_length <- nrow(prob_curves$p1)
   # cat("n:", num_indvs, "\tt:", timeseries_length, "\n")
   
-  
+  ############################################################
+  # set.seed(123)
   W <- matrix(0, ncol=num_indvs, nrow=timeseries_length)
   X_array <- array(0, c(num_indvs, timeseries_length, curve_count))
-  
   for(indv in c(1:num_indvs))
   {
     X <- sapply(c(1:timeseries_length),
@@ -91,6 +97,21 @@ GenerateCategFuncData <- function(prob_curves)
     W[,indv] <- apply(X, 2, which.max)
     X_array[indv,,] <- t(X)
   }
+  ############################################################
+  # set.seed(123)
+  # retval <- foreach(indv=1:num_indvs, .combine = cbind, .init = NULL, .packages = c("base","stats")) %dorng% {
+  #   X_indv <- sapply(c(1:timeseries_length),
+  #                    function(this_time) rmultinom(n=1,
+  #                                                  size=1,
+  #                                                  prob = c(prob_curves$p1[this_time,indv],
+  #                                                           prob_curves$p2[this_time,indv],
+  #                                                           prob_curves$p3[this_time,indv]) ))
+  #   W_indv <- apply(X_indv, 2, which.max)
+  #   list("x"=X_indv, "w"=W_indv)
+  # }
+  # X_array <- aperm( array(as.double(unlist(retval[1,])), c(curve_count,timeseries_length,num_indvs)), c(3,2,1))
+  # W <- matrix(as.double(unlist(retval[2,])), ncol=num_indvs)
+  ############################################################
   
   return(list(X=X_array, W=W)) # X_binary W_catfd
 }
@@ -344,3 +365,21 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
   return(list("true"=truelist))
 }
 
+# begin_exp_time <- Sys.time()
+# 
+# timeseries_length = 180
+# timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
+# mu1_coef=c(-6.67,-2.47,5.42)
+# mu2_coef=c(-3.14,-0.99,3.91)
+# for (idx in 1:20) {
+#   results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, "8", 1.5)
+# }
+# 
+# end_exp_time <- Sys.time()
+# 
+# cat("\n====================\n",
+#     "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time),
+#     "\n====================\n")
+
+
+# })
