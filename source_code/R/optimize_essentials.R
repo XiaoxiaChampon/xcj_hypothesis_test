@@ -138,7 +138,7 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
     numcat <- length(catorder)
     refcat <- catorder[numcat]
     # print("W_StartWhile")
-    while (count_iter_indv < 200 && 
+    while (count_iter_indv < 100 && 
            ( (numcat < length(Q_vals))
              ||(timeseries_length==300  && min(as.numeric(tolcat)) < 4)
              ||(timeseries_length==750  && min(as.numeric(tolcat)) < 10)
@@ -377,7 +377,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
 my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
   timeseries_length = 180
   timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 300, timeseries_length, timestamps01, flc, intercept)
   
   tab_y <- table(results$yis)
   tab_y <- tab_y / sum(tab_y)

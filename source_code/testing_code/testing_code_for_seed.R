@@ -12,14 +12,18 @@ test_type='Functional'
 klen=3
 mu1_coef=c(-6.67,-2.47,5.42)
 mu2_coef=c(-3.14,-0.99,3.91)
+
 ###############################################
-MAGIC_NUM_DUM_DUM <<- 0.6206897
+MAGIC_NUM_DUM_DUM <<- 0.1 #0.6206897
 source("source_code/R/data_generator.R")
 
 set.seed(123456) #working
-test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
-                            num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
-                            klen=3, MAGIC_NUM_DUM_DUM)
+
+#GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                      lp_intercept=0.6206897)
+
+test_noconstant=GenerateCategoricalFDTest(klen=3,mu1_coef, mu2_coef,timeseries_length,
+                                          time_interval, fl_choice,MAGIC_NUM_DUM_DUM)
 test_noconstant$pvalue
 linear_predictor_w=test_noconstant$linear_predictor$linearw
 linear_predictor_wo=test_noconstant$linear_predictor$linearwo
