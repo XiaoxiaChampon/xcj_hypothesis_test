@@ -2,11 +2,11 @@ library(rmoo)
 
 source("source_code/R/optimize_essentials.R")
 
-timeseries_length = 180
+timeseries_length = 90
 timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
 
 my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 100, timeseries_length, timestamps01, flc, intercept)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 50, timeseries_length, timestamps01, flc, intercept)
 
   tab_y <- table(results$true$yis)
   tab_y <- tab_y / sum(tab_y)
@@ -29,8 +29,6 @@ my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
   return(minimizing_fitness)
 }
 
-set.seed(123)
-
 fitness_func <- function(x){
   if(is.null(dim(x))) {
     x <- matrix(x, ncol = 1)
@@ -42,24 +40,34 @@ fitness_func <- function(x){
       res <- my_fitness(x[1:3], x[4:6], x[7], flc)
       res_list <- rbind(res_list, res)
     }
-    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, median)
+    median_results <- apply(matrix(unlist(res_list), ncol=2), 2, max)
     flc_result <- rbind(flc_result, median_results)
   }
 
-  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, median)
+  median_fitness <- apply(matrix(unlist(flc_result), ncol=2), 2, max)
   return(median_fitness)
 }
+
+begin_exp_time <- Sys.time()
+
+set.seed(123)
 
 ga <- nsga2(type = "real-valued",
             fitness = fitness_func,
             nObj = 2,
             lower = rep(-50.0,7),
             upper = rep(50.0,7),
-            popSize = 10,
-            summary = FALSE,
-            monitor = FALSE,
-            parallel = TRUE,
-            maxiter = 2)
+            popSize = 100,
+            summary = TRUE,
+            monitor = TRUE,
+            parallel = FALSE,
+            maxiter = 10)
 
 summary(ga)
-# plot(ga)
+plot(ga)
+
+end_exp_time <- Sys.time()
+
+cat("\n====================\n",
+    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time),
+    "\n====================\n")
