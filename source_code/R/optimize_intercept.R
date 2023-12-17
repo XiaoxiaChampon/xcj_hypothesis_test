@@ -1,3 +1,34 @@
+
+# ---- For: parallelization ----
+# For: foreach loop
+library(foreach)
+
+run_parallel <- FALSE
+time_elapsed <- list()
+if(run_parallel)
+{
+  print("RUNNING PARALLEL")
+  
+  # For: makeCluster
+  library(doParallel)
+  
+  # For: %dorng% or registerDoRNG for reproducable parallel random number generation
+  library(doRNG)
+  
+  if(exists("initialized_parallel") && initialized_parallel == TRUE)
+  {
+    parallel::stopCluster(cl = my.cluster)
+  }
+  n.cores <- parallel::detectCores() - 1
+  my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
+  doParallel::registerDoParallel(cl = my.cluster)
+  cat("Parellel Registered: ", foreach::getDoParRegistered(), "\n")
+  initialized_parallel <- TRUE
+  
+  # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
+}
+
+
 library(rmoo)
 
 source("source_code/R/optimize_essentials.R")
@@ -6,7 +37,7 @@ timeseries_length = 90
 timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
 
 my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 50, timeseries_length, timestamps01, flc, intercept)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
 
   tab_y <- table(results$true$yis)
   tab_y <- tab_y / sum(tab_y)
@@ -66,8 +97,15 @@ ga <- nsga2(type = "real-valued",
 summary(ga)
 plot(ga)
 
+
 end_exp_time <- Sys.time()
 
 cat("\n====================\n",
     "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time),
     "\n====================\n")
+
+if(run_parallel)
+{
+  parallel::stopCluster(cl = my.cluster)
+  initialized_parallel <- FALSE
+}
