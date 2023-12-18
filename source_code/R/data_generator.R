@@ -253,7 +253,7 @@ flx456 <- function(t, x){
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice){
+                                      time_interval, fl_choice, lp_intercept=0.9998364){
   
     mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
@@ -360,22 +360,23 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
-    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.9998364 )
-    linear_predictor_without <- matrix(x1fl1 + x3fl3+ 0.9998364 )
-   
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
+    linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
     generate_y_indvs <- function(lp){
       ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+      leastOccr <- min(sum(ys), length(ys) - sum(ys))
       count_iter <- 1
       min_occurrence <- round(num_indvs * 0.2)
-      mc_step_size <- min_occurrence * 0.2
       max_iterations <- 500
-      increment_every <- round(max_iterations * 0.2)
-      while (count_iter < max_iterations && (length(ys) - min_occurrence < sum(ys) || sum(ys) < min_occurrence)){
+      while (count_iter < max_iterations && (length(ys) - sum(ys) < min_occurrence || sum(ys) < min_occurrence)){
         count_iter <- count_iter + 1
-        ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
-        if(count_iter %% increment_every){
-          min_occurrence <- min_occurrence - mc_step_size
+        candidate <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+        num1s <- sum(candidate)
+        num0s <- length(ys) - num1s
+        if(leastOccr < min(num0s, num1s)){
+          ys <- candidate
+          leastOccr <- min(num0s, num1s)
         }
       }
       # cat("Y generation count:", count_iter, "\n")

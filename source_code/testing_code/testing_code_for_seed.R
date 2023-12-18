@@ -24,6 +24,7 @@ fl_choice=10
 response_family='bernoulli'
 test_type='Functional'
 klen=3
+
 # mu1_coef=c(-6.67,-2.47,5.42)
 # mu2_coef=c(-3.14,-0.99,3.91)
 
@@ -53,10 +54,12 @@ mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 #MAGIC_NUM_DUM_DUM <<- 0.9968092
 
 MAGIC_NUM_DUM_DUM <<-0.9998364
+
 source("source_code/R/data_generator.R")
 
 #library(fda.usc)
 set.seed(123456) #working
+
 test_noconstant=GenerateCategoricalFDTestIntercept(klen=3, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                    time_interval, fl_choice,
                                                    MAGIC_NUM_DUM_DUM)
@@ -68,6 +71,7 @@ test_result$pvalue
 
 linear_predictor_w=test_noconstant$true$linear_predictor$linearw
 linear_predictor_wo=test_noconstant$true$linear_predictor$linearwo
+
 linear_predictor=c(linear_predictor_w,linear_predictor_wo)
 indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
 Y_indvs=test_noconstant$true$yis
