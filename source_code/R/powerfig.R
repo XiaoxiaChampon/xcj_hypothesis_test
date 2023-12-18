@@ -150,7 +150,7 @@ n100n500t90fl21tofl25$fl_choice <- replace(n100n500t90fl21tofl25$fl_choice,
                                            replacement_values_fl21fl25)
 save(n100n500t90fl21tofl25,file="n100n500t90fl21tofl25.RData")
 
-
+load("n100n500t90fl21tofl25.RData")
 n100n500t90fl21fl25_plot=ggplot(n100n500t90fl21tofl25,
                                     aes(x=fl_choice,y=unlist(power),
                                         color=as.factor(num_subjects),
@@ -158,7 +158,7 @@ n100n500t90fl21fl25_plot=ggplot(n100n500t90fl21tofl25,
     geom_line() +
     facet_grid(. ~ paste0("Test Type: ",test_type))+
     ylab("Power")+
-    xlab(expression(~delta~": Slope deviation from 0"))+
+    xlab(expression(~delta~": Slope"))+
     guides(color = guide_legend(title = "Subjects")) +
     theme(text = element_text(size = 20))  +
     theme(
@@ -222,5 +222,37 @@ xtable(final_table,digits=4)
 n100n500t180fl678212226 =final_table[,1:6]
 n100n500t180fl678212226
 save(n100n500t180fl678212226,file="n100n500t180fl678212226.RData")
+###########################fl 6, 200, 7
+load("EXP2_r5000_cfda2outputstypeI180fl200.RData")
+typeI180fl200=final_table[,1:7]
+typeI180fl200
+xtable(typeI180fl200,digits=4)
+save(typeI180fl200,file="typeI180fl200.RData")
 ###########################
+load("EXP3_r5000_cfda2n300n1000t180typeI.RData")
+n300n1000t180fl7fl200=final_table[,1:7]
+save(n300n1000t180fl7fl200,file="n300n1000t180fl7fl200.RData")
+#######################
+load("EXP6_newintercept_t90fl21fl25power.RData")
+xtable(final_table,digits=4)
+#########################
+load("EXP2_r5000_cfda2outputstypeI180fl200n300.RData")
+xtable(final_table,digits=4)
+n300t180_newintercept_fl6200721 =final_table[,1:7]
+save(n300t180_newintercept_fl6200721,file="n300t180_newintercept_fl6200721.RData")
+#############
+load("EXP4_r5000_cfda2n1000t180typeI.RData")
+xtable(final_table[,1:7],digits=4)
+
+##############
+load("EXP6_newintercept_fl6fl10t90power.RData")
+xtable(final_table[,1:7],digits=4)
+
+
+
+
+
+
+
+
 

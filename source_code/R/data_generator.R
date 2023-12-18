@@ -253,7 +253,7 @@ flx456 <- function(t, x){
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice){
+                                      time_interval, fl_choice, lp_intercept=0.9998364){
   
     mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
@@ -296,6 +296,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                    "4"=list("fl1"=rep(-0.2,timeseries_length),
                             "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
+                   "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   
                    
                    "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                              "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
@@ -356,28 +360,30 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
-    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.6206897 )
-    linear_predictor_without <- matrix(x1fl1 + x3fl3+ 0.6206897 )
-   
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
+    linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
     generate_y_indvs <- function(lp){
       ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+      leastOccr <- min(sum(ys), length(ys) - sum(ys))
       count_iter <- 1
       min_occurrence <- round(num_indvs * 0.2)
-      mc_step_size <- min_occurrence * 0.2
       max_iterations <- 500
-      increment_every <- round(max_iterations * 0.2)
-      while (count_iter < max_iterations && (length(ys) - min_occurrence < sum(ys) || sum(ys) < min_occurrence)){
+      while (count_iter < max_iterations && (length(ys) - sum(ys) < min_occurrence || sum(ys) < min_occurrence)){
         count_iter <- count_iter + 1
-        ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
-        if(count_iter %% increment_every){
-          min_occurrence <- min_occurrence - mc_step_size
+        candidate <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+        num1s <- sum(candidate)
+        num0s <- length(ys) - num1s
+        if(leastOccr < min(num0s, num1s)){
+          ys <- candidate
+          leastOccr <- min(num0s, num1s)
         }
       }
       # cat("Y generation count:", count_iter, "\n")
       return(ys)
     }
     Y_indvs <- generate_y_indvs(linear_predictor)
+    Y_indvs_without <- generate_y_indvs(linear_predictor_without)
     
     prob_ind=1/(1+exp(-linear_predictor))
     
@@ -387,16 +393,163 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs,
+                  "yis_without" = Y_indvs_without,
                   "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
                   "prob_ind"=prob_ind)
    
     return(list("true"=truelist))
 }
 
-
+GenerateCategoricalFDTestIntercept <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                      time_interval, fl_choice, intercept_opt){
+  
+  mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
+  
+  generated_data <- GenerateDataTest(num_indvs = num_indvs,
+                                     timeseries_length = timeseries_length,
+                                     mu_1 = mns$mu_1,
+                                     mu_2 = mns$mu_2,
+                                     score_vals = mns$score_vals,
+                                     start_time = time_interval[1],
+                                     end_time = tail(time_interval,1),
+                                     k = klen)
+  prob_curves <- list(p1 = generated_data$p1, p2 = generated_data$p2, p3 = generated_data$p3)
+  cat_data <- GenerateCategFuncDataUpdate(prob_curves,mu1_coef,mu2_coef)
+  
+  flfn <- switch(fl_choice,
+                 "1"=list("fl1"=rep(0.45,timeseries_length),
+                          "fl2"=rep(0.5,timeseries_length),
+                          "fl3"=rep(-0.51,timeseries_length)),
+                 
+                 "2"=list("fl1"=rep(-0.1,timeseries_length),
+                          "fl2"=matrix(-0.1*fl2f(time_interval),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
+                 #not constant
+                 # fll2=-10*sin((2*pi/25)*(time_interval-1))
+                 # fll3=-20*sin((2*pi/25)*(time_interval-1))-6
+                 "3"=list("fl1"=rep(-0.2,timeseries_length),
+                          # "fl2"=matrix(-0.15*fl2f(time_interval),nrow=timeseries_length,ncol=1),
+                          # "fl3"=matrix(fl3f(time_interval),nrow=timeseries_length,ncol=1)),
+                          "fl2"=matrix(-10*sin((2*pi/25)*(time_interval-1)),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1)),
+                 
+                 "100"=list("fl1"=rep(-0.2,timeseries_length),
+                            # "fl3"=matrix(fl3f(time_interval,),nrow=timeseries_length,ncol=1)),
+                            "fl2"=matrix(flx456(time_interval,mu2_coef),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(flx789(time_interval,mu2_coef),nrow=timeseries_length,ncol=1)),                  
+                 "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 
+                 "4"=list("fl1"=rep(-0.2,timeseries_length),
+                          "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
+                 "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 
+                 
+                 "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                          "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "7"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                          "fl2"=matrix(rep(5,timeseries_length),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "8"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                          "fl2"=matrix(rep(10,timeseries_length),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "9"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                          "fl2"=matrix(rep(15,timeseries_length),nrow=timeseries_length,ncol=1),
+                          "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "10"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(rep(20,timeseries_length),nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 
+                 
+                 "11"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+0*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "12"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+20*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "13"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+40*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "14"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+60*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "15"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+80*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 
+                 "21"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+0*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "22"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+10*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "23"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+20*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "24"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+30*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "25"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+40*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "26"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                           "fl2"=matrix(1+5*time_interval,nrow=timeseries_length,ncol=1),
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1))
+  )
+  
+  vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
+  
+  x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1, equi = TRUE, method = "TRAPZ")})
+  x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
+  x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
+  
+  linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + intercept_opt )
+  linear_predictor_without <- matrix(x1fl1 + x3fl3+ intercept_opt )
+ 
+  
+  generate_y_indvs <- function(lp){
+    ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+    count_iter <- 1
+    min_occurrence <- round(num_indvs * 0.2)
+    mc_step_size <- min_occurrence * 0.2
+    max_iterations <- 500
+    increment_every <- round(max_iterations * 0.2)
+    while (count_iter < max_iterations && (length(ys) - min_occurrence < sum(ys) || sum(ys) < min_occurrence)){
+      count_iter <- count_iter + 1
+      ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+      if(count_iter %% increment_every){
+        min_occurrence <- min_occurrence - mc_step_size
+      }
+    }
+    # cat("Y generation count:", count_iter, "\n")
+    return(ys)
+  }
+  Y_indvs <- generate_y_indvs(linear_predictor)
+  Y_indvs_without <- generate_y_indvs(linear_predictor_without)
+  
+  prob_ind=1/(1+exp(-linear_predictor))
+  
+  truelist=list("TrueX1"=cat_data$X[,,1],
+                "TrueX2"=cat_data$X[,,2],
+                "TrueX3"=cat_data$X[,,3],
+                "Truecatcurve"=cat_data$W,
+                "fl"=flfn,
+                "yis"=Y_indvs,
+                "yis_without" = Y_indvs_without,
+                "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
+                "prob_ind"=prob_ind)
+  
+  return(list("true"=truelist))
+}
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
-                        num_indvs, mu1_coef, mu2_coef, fl_choice,response_family,test_type,
+                        num_indvs, mu1_coef, mu2_coef, fl_choice,
+                        response_family,test_type,
                         klen=3){
   # cat("CFD Testing \nNum Indvs:\t", num_indvs,
   #     "\nTimeseries Len:\t", timeseries_length,

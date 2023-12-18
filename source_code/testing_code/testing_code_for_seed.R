@@ -1,31 +1,80 @@
+#ga1@population[c(7,22),]
+#[,1]       [,2]      [,3]       [,4]      [,5]      [,6]      [,7]
+#[1,] -82.21066  -5.525831 -5.229593 -0.5398613 -42.17238 30.712295 1.0124760
+#[2,] -82.42895 -53.019137 -5.229593 -0.5201384 -42.17238  2.771234 0.9968092
+
+#ga@population[c(6,9,90,91),]
+#[,1]      [,2]     [,3]      [,4]      [,5]     [,6]     [,7]
+#[1,] -22.07539 -2.881389 1.909785 -1.122699 -28.24956 3.959064 1.106851
+#[2,] -15.44999 -2.881389 2.559723 -1.152536 -27.90200 3.903929 1.106851
+#[3,] -21.57212 -2.881389 1.897356 -1.152536 -27.78895 3.952971 1.109069
+#[4,] -22.07539 -2.881389 1.909785 -1.122699 -28.24956 3.959064 1.106851
+
 #extra testing code
 #check
 start_time=0.01
 end_time=0.99
-timeseries_length=90
+timeseries_length=180
 time_interval=seq(start_time,end_time,length=timeseries_length)
 num_indvs=500
 #fl_choice=3 #not constant, expect to reject
-fl_choice=8 #not constant, expect to reject
+#fl_choice=8 #not constant, expect to reject
+
+fl_choice=10
 response_family='bernoulli'
 test_type='Functional'
 klen=3
-mu1_coef=c(-6.67,-2.47,5.42)
-mu2_coef=c(-3.14,-0.99,3.91)
+
+# mu1_coef=c(-6.67,-2.47,5.42)
+# mu2_coef=c(-3.14,-0.99,3.91)
+
+# mu1_coef=c(3.235817 , 3.25827, -1.878708)
+# mu2_coef=c(-1.583016 , -6.915079 , 3.288083)
+# 
+# mu1_coef=c(-40.2339963 , -5.3899194 , -3.1525938  )
+# mu2_coef=c(40.3651894 ,-38.1102743 ,  1.0417336  )
+
+
+# mu1_coef=c(-82.21066 , -5.525831, -5.229593 )
+# mu2_coef=c(-0.5398613, -42.17238, 30.712295  )
+# 
+# mu1_coef=c(-82.42895, -53.019137 ,-5.229593)
+# mu2_coef=c(-0.5201384, -42.17238,  2.771234 )
+
+mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 ###############################################
-MAGIC_NUM_DUM_DUM <<- 0.6206897
+#MAGIC_NUM_DUM_DUM <<- 0.6206897
+
+#MAGIC_NUM_DUM_DUM <<- 0.9057185
+
+# MAGIC_NUM_DUM_DUM <<- 0.2908304
+#MAGIC_NUM_DUM_DUM <<- 1.0124760
+
+#MAGIC_NUM_DUM_DUM <<- 0.9968092
+
+MAGIC_NUM_DUM_DUM <<-0.9998364
+
 source("source_code/R/data_generator.R")
 
+#library(fda.usc)
 set.seed(123456) #working
-test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
-                            num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
-                            klen=3, MAGIC_NUM_DUM_DUM)
-test_noconstant$pvalue
-linear_predictor_w=test_noconstant$linear_predictor$linearw
-linear_predictor_wo=test_noconstant$linear_predictor$linearwo
+
+test_noconstant=GenerateCategoricalFDTestIntercept(klen=3, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                   time_interval, fl_choice,
+                                                   MAGIC_NUM_DUM_DUM)
+
+test_result = cfd_testing(start_time, end_time, timeseries_length,
+                          num_indvs,mu1_coef,mu2_coef,fl_choice,
+                          response_family,test_type, klen=3)
+test_result$pvalue
+
+linear_predictor_w=test_noconstant$true$linear_predictor$linearw
+linear_predictor_wo=test_noconstant$true$linear_predictor$linearwo
+
 linear_predictor=c(linear_predictor_w,linear_predictor_wo)
 indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
-Y_indvs=test_noconstant$yis
+Y_indvs=test_noconstant$true$yis
 
 Y_without = apply(linear_predictor_wo, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
 #table(Y_without)
@@ -36,16 +85,31 @@ Y_perc_wo
 Y_perc_w = table(Y_indvs)/sum(table(Y_indvs))
 Y_perc_w
 
-
-
-intercept_values <- seq(-2,2,length.out=30)
+data_sample=data.frame(linear_predictor,as.factor(indicator))
+colnames(data_sample)=c("linear_predictor","Group")
+library(ggplot2)
+linear_group=ggplot( data_sample, aes(x = linear_predictor, fill=Group, colour = Group)) +
+  geom_histogram(position = "dodge")+
+  #theme(axis.title.x=element_blank())+
+  theme(text = element_text(size = 20))+
+  labs(x = "Linear Predictor")+
+  theme(
+    legend.position = c(.95, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6)
+  )
+linear_group
+#####################
+#GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#time_interval, fl_choice)
+set.seed(123456) #working
+intercept_values <- seq(-2,2,length.out=100)
 result_y <- foreach (intercept_index = 1:length(intercept_values), .combine = cbind, .init = NULL) %dorng% {
   source("source_code/R/data_generator.R")
-  
-  set.seed(123456) #working
-  test_noconstant=cfd_testing(start_time, end_time, timeseries_length,
-                              num_indvs,mu1_coef, mu2_coef,fl_choice,response_family,test_type,
-                              klen=3, intercept_values[intercept_index])
+  test_noconstant=GenerateCategoricalFDTestIntercept(klen=3, mu1_coef,mu2_coef,num_indvs,
+                                            time_interval, fl_choice, 
+                                            intercept_values[intercept_index])
   test_noconstant$pvalue
   linear_predictor_w=test_noconstant$linear_predictor$linearw
   linear_predictor_wo=test_noconstant$linear_predictor$linearwo
@@ -53,7 +117,7 @@ result_y <- foreach (intercept_index = 1:length(intercept_values), .combine = cb
   indicator <- c(rep("With",length(linear_predictor_w)), rep("Without", length(linear_predictor_wo)))
   Y_indvs=test_noconstant$yis
   
-  Y_without = apply(linear_predictor_wo, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+  Y_without = test_noconstant$yis_without
   #table(Y_without)
   Y_perc_wo = table(Y_without)/sum(table(Y_without))
   
