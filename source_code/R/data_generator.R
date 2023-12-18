@@ -547,7 +547,8 @@ GenerateCategoricalFDTestIntercept <- function(klen, mu1_coef,mu2_coef,num_indvs
 }
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
-                        num_indvs, mu1_coef, mu2_coef, fl_choice,response_family,test_type,
+                        num_indvs, mu1_coef, mu2_coef, fl_choice,
+                        response_family,test_type,
                         klen=3){
   # cat("CFD Testing \nNum Indvs:\t", num_indvs,
   #     "\nTimeseries Len:\t", timeseries_length,
