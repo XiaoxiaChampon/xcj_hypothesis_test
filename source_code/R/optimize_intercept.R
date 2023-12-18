@@ -1,4 +1,7 @@
 
+
+devtools::install_github("Evolutionary-Optimization-Laboratory/rmoo")
+library(ecr)
 # ---- For: parallelization ----
 # For: foreach loop
 library(foreach)
@@ -78,11 +81,13 @@ fitness_func <- function(x){
   }
   print(t(x))
   
-  flcs <- c("6", "7", "8", "9", "10")
-  rng <- rngtools::RNGseq( 5 * 3, 1234)
+  flcs <- c("6", "7","8", "9","10")
+  num_fls <- 5
+  num_replications <- 3
+  rng <- rngtools::RNGseq( num_fls * num_replications, 1234)
   
-  flc_result3 <- foreach(flcidx = 1:5, .combine = rbind) %:%
-    foreach(replica_num = 1:3, .combine = cbind, r=rng[(flcidx-1)*5 + 1:5]) %dopar% {
+  flc_result3 <- foreach(flcidx = 1:num_fls, .combine = rbind) %:%
+    foreach(replica_num = 1:num_replications, .combine = cbind, r=rng[(flcidx-1)*num_fls + 1:num_fls]) %dopar% {
         rngtools::setRNG(r)
         source("source_code/R/optimize_essentials.R")
         my_fitness(x[1:3], x[4:6], x[7], flcs[flcidx])
@@ -112,19 +117,20 @@ begin_exp_time <- Sys.time()
 set.seed(123)
 
 ga <- nsga2(type = "real-valued",
-            fitness = fitness_func,
-            nObj = 2,
-            lower = rep(-100.0,7),
-            upper = rep(100.0,7),
-            popSize = 100,
-            summary = FALSE,
-            parallel = FALSE,
-            suggestions = known_candidates,
-            maxiter = 100)
+             fitness = fitness_func,
+             nObj = 2,
+             lower = rep(-100.0,7),
+             upper = rep(100.0,7),
+             popSize = 100,
+             summary = FALSE,
+             parallel = FALSE,
+             #monitor=FALSE,
+             suggestions = known_candidates,
+             maxiter = 100)
 
 summary(ga)
 plot(ga)
-ga_params = list("popSize"=100, "num_indv"=300, "maxiter"=100, "method"="max of medians", "count_iter_indv"=100)
+ga_params = list("flcs"= c("6", "7","8", "9","10"), "popSize"=100, "num_indv"=300, "maxiter"=100, "method"="max of medians", "count_iter_indv"=100)
 save(ga, ga_params, file="ga_run.RData")
 
 end_exp_time <- Sys.time()
