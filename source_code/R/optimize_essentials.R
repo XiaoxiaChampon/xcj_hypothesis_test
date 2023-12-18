@@ -138,7 +138,7 @@ GenerateCategFuncDataUpdate <- function(prob_curves,mu1_coef,mu2_coef)
     numcat <- length(catorder)
     refcat <- catorder[numcat]
     # print("W_StartWhile")
-    while (count_iter_indv < 200 && 
+    while (count_iter_indv < 100 && 
            ( (numcat < length(Q_vals))
              ||(timeseries_length==300  && min(as.numeric(tolcat)) < 4)
              ||(timeseries_length==750  && min(as.numeric(tolcat)) < 10)
@@ -369,6 +369,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
   
   truelist=list("yis"=Y_indvs,
                 "yis_without" = Y_indvs_without,
+                "Truecatcurve"=cat_data$W,
                 "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without))
   
   return(truelist)
@@ -377,7 +378,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
 my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
   timeseries_length = 180
   timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 500, timeseries_length, timestamps01, flc, intercept)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 300, timeseries_length, timestamps01, flc, intercept)
   
   tab_y <- table(results$yis)
   tab_y <- tab_y / sum(tab_y)
@@ -391,10 +392,21 @@ my_fitness <- function(mu1_coef, mu2_coef, intercept, flc){
   }
   
   balance_penalty <- balance01
+  if(balance_penalty < 0.25){
+    balance_penalty <- 0.25
+  }
   
   lp_distance <- abs(mean(results$linear_predictor$linearw) - mean(results$linear_predictor$linearwo))
   
   distance_penalty <- -lp_distance
+  if(distance_penalty < -1.3){
+    distance_penalty <- -1.3
+  }
+  
+  categories_in_w <- length(table(array(unlist(results$Truecatcurve))))
+  if(categories_in_w < 3){
+    distance_penalty <- 1
+  }
   
   minimizing_fitness <- cbind(balance_penalty, distance_penalty)
   return(minimizing_fitness)
