@@ -253,7 +253,7 @@ flx456 <- function(t, x){
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice){
+                                      time_interval, fl_choice, lp_intercept=0.6206897){
   
     mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
@@ -296,6 +296,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                    "4"=list("fl1"=rep(-0.2,timeseries_length),
                             "fl2"=matrix(1.23+1.56*time_interval+0.58*time_interval^2,nrow=timeseries_length,ncol=1),
                             "fl3"=matrix(-1.86-5.03*time_interval+3.68*time_interval^2,nrow=timeseries_length,ncol=1)),
+                   "200"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
+                            "fl2"=matrix(rep(2.5,timeseries_length),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                   
                    
                    "6"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                              "fl2"=matrix(rep(0,timeseries_length),nrow=timeseries_length,ncol=1),
@@ -356,28 +360,31 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     
-    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + 0.6206897 )
-    linear_predictor_without <- matrix(x1fl1 + x3fl3+ 0.6206897 )
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
+    linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
    
     generate_y_indvs <- function(lp){
       ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+      leastOccr <- min(sum(ys), length(ys) - sum(ys))
       count_iter <- 1
       min_occurrence <- round(num_indvs * 0.2)
-      mc_step_size <- min_occurrence * 0.2
       max_iterations <- 500
-      increment_every <- round(max_iterations * 0.2)
-      while (count_iter < max_iterations && (length(ys) - min_occurrence < sum(ys) || sum(ys) < min_occurrence)){
+      while (count_iter < max_iterations && (length(ys) - sum(ys) < min_occurrence || sum(ys) < min_occurrence)){
         count_iter <- count_iter + 1
-        ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
-        if(count_iter %% increment_every){
-          min_occurrence <- min_occurrence - mc_step_size
+        candidate <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+        num1s <- sum(candidate)
+        num0s <- length(ys) - num1s
+        if(leastOccr < min(num0s, num1s)){
+          ys <- candidate
+          leastOccr <- min(num0s, num1s)
         }
       }
       # cat("Y generation count:", count_iter, "\n")
       return(ys)
     }
     Y_indvs <- generate_y_indvs(linear_predictor)
+    Y_indvs_without <- generate_y_indvs(linear_predictor_without)
     
     prob_ind=1/(1+exp(-linear_predictor))
     
@@ -387,12 +394,12 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs,
+                  "yis_without" = Y_indvs_without,
                   "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
                   "prob_ind"=prob_ind)
    
     return(list("true"=truelist))
 }
-
 
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
