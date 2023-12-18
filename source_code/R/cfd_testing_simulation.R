@@ -118,8 +118,8 @@ run_experiment_hypothesis <- function(exp_idx,
                                       test_type,
                                       num_replicas = 5000,
                                       alpha = 0.05){
-  mu1_coef=c(-6.67,-2.47,5.42)
-  mu2_coef=c(-3.14,-0.99,3.91)
+  mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+  mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
   exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
         "\n timeserires_length:\t",timeseries_length,
         "\n fl_choice:\t",fl_choice,
@@ -153,13 +153,14 @@ run_experiment_hypothesis <- function(exp_idx,
                                                     ".RData"))
   non_null_count <- dim(simulation_pvalues)[2]
   power <- mean(simulation_pvalues[1,] < alpha)
-  power_se <- sd(simulation_pvalues[1,])/sqrt(non_null_count)
+  power_se <- sqrt(power*(1-power))/sqrt(non_null_count)
   ############
   power_01 <- mean(simulation_pvalues[1,] < 0.1)
+  power_se01 <- sqrt(power_01*(1-power_01))/sqrt(non_null_count)
   ##############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
-  return(list("power"=power,"se"=power_se,"power_01"=power_01 , "NAs"=num_replicas - non_null_count))
+  return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01, "NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
@@ -173,7 +174,7 @@ run_experiment_hypothesis <- function(exp_idx,
 begin_exp_time <- Sys.time()
 
 set.seed(123456)
-subjects_vector <- c(300, 1000)
+subjects_vector <- c(100, 500)
 time_length_vector <- c(180)
 fl_choice_vector <- c("7", "200")
 test_type_vector <- c("Inclusion", "Functional")
