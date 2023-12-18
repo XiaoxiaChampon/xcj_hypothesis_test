@@ -244,6 +244,9 @@ save(n300t180_newintercept_fl6200721,file="n300t180_newintercept_fl6200721.RData
 load("EXP4_r5000_cfda2n1000t180typeI.RData")
 xtable(final_table[,1:7],digits=4)
 
+##############
+load("EXP6_newintercept_fl6fl10t90power.RData")
+xtable(final_table[,1:7],digits=4)
 
 
 
