@@ -359,7 +359,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1, equi = TRUE, method = "TRAPZ")})
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
-    
+    #lp_intercept= 0.6206897
     linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
     linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    

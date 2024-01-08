@@ -118,6 +118,10 @@ run_experiment_hypothesis <- function(exp_idx,
                                       test_type,
                                       num_replicas = 5000,
                                       alpha = 0.05){
+  
+  # mu1_coef=c(-6.67,-2.47,5.42)
+  # mu2_coef=c(-3.14,-0.99,3.91)
+  
   mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
   mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
   exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
@@ -159,12 +163,15 @@ run_experiment_hypothesis <- function(exp_idx,
   power_se01 <- sqrt(power_01*(1-power_01)/non_null_count)
   ##############
   yip_mean= mean(simulation_pvalues[2,])
+  yip_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
   yip_wo_mean= mean(simulation_pvalues[3,])
+  yip_wo_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
   ##############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
   return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
-              "yip_mean"=yip_mean,"yip_wo_mean"=yip_wo_mean,"NAs"=num_replicas - non_null_count))
+              "yip_mean"=yip_mean,"yip_wo_mean"=yip_wo_mean,"yip_sd"=yip_sd,
+              "yip_wo_sd"=yip_wo_sd,"NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
@@ -178,13 +185,30 @@ run_experiment_hypothesis <- function(exp_idx,
 begin_exp_time <- Sys.time()
 
 set.seed(123456)
-subjects_vector <- c(100, 500)
-time_length_vector <- c(90)
-fl_choice_vector <- c("6","200","7", "8","9","10")
-test_type_vector <- c("Inclusion", "Functional")
 
-ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
+
+generate_ed_table <- function(subjects_vector = c(100, 500,1000),
+                               time_length_vector = c(90),
+                               fl_choice_vector = c("6"),
+                               test_type_vector = c("Inclusion", "Functional")){
+  ed_table_ret <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
+  return(ed_table_ret)
+}
+
+########
+#type I error rate
+# ed_table1=generate_ed_table()
+# ed_table2=generate_ed_table(fl_choice_vector = c("200","7", "8","9","10"),
+#                             test_type_vector = c("Functional"))
+# ed_table <- rbind(ed_table1,ed_table2)
+
+###################
+#power
+ed_table <- generate_ed_table(fl_choice_vector = c("6","7", "8","9","10","21","22","23","24","25","14","15"))
+###################
+
 colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")
+
 
 all_experiment_outputs <- list()
 for (row_index in 1:dim(ed_table)[1]){
@@ -209,7 +233,7 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP3_r5000_cfda2jan.RData")
+save(final_table,mu1_coef,mu2_coef,file = "EXP3_r5000_cfda2jan.RData")
 
 end_exp_time <- Sys.time()
 
