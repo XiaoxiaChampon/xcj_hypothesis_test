@@ -562,14 +562,15 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                              timeseries_length = timeseries_length,
                                              time_interval = timestamps01,
                                              fl_choice=fl_choice)
-  
+  yip=sum(cfd_test_data$true$yis)/num_indvs
+  yip_wo=sum(cfd_test_data$true$yis_without)/num_indvs
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
   
-  return(list("pvalue"=result$pvalue))
+  return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo))
 
   # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
   #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,

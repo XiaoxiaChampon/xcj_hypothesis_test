@@ -84,7 +84,7 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
                           test_type, klen=3)
     
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
-    return(list("pvalue"=result$pvalue))
+    return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo))
   } 
   return(result_all)
   
@@ -143,8 +143,8 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            response_family='bernoulli',test_type='Functional',
 #                                            klen=3)
   
-  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=1)
-  save(simulation_pvalues, file = paste0("./outputs/simpvals3",
+  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
+  save(simulation_pvalues, file = paste0("./outputsjan/simpvals3",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -153,14 +153,18 @@ run_experiment_hypothesis <- function(exp_idx,
                                                     ".RData"))
   non_null_count <- dim(simulation_pvalues)[2]
   power <- mean(simulation_pvalues[1,] < alpha)
-  power_se <- sqrt(power*(1-power))/sqrt(non_null_count)
+  power_se <- sqrt(power*(1-power)/non_null_count)
   ############
   power_01 <- mean(simulation_pvalues[1,] < 0.1)
-  power_se01 <- sqrt(power_01*(1-power_01))/sqrt(non_null_count)
+  power_se01 <- sqrt(power_01*(1-power_01)/non_null_count)
+  ##############
+  yip_mean= mean(simulation_pvalues[2,])
+  yip_wo_mean= mean(simulation_pvalues[3,])
   ##############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
-  return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01, "NAs"=num_replicas - non_null_count))
+  return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
+              "yip_mean"=yip_mean,"yip_wo_mean"=yip_wo_mean,"NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
@@ -175,8 +179,8 @@ begin_exp_time <- Sys.time()
 
 set.seed(123456)
 subjects_vector <- c(100, 500)
-time_length_vector <- c(180)
-fl_choice_vector <- c("7", "200")
+time_length_vector <- c(90)
+fl_choice_vector <- c("6","200","7", "8","9","10")
 test_type_vector <- c("Inclusion", "Functional")
 
 ed_table <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
@@ -193,7 +197,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                   timeseries_length,
                                                   fl_choice,
                                                   test_type )
-  save(experiment_output, file = paste0("./outputs/exp3_", 
+  save(experiment_output, file = paste0("./outputsjan/exp3_", 
                                        "_i", row_index, 
                                        "_fl", fl_choice, 
                                        "_ttype", test_type, 
@@ -205,7 +209,7 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
-save(final_table, file = "EXP3_r5000_cfda2.RData")
+save(final_table, file = "EXP3_r5000_cfda2jan.RData")
 
 end_exp_time <- Sys.time()
 

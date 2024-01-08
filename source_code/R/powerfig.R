@@ -248,11 +248,47 @@ xtable(final_table[,1:7],digits=4)
 load("EXP6_newintercept_fl6fl10t90power.RData")
 xtable(final_table[,1:7],digits=4)
 
+################
+#final mu1, mu2
+load("EXP7_outputfl6fl10.RData")
+library(xtable)
+xtable(final_table[,1:7],digits=4)
+
+n100n500t180fl6fl10finalmu = final_table[,1:8]
+save(n100n500t180fl6fl10finalmu,file="n100n500t180fl6fl10finalmu.RData")
 
 
+#################
+load("EXP8_outputfl21fl25.RData")
+xtable(final_table[,1:8],digits=4)
+n100n500t180fl21fl25finalmu = final_table[,1:8]
+save(n100n500t180fl21fl25finalmu,file="n100n500t180fl21fl25finalmu.RData")
+#########
+load("EXP9_outputfl6200fl7.RData")
+xtable(final_table[,1:8],digits=4)
+n100n500t180fl6fl200fl7finalmu = final_table[,1:8]
+save(n100n500t180fl6fl200fl7finalmu,file="n100n500t180fl6fl200fl7finalmu.RData")
+#############################
+load("EXP9_outputfl11fl15.RData")
+xtable(final_table[,1:8],digits=4)
+n100n500t180fl11fl15finalmu = final_table[,1:8]
+save(n100n500t180fl11fl15finalmu,file="n100n500t180fl11fl15finalmu.RData")
 
+###
+load("typeI_censor_balance.RData")
+xtable(typeI_censor_balance)
+###3
+load("typeI_censor_unbalance.RData")
+xtable(typeI_censor_unbalance)
 
+###
+load("power_censor_balance.RData")
+xtable(power_censor_balance)
 
+#
+load("power_censor_unbalance.RData")
+xtable(power_censor_unbalance)
 
+######
 
 

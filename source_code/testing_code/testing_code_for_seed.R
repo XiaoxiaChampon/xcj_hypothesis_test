@@ -14,7 +14,7 @@
 #check
 start_time=0.01
 end_time=0.99
-timeseries_length=180
+timeseries_length=90
 time_interval=seq(start_time,end_time,length=timeseries_length)
 num_indvs=500
 #fl_choice=3 #not constant, expect to reject
