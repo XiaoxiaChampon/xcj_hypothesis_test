@@ -102,7 +102,7 @@ ga <- nsga2(type = "real-valued",
 
 summary(ga)
 plot(ga)
-
+save(ga, file = "ga_run_main.RData")
 
 end_exp_time <- Sys.time()
 
