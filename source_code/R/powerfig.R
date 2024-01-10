@@ -45,9 +45,14 @@ str(n100n500t90t300deltapower)
 conditions <- c(1, 2,3, 4,5)
 replacement_values <- c(0, 5,10,15,20)
 
+replace_all <- function(old_vector, old_values, new_values){
+    c(new_values, old_vector)[match(old_vector, c(old_values, old_vector))]
+}
+
 # Use replace() to replace the names in the 'Names' column
-n100n500t90t300deltapower$fl_choice <- replace(n100n500t90t300deltapower$fl_choice, 
-                                               n100n500t90t300deltapower$fl_choice %in% conditions, replacement_values)
+n100n500t90t300deltapower$fl_choice <- replace_all(n100n500t90t300deltapower$fl_choice, 
+                                                   conditions, 
+                                                   replacement_values)
 
 save(n100n500t90t300deltapower,file="n100n500t90t300deltapower.RData")
 ####################################################
@@ -117,7 +122,7 @@ n100ton500t90deltapower_plot=ggplot(n100ton500_t90_final,
     geom_line() +
     facet_grid(. ~ paste0("Test Type: ",test_type))+
     ylab("Power")+
-    xlab(expression(~delta~": Slope deviation from 0"))+
+    xlab(expression(~1~"+"~delta~": Slope deviation from 0"))+
     guides(color = guide_legend(title = "Subjects")) +
     theme(text = element_text(size = 20))  +
     theme(
@@ -275,20 +280,133 @@ n100n500t180fl11fl15finalmu = final_table[,1:8]
 save(n100n500t180fl11fl15finalmu,file="n100n500t180fl11fl15finalmu.RData")
 
 ###
-load("typeI_censor_balance.RData")
-xtable(typeI_censor_balance)
-###3
-load("typeI_censor_unbalance.RData")
-xtable(typeI_censor_unbalance)
+# load("typeI_censor_balance.RData")
+# xtable(typeI_censor_balance)
+# ###3
+# load("typeI_censor_unbalance.RData")
+# xtable(typeI_censor_unbalance)
+# 
+# ###
+# load("power_censor_balance.RData")
+# xtable(power_censor_balance)
+# 
+# #
+# load("power_censor_unbalance.RData")
+# xtable(power_censor_unbalance)
 
-###
-load("power_censor_balance.RData")
-xtable(power_censor_balance)
+######Jan 9, 2024
+load("EXP3_r5000_cfda2jan.RData")
+library(xtable)
+xtable(final_table,digits = 4)
+power_curve_final=final_table
+save(power_curve_final,file="power_curve.RData")
+#########
 
-#
-load("power_censor_unbalance.RData")
-xtable(power_censor_unbalance)
+# Define the conditions and replacement values
+conditions <- c(6, 7,8, 9,10)
 
-######
+power_by_time=power_curve_final[power_curve_final$fl_choice %in% conditions,]
 
+replacement_values <- c(0, 5,10,15,20)
 
+# Use replace() to replace the names in the 'Names' column
+power_by_time$fl_choice <- replace_all(power_by_time$fl_choice, 
+                                       conditions, 
+                                       replacement_values)
+#########
+save(power_by_time,file="power_by_time.RData")
+####################################################
+library(ggplot2)
+
+power_by_time_plot=ggplot(power_by_time,
+                                      aes(x=fl_choice,y=unlist(power),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(. ~ paste0("Time Points: ",as.factor(num_timepoints)))+
+    ylab("Power")+
+    xlab(expression(~delta~": Deivation from 0"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )
+power_by_time_plot
+ggsave("power_by_time_plot.png")
+########
+power_by_time_plot_01=ggplot(power_by_time,
+                          aes(x=fl_choice,y=unlist(power_01),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(. ~ paste0("Time Points: ",as.factor(num_timepoints)))+
+    ylab("Power")+
+    xlab(expression(~delta~": Deivation from 0"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )
+power_by_time_plot_01
+ggsave("power_by_time_plot_01.png")
+###############################################
+conditions_more <- c(6, 7,8, 9,10,14,15)
+power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more,]
+power_by_test_type
+
+# Define the conditions and replacement values
+conditions_rep=c(21,22,23,24,25)
+replacement_values_fl <- c(0,10, 20,30,40)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_test_type$fl_choice <- replace_all(power_by_test_type$fl_choice, 
+                                          conditions_rep,
+                                          replacement_values_fl)
+####graph the power
+#power_by_test_type$test_type <- c('"Test Type"*beta*" (t)= c"', '"Test Type"*beta*" (t)= 0"')[power_by_test_type$test_type]
+
+save(power_by_test_type,file="power_by_test_type.RData")
+power_by_test_type_plot=ggplot(power_by_test_type,
+                                    aes(x=fl_choice,y=unlist(power),
+                                        color=as.factor(num_subjects),
+                                        shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(. ~ paste0("Test Type: ",test_type))+
+    #facet_grid(. ~ test_type,labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~1~"+"~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )
+power_by_test_type_plot
+ggsave("power_by_test_type_plot.png")
+#power 01
+power_by_test_type_plot_01=ggplot(power_by_test_type,
+                               aes(x=fl_choice,y=unlist(power_01),
+                                   color=as.factor(num_subjects),
+                                   shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(. ~ paste0("Test Type: ",test_type))+
+    #facet_grid(. ~ test_type,labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~1~"+"~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )
+power_by_test_type_plot_01
+ggsave("power_by_test_type_plot_01.png")
+#############################
+load("EXP3_typeIJAN.RData")
+xtable(final_table,digits = 4)
