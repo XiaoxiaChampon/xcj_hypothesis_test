@@ -187,7 +187,7 @@ begin_exp_time <- Sys.time()
 set.seed(123456)
 
 
-generate_ed_table <- function(subjects_vector = c(100, 500,1000),
+generate_ed_table <- function(subjects_vector = c(1000, 500,100),
                                time_length_vector = c(90),
                                fl_choice_vector = c("6"),
                                test_type_vector = c("Inclusion", "Functional")){
@@ -204,7 +204,11 @@ generate_ed_table <- function(subjects_vector = c(100, 500,1000),
 
 ###################
 #power
-ed_table <- generate_ed_table(fl_choice_vector = c("6","7", "8","9","10","21","22","23","24","25","14","15"))
+ed_table1 <- generate_ed_table(fl_choice_vector = c("6","7", "8","9","10"),
+                               time_length_vector = c(180,90),
+                               test_type_vector = c("Inclusion"))
+ed_table2 <- generate_ed_table(fl_choice_vector = c("21","22","23","24","25","14","15"))
+ed_table <- rbind(ed_table1,ed_table2)
 ###################
 
 colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")
@@ -233,6 +237,8 @@ for (row_index in 1:dim(ed_table)[1]){
 
 final_table <- cbind(ed_table, all_experiment_outputs)
 
+mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 save(final_table,mu1_coef,mu2_coef,file = "EXP3_r5000_cfda2jan.RData")
 
 end_exp_time <- Sys.time()
