@@ -376,7 +376,7 @@ power_by_test_type_plot=ggplot(power_by_test_type,
     facet_grid(. ~ paste0("Test Type: ",test_type))+
     #facet_grid(. ~ test_type,labeller = label_parsed)+
     ylab("Power")+
-    xlab(expression(~1~"+"~delta))+
+    xlab(expression(~1~"+"~delta~"t"))+
     guides(color = guide_legend(title = "Subjects")) +
     theme(text = element_text(size = 20))  +
     theme(
@@ -396,7 +396,7 @@ power_by_test_type_plot_01=ggplot(power_by_test_type,
     facet_grid(. ~ paste0("Test Type: ",test_type))+
     #facet_grid(. ~ test_type,labeller = label_parsed)+
     ylab("Power")+
-    xlab(expression(~1~"+"~delta))+
+    xlab(expression(~1~"+"~delta~"t"))+
     guides(color = guide_legend(title = "Subjects")) +
     theme(text = element_text(size = 20))  +
     theme(
@@ -408,5 +408,16 @@ power_by_test_type_plot_01=ggplot(power_by_test_type,
 power_by_test_type_plot_01
 ggsave("power_by_test_type_plot_01.png")
 #############################
+#typeI
 load("EXP3_typeIJAN.RData")
+xtable(final_table,digits = 4)
+#######################
+#type I 300
+load("EXP3_r5000_cfda2jan2.RData")
+xtable(final_table,digits = 4)
+######################
+load("EXP3_typeIJAN300.RData")
+xtable(final_table,digits = 4)
+##############
+load("EXP3_typeIJAN3002.RData")
 xtable(final_table,digits = 4)
