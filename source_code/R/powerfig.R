@@ -421,3 +421,27 @@ xtable(final_table,digits = 4)
 ##############
 load("EXP3_typeIJAN3002.RData")
 xtable(final_table,digits = 4)
+#############
+load("EXP3_typeIJAN1000.RData")
+xtable(final_table,digits = 4)
+###########################
+load("EXP3_typeIJANFULL.RData")
+library(xtable)
+xtable(final_table,digits = 4)
+check_100=final_table[final_table$num_subjects==100,]
+check_300=final_table[final_table$num_subjects==300,]
+check_500=final_table[final_table$num_subjects==500,]
+check_700=final_table[final_table$num_subjects==700,]
+
+
+load("EXP3_typeIJANFULLpower.RData")
+#library(xtable)
+xtable(final_table,digits = 4)
+check_100p=final_table[final_table$num_subjects==100,]
+check_300p=final_table[final_table$num_subjects==300,]
+check_500p=final_table[final_table$num_subjects==500,]
+check_700=final_table[final_table$num_subjects==700,]
+check_1000=final_table[final_table$num_subjects==1000,]
+
+
+
