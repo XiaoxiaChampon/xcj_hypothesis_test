@@ -359,7 +359,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x1fl1 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, flfn$fl1, equi = TRUE, method = "TRAPZ")})
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
-    
+    #lp_intercept= 0.6206897
     linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
     linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
@@ -562,14 +562,15 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                              timeseries_length = timeseries_length,
                                              time_interval = timestamps01,
                                              fl_choice=fl_choice)
-  
+  yip=sum(cfd_test_data$true$yis)/num_indvs
+  yip_wo=sum(cfd_test_data$true$yis_without)/num_indvs
   result <- cfd_hypothesis_test(cfd_test_data$true$yis,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
   
-  return(list("pvalue"=result$pvalue))
+  return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo))
 
   # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
   #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
