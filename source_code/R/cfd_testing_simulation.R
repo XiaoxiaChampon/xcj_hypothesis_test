@@ -38,6 +38,7 @@ library("glmmVCtest")
 library(RLRsim)
 library(MASS)
 library(splines)
+library(mgcv)
 
 
 # ---- For: parallelization ----
