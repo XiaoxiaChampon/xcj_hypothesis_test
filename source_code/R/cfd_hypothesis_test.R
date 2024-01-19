@@ -27,7 +27,7 @@
 # Date: 10/26/2023
 #
 ##############################################################
-
+library(mgcv)
 #' Create directories
 if (!dir.exists("outputs")){
   dir.create("outputs")
