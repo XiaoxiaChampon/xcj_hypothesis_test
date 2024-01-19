@@ -198,7 +198,7 @@ generate_ed_table <- function(subjects_vector = c(1000, 500,100),
 ########
 #type I error rate
 # ed_table1=generate_ed_table()
-# ed_table2=generate_ed_table(fl_choice_vector = c("200","7", "8","9","10"),
+# ed_table2=generate_ed_table(fl_choice_vector = c("200","7", "8","9","10","21"),
 #                             test_type_vector = c("Functional"))
 # ed_table <- rbind(ed_table1,ed_table2)
 
