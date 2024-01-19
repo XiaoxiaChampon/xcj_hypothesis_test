@@ -90,24 +90,24 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   
 }
 
-cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
-                                               mu1_coef,mu2_coef,num_indvs,fl_choice,response_family,test_type,
-                                    klen=3){
-  # cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
-  source("source_code/R/data_generator.R")
-  p_value=c(0)
-  test_stats=c(0)
-  # browser("mystop")
-  for (i in 1:num_replicas){
-    print( i)
-    result <- cfd_testing(start_time, end_time, timeseries_length,
-                          num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
-    p_value[i]=result$pvalue
-    test_stats[i]=result$test_statistics
-  }
-
-  return(list("pvalue"=p_value,"teststat"=test_stats))
-}
+# cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
+#                                                mu1_coef,mu2_coef,num_indvs,fl_choice,response_family,test_type,
+#                                     klen=3){
+#   # cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
+#   source("source_code/R/data_generator.R")
+#   p_value=c(0)
+#   test_stats=c(0)
+#   # browser("mystop")
+#   for (i in 1:num_replicas){
+#     print( i)
+#     result <- cfd_testing(start_time, end_time, timeseries_length,
+#                           num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,test_type, klen=3)
+#     p_value[i]=result$pvalue
+#     test_stats[i]=result$test_statistics
+#   }
+# 
+#   return(list("pvalue"=p_value,"teststat"=test_stats))
+# }
 
 
 source("source_code/R/time_track_function.R")

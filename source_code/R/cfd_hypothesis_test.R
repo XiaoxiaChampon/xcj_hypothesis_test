@@ -102,17 +102,24 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   #' effect set to zero under the null hypothesis, while \code{mA} and \code{m0}
   #' are the models under the alternative and the null, respectively. 
   
-  alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+  # alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+  # 
+  # result_try <- try(test.aRLRT(alternative_fit), silent=T)
+  # 
+  # if(is.atomic(result_try)){
+  #   return(list(statistics=NULL, pvalue=NULL))
+  # }
+  # 
+  # result <- result_try$aRLRT 
   
-  result_try <- try(test.aRLRT(alternative_fit), silent=T)
-
-  if(is.atomic(result_try)){
-    return(list(statistics=NULL, pvalue=NULL))
-  }
+  gam_test <- gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+                     s(Zmat_test_type_2$Zmat, bs = 're')+ s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial')
   
-  result <- result_try$aRLRT 
   
-  return(list(statistics=result$statistic, pvalue=result$p.value))
+ 
+  #return(list(statistics=result$statistic, pvalue=result$p.value))
+  
+  return(list(statistics=gam_test[1,3], pvalue=gam_test[1,4]))
 }
 
 
