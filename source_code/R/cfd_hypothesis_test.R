@@ -65,6 +65,10 @@ GetXFromW <- function(W)
 #' @return list: statistics is test statistics, pvalue
 cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type){
   #X will be n*t*Q
+  # Y=cfd_test_data$true$yis
+  # cfd=cfd_test_data$true$Truecatcurve
+  
+  
   X_cfd <- GetXFromW(cfd)
   
   num_indvs <- length(Y)
@@ -112,14 +116,16 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   # 
   # result <- result_try$aRLRT 
   
-  gam_test <- gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
-                     s(Zmat_test_type_2$Zmat, bs = 're')+ s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial')
+  gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+                     s(Zmat_test_type_2$Zmat, bs = 're')+ 
+                         s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial'))
   
-  
+  if('try-error' %in% class(gam_test)){return(list(statistics=NULL, pvalue=NULL))}
  
   #return(list(statistics=result$statistic, pvalue=result$p.value))
   
-  return(list(statistics=gam_test[1,3], pvalue=gam_test[1,4]))
+  return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
+              statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
 }
 
 

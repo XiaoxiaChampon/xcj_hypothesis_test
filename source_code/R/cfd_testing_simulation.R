@@ -85,11 +85,13 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
                           test_type, klen=3)
     
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
-    return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo))
+    return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
   } 
   return(result_all)
   
 }
+
+
 
 # cfd_testing_simulation_no_paralel <- function (num_replicas, start_time, end_time, timeseries_length,
 #                                                mu1_coef,mu2_coef,num_indvs,fl_choice,response_family,test_type,
@@ -117,7 +119,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       timeseries_length,
                                       fl_choice,
                                       test_type,
-                                      num_replicas = 5000,
+                                      num_replicas = 5,
                                       alpha = 0.05){
   
   # mu1_coef=c(-6.67,-2.47,5.42)
@@ -148,7 +150,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            response_family='bernoulli',test_type='Functional',
 #                                            klen=3)
   
-  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
+  simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=4)
   save(simulation_pvalues, file = paste0("./outputsjan/simpvals3",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
@@ -168,11 +170,17 @@ run_experiment_hypothesis <- function(exp_idx,
   yip_wo_mean= mean(simulation_pvalues[3,])
   yip_wo_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
   ##############
+  power2 <- mean(simulation_pvalues[4,] < alpha)
+  power2_se <- sqrt(power4*(1-power4)/non_null_count)
+  power_012 <- mean(simulation_pvalues[4,] < 0.1)
+  power_se012 <- sqrt(power_012*(1-power_012)/non_null_count)
+  ############
   # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
   timeKeeperNext()
   return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
               "yip_mean"=yip_mean,"yip_wo_mean"=yip_wo_mean,"yip_sd"=yip_sd,
-              "yip_wo_sd"=yip_wo_sd,"NAs"=num_replicas - non_null_count))
+              "yip_wo_sd"=yip_wo_sd,"power2"=power2,"se2"=power2_se,"power_012"=power_012 ,
+              "se012"=power_se012,"NAs"=num_replicas - non_null_count))
 }
 
 # run_experiment_hypothesis( 0,
@@ -180,7 +188,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                            300,
 #                            "11",
 #                            "Functional",
-#                            num_replicas = 50,
+#                            num_replicas = 5,
 #                            alpha = 0.05 )
 
 begin_exp_time <- Sys.time()
@@ -188,7 +196,7 @@ begin_exp_time <- Sys.time()
 set.seed(123456)
 
 
-generate_ed_table <- function(subjects_vector = c(1000, 500,100),
+generate_ed_table <- function(subjects_vector = c(500),
                                time_length_vector = c(90),
                                fl_choice_vector = c("6"),
                                test_type_vector = c("Inclusion", "Functional")){
@@ -198,7 +206,7 @@ generate_ed_table <- function(subjects_vector = c(1000, 500,100),
 
 ########
 #type I error rate
-# ed_table1=generate_ed_table()
+ ed_table1=generate_ed_table()
 # ed_table2=generate_ed_table(fl_choice_vector = c("200","7", "8","9","10","21"),
 #                             test_type_vector = c("Functional"))
 # ed_table <- rbind(ed_table1,ed_table2)

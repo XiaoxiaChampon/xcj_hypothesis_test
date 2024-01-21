@@ -25,6 +25,24 @@ response_family='bernoulli'
 test_type='Functional'
 klen=3
 
+# cfd_testing_simulation  (num_replicas, start_time, end_time, timeseries_length,
+#                                     mu1_coef, mu2_coef,
+#                                     num_indvs,fl_choice,response_family,test_type,
+#                                     klen=3)
+#test gam
+###################
+cfd_testing_simulation  (2, start_time, end_time, timeseries_length,
+                         mu1_coef, mu2_coef,
+                         num_indvs,fl_choice,response_family,test_type,
+                         klen=3)
+
+
+
+
+
+
+
+
 # mu1_coef=c(-6.67,-2.47,5.42)
 # mu2_coef=c(-3.14,-0.99,3.91)
 

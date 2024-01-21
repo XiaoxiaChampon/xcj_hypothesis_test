@@ -570,7 +570,7 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 response_family=response_family,
                                 test_type=test_type)
   
-  return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo))
+  return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo,"pvalue2"=result$pvalue2))
 
   # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,
   #             "yis"=cfd_test_data$true$yis,"flt"=cfd_test_data$true$fl,
