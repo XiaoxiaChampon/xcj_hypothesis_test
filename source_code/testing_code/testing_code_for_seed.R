@@ -31,15 +31,26 @@ klen=3
 #                                     klen=3)
 #test gam
 ###################
-cfd_testing_simulation  (2, start_time, end_time, timeseries_length,
+set.seed(12345)
+simulation_scenarios=cfd_testing_simulation  (5, start_time, end_time, timeseries_length,
                          mu1_coef, mu2_coef,
                          num_indvs,fl_choice,response_family,test_type,
                          klen=3)
+simulation_scenarios
+# CFD Testing Simulation 
+# Num Replicas:	 2        result.1  result.2 
+# pvalue  0.8260399 0.9997685
+# yip     0.652     0.658    
+# yip_wo  0.358     0.41     
+# pvalue2 0.4502666 0.9716266
+# attr(,"doRNG_version")
+# [1] "1.7.4"
+simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=4)
 
 
-
-
-
+non_null_count <- dim(simulation_pvalues)[2]
+power <- mean(simulation_pvalues[1,] < alpha)
+power_se <- sqrt(power*(1-power)/non_null_count)
 
 
 

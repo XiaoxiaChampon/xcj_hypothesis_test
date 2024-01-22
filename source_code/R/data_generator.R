@@ -569,7 +569,7 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 time_interval = timestamps01,
                                 response_family=response_family,
                                 test_type=test_type)
-  
+  #save(result, file = "result2.RData")
   return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo,"pvalue2"=result$pvalue2))
 
   # return(list("pvalue"=result$pvalue,"test_statistics"=result$statistics,

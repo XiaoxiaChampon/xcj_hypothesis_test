@@ -38,8 +38,6 @@ library("glmmVCtest")
 library(RLRsim)
 library(MASS)
 library(splines)
-library(mgcv)
-
 
 # ---- For: parallelization ----
 # For: foreach loop
@@ -76,13 +74,15 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
                                     num_indvs,fl_choice,response_family,test_type,
                                     klen=3){
   cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
-  
+  #num_replicas=2
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                        .packages=c("splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
+                        .packages=c("glmmVCtest","splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
+  # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
     source("source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
                           num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,
                           test_type, klen=3)
+    
     
     #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
     return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
@@ -171,7 +171,7 @@ run_experiment_hypothesis <- function(exp_idx,
   yip_wo_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
   ##############
   power2 <- mean(simulation_pvalues[4,] < alpha)
-  power2_se <- sqrt(power4*(1-power4)/non_null_count)
+  power2_se <- sqrt(power2*(1-power2)/non_null_count)
   power_012 <- mean(simulation_pvalues[4,] < 0.1)
   power_se012 <- sqrt(power_012*(1-power_012)/non_null_count)
   ############
@@ -182,7 +182,7 @@ run_experiment_hypothesis <- function(exp_idx,
               "yip_wo_sd"=yip_wo_sd,"power2"=power2,"se2"=power2_se,"power_012"=power_012 ,
               "se012"=power_se012,"NAs"=num_replicas - non_null_count))
 }
-
+# 
 # run_experiment_hypothesis( 0,
 #                            100,
 #                            300,
@@ -207,17 +207,20 @@ generate_ed_table <- function(subjects_vector = c(500),
 ########
 #type I error rate
  ed_table1=generate_ed_table()
+ed_table2=generate_ed_table(fl_choice_vector = c("200","7"),
+                                                         test_type_vector = c("Functional"))
+
 # ed_table2=generate_ed_table(fl_choice_vector = c("200","7", "8","9","10","21"),
 #                             test_type_vector = c("Functional"))
 # ed_table <- rbind(ed_table1,ed_table2)
 
 ###################
 #power
-ed_table1 <- generate_ed_table(fl_choice_vector = c("6","7", "8","9","10"),
-                               time_length_vector = c(180,90),
-                               test_type_vector = c("Inclusion"))
-ed_table2 <- generate_ed_table(fl_choice_vector = c("21","22","23","24","25","14","15"))
-ed_table <- rbind(ed_table1,ed_table2)
+# ed_table1 <- generate_ed_table(fl_choice_vector = c("6","7", "8","9","10"),
+#                                time_length_vector = c(180,90),
+#                                test_type_vector = c("Inclusion"))
+# ed_table2 <- generate_ed_table(fl_choice_vector = c("21","22","23","24","25","14","15"))
+# ed_table <- rbind(ed_table1,ed_table2)
 ###################
 
 colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")

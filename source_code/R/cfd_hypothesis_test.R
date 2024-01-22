@@ -116,14 +116,26 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   # 
   # result <- result_try$aRLRT 
   
-  gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
-                     s(Zmat_test_type_2$Zmat, bs = 're')+ 
-                         s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial'))
+  gam_results <- run_gam_for_cfd(Y, num_indvs, Xmat_test_type, Zmat_test_type_2$Zmat, Zmat_test_type_3$Zmat)
   
-  if('try-error' %in% class(gam_test)){return(list(statistics=NULL, pvalue=NULL))}
+  # gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+  #                    s(Zmat_test_type_2$Zmat, bs = 're')+ 
+  #                        s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial'))
+  
+  #if('try-error' %in% class(gam_test)){return(list(statistics=NULL, pvalue=NULL))}
  
   #return(list(statistics=result$statistic, pvalue=result$p.value))
+  #save(gam_results,Y,Xmat_test_type,Zmat_test_type_2, Zmat_test_type_3,file="gamtest.RData")
   
+  return(gam_results)
+  # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
+              # statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
+}
+
+run_gam_for_cfd <- function(Y, num_indvs, Xmat_test_type, Zmat_test_type_2Zmat, Zmat_test_type_3Zmat){
+  gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+                        s(Zmat_test_type_2Zmat, bs = 're')+ 
+                        s(Zmat_test_type_3Zmat, bs = 're'), family = 'binomial'))
   return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
               statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
 }
