@@ -63,7 +63,7 @@ GetXFromW <- function(W)
 #' @param response_family, currently only support 'bernoulli'
 #' @param test_type, "Function" or "constant"
 #' @return list: statistics is test statistics, pvalue
-cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type){
+cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_type,gam_choice){
   #X will be n*t*Q
   # Y=cfd_test_data$true$yis
   # cfd=cfd_test_data$true$Truecatcurve
@@ -74,7 +74,9 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   num_indvs <- length(Y)
 
   Zmat_test_type_2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
-  Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
+  #Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
+  
+  Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type="Linearity")
 
   Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
   
@@ -105,18 +107,23 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   #' components, the fitted model \code{m} must contain \bold{only} the random
   #' effect set to zero under the null hypothesis, while \code{mA} and \code{m0}
   #' are the models under the alternative and the null, respectively. 
+  if (gam_choice==0){
+      alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+
+      result_try <- try(test.aRLRT(alternative_fit), silent=T)
+
+      if(is.atomic(result_try)){
+        return(list(statistics=NULL, pvalue=NULL))
+      }
+
+      result <- result_try$aRLRT
+      return(list(statistics=result$statistic, pvalue=result$p.value))
+  }
   
-  # alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
-  # 
-  # result_try <- try(test.aRLRT(alternative_fit), silent=T)
-  # 
-  # if(is.atomic(result_try)){
-  #   return(list(statistics=NULL, pvalue=NULL))
-  # }
-  # 
-  # result <- result_try$aRLRT 
-  
-  gam_results <- run_gam_for_cfd(Y, num_indvs, Xmat_test_type, Zmat_test_type_2$Zmat, Zmat_test_type_3$Zmat)
+  if (gam_choice==1){
+      gam_results <- run_gam_for_cfd(Y, num_indvs, Xmat_test_type, Zmat_test_type_2$Zmat, Zmat_test_type_3$Zmat)
+      return(gam_results)
+  }
   
   # gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
   #                    s(Zmat_test_type_2$Zmat, bs = 're')+ 
@@ -127,7 +134,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   #return(list(statistics=result$statistic, pvalue=result$p.value))
   #save(gam_results,Y,Xmat_test_type,Zmat_test_type_2, Zmat_test_type_3,file="gamtest.RData")
   
-  return(gam_results)
+ 
   # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
               # statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
 }
@@ -136,8 +143,9 @@ run_gam_for_cfd <- function(Y, num_indvs, Xmat_test_type, Zmat_test_type_2Zmat, 
   gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
                         s(Zmat_test_type_2Zmat, bs = 're')+ 
                         s(Zmat_test_type_3Zmat, bs = 're'), family = 'binomial'))
-  return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
-              statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
+  # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
+  #             statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
+  return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4]))
 }
 
 
@@ -196,10 +204,10 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
     #return(list(Zmat=(ximat %*% J_matrix), X.g2=NULL,J_matrix=J_matrix,D=D))
     return(list(Zmat=( J_matrix), X.g2=NULL,J=J_matrix,D=D))
   }
-  # if(test_type=='Linearity'){ #Test for linearity
-  #   d=2
-  #   Q2=as.matrix(cbind(constant,lin))
-  # }
+  if(test_type=='Linearity'){ #Test for linearity
+      difference_penalty=2
+    Q2=as.matrix(cbind(constant,lin))
+  }
   if(test_type=='Functional'){ #Test for functional form
     difference_penalty=1
     Q2=as.matrix(constant)

@@ -549,7 +549,7 @@ GenerateCategoricalFDTestIntercept <- function(klen, mu1_coef,mu2_coef,num_indvs
 
 cfd_testing <- function(start_time, end_time, timeseries_length,
                         num_indvs, mu1_coef, mu2_coef, fl_choice,
-                        response_family,test_type,
+                        response_family,test_type,gam_choice,
                         klen=3){
   # cat("CFD Testing \nNum Indvs:\t", num_indvs,
   #     "\nTimeseries Len:\t", timeseries_length,
@@ -568,7 +568,7 @@ cfd_testing <- function(start_time, end_time, timeseries_length,
                                 cfd_test_data$true$Truecatcurve,
                                 time_interval = timestamps01,
                                 response_family=response_family,
-                                test_type=test_type)
+                                test_type=test_type,gam_choice)
   #save(result, file = "result2.RData")
   return(list("pvalue"=result$pvalue,"yip"=yip,"yip_wo"=yip_wo,"pvalue2"=result$pvalue2))
 
