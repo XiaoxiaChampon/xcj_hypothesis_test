@@ -36,7 +36,7 @@ library(MASS)
 #for splineDesign
 library(splines)
 
-source("source_code/R/cfd_hypothesis_test.R")
+source("./source_code/R/cfd_hypothesis_test.R")
 
 
 #' Get mu_1, mu_2 functions, and score_vals objects for a given context.

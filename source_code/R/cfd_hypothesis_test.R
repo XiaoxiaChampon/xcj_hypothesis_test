@@ -182,7 +182,7 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
 
   J_matrix <- foreach(this_row = 1:number_row) %do%
     {
-      source("source_code/R/integral_penalty_function.R")
+      source("./source_code/R/integral_penalty_function.R")
 
       temp <- array(-123, number_col)
       for(this_col in 1:number_col){

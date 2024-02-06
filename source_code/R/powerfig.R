@@ -341,10 +341,7 @@ power_by_time_plot=ggplot(power_by_time,
 power_by_time_plot
 ggsave("power_by_time_plot.png")
 power_by_time_new=power_by_time[,c(1,3:5,7)]
-power_by_time_new$num_timepoints <- chartr("18090", "90180", power_by_time_new$num_timepoints)
-power_by_time_new$num_timepoints[power_by_time_new$num_timepoints==80]=180
-power_by_time_new$num_timepoints[power_by_time_new$num_timepoints==900]=90
-power_by_time_new$num_timepoints=as.numeric(power_by_time_new$num_timepoints)
+
 
 library(data.table)
 power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
@@ -382,7 +379,7 @@ ggsave("power_by_time_plot_new_sub.png")
 # names(time.labs) <- c("90", "180")
 ########################################################
 ########################################################
-power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_new_long$num_timepoints)]
+power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 180"', '"Timepoints = 90"')[as.factor(power_by_time_new_long$num_timepoints)]
 power_by_time_new_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_new_long$power_both]
 
 power_by_time_plot_new=ggplot(power_by_time_new_long,
@@ -572,13 +569,6 @@ power_by_time$fl_choice <- replace_all(power_by_time$fl_choice,
 
 power_by_time_new=power_by_time[,c(1,3:5,7)]
 
-power_by_time_new$num_timepoints <- chartr("18090", "90180", power_by_time_new$num_timepoints)
-power_by_time_new$num_timepoints[power_by_time_new$num_timepoints==80]=180
-power_by_time_new$num_timepoints[power_by_time_new$num_timepoints==900]=90
-power_by_time_new$num_timepoints=as.numeric(power_by_time_new$num_timepoints)
-
-
-
 
 library(data.table)
 power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
@@ -649,4 +639,205 @@ power_by_test_type_subset_plot_new_gam=ggplot(power_by_test_type_subset_long,
     )#+
 #theme(strip.text.x = element_blank())
 power_by_test_type_subset_plot_new_gam
+
+#######################################
+#L2 penalty start
+########################################
+#########no gam l2 penalty type I error
+load("EXP3_r5000_1febnogaml2penalty.RData")
+xtable(final_table,digits = 4)
+###############gam l2 penalty type I error
+load("EXP3_r5000_outputs_gam_feb2.RData")
+xtable(final_table,digits = 4)
+#############no gam l2 penalty power
+#power by time points
+load("EXP3_r5000_cfdanongampower.RData")
+power_curve_final=final_table
+
+conditions <- c(6, 7,8, 9,10)
+
+power_by_time=power_curve_final[power_curve_final$fl_choice %in% conditions,]
+
+replacement_values <- c(0, 5,10,15,20)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_time$fl_choice <- replace_all(power_by_time$fl_choice, 
+                                       conditions, 
+                                       replacement_values)
+
+power_by_time_new=power_by_time[,c(1,3:5,7)]
+
+
+library(data.table)
+power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
+                               variable.name = "power_both")
+#power_by_time_new_long
+#######
+power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_new_long$num_timepoints)]
+power_by_time_new_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_new_long$power_both]
+
+power_by_time_plot_new_gam=ggplot(power_by_time_new_long,
+                                  aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(as.factor(num_timepoints_new)~power_both_new,
+               labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .98),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_time_plot_new_gam
+#power by test type
+conditions_more <- c(6, 7,8, 9,10,14,15)
+power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more &power_curve_final$num_timepoints==90,]
+#power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more &power_curve_final$num_timepoints==180,]
+power_by_test_type
+
+# Define the conditions and replacement values
+conditions_rep=c(21,22,23,24,25)
+replacement_values_fl <- c(0,10, 20,30,40)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_test_type$fl_choice <- replace_all(power_by_test_type$fl_choice, 
+                                            conditions_rep,
+                                            replacement_values_fl)
+power_by_test_type_subset=power_by_test_type[,c(1:3,5,7)]
+power_by_test_type_subset
+power_by_test_type_subset_long <- melt(setDT(power_by_test_type_subset), 
+                                       id.vars = c("fl_choice", "num_subjects", "test_type"),
+                                       variable.name = "power_both")
+power_by_test_type_subset_long
+
+power_by_test_type_subset_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_test_type_subset_long$power_both]
+power_by_test_type_subset_long$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long$test_type]
+
+#save(power_by_test_type_subset_long,file="power_by_test_type_subset_long.RData")
+power_by_test_type_subset_plot_new_gam=ggplot(power_by_test_type_subset_long,
+                                              aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(  test_type_new~power_both_new,
+                 labeller = label_parsed)+
+    ylab("Power")+
+    #xlab(expression(~delta~": Deivation from 0"))+
+    xlab(expression(~1~"+"~delta~"t"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_test_type_subset_plot_new_gam
+############# gam l2 penalty power
+load("EXP3_r5000_cfdagampower.RData")
+##power by timepoints
+power_curve_final=final_table
+
+conditions <- c(6, 7,8, 9,10)
+
+power_by_time=power_curve_final[power_curve_final$fl_choice %in% conditions,]
+
+replacement_values <- c(0, 5,10,15,20)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_time$fl_choice <- replace_all(power_by_time$fl_choice, 
+                                       conditions, 
+                                       replacement_values)
+
+power_by_time_new=power_by_time[,c(1,3:5,7)]
+
+
+library(data.table)
+power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
+                               variable.name = "power_both")
+#power_by_time_new_long
+#######
+power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_new_long$num_timepoints)]
+power_by_time_new_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_new_long$power_both]
+
+power_by_time_plot_new_gam=ggplot(power_by_time_new_long,
+                                  aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(as.factor(num_timepoints_new)~power_both_new,
+               labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .98),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_time_plot_new_gam
+#power by test type
+conditions_more <- c(6, 7,8, 9,10,14,15)
+power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more &power_curve_final$num_timepoints==90,]
+#power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more &power_curve_final$num_timepoints==180,]
+power_by_test_type
+
+# Define the conditions and replacement values
+conditions_rep=c(21,22,23,24,25)
+replacement_values_fl <- c(0,10, 20,30,40)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_test_type$fl_choice <- replace_all(power_by_test_type$fl_choice, 
+                                            conditions_rep,
+                                            replacement_values_fl)
+power_by_test_type_subset=power_by_test_type[,c(1:3,5,7)]
+power_by_test_type_subset
+power_by_test_type_subset_long <- melt(setDT(power_by_test_type_subset), 
+                                       id.vars = c("fl_choice", "num_subjects", "test_type"),
+                                       variable.name = "power_both")
+power_by_test_type_subset_long
+
+power_by_test_type_subset_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_test_type_subset_long$power_both]
+power_by_test_type_subset_long$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long$test_type]
+
+#save(power_by_test_type_subset_long,file="power_by_test_type_subset_long.RData")
+power_by_test_type_subset_plot_new_gam=ggplot(power_by_test_type_subset_long,
+                                              aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(  test_type_new~power_both_new,
+                 labeller = label_parsed)+
+    ylab("Power")+
+    #xlab(expression(~delta~": Deivation from 0"))+
+    xlab(expression(~1~"+"~delta~"t"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_test_type_subset_plot_new_gam
+#######################################
+#L2 penalty end
+########################################
+
+#######################################
+#aRLRT, difference_penalty start, type I error
+########################################
+load("EXP3_aRLRTFeb5.RData")
+xtable(final_table,digits=4)
+typeI90and180RData=final_table
+typeI90=typeI90and180[typeI90and180RData$num_timepoints==90,]
+typeI180=typeI90and180[typeI90and180RData$num_timepoints==180,]
+#######################################
+#aRLRT, difference_penalty end, type I error
+########################################
+
+
 

@@ -78,7 +78,7 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
   result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
                         .packages=c("glmmVCtest","splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
   # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
-    source("source_code/R/data_generator.R")
+    source("./source_code/R/data_generator.R")
     result <- cfd_testing(start_time, end_time, timeseries_length,
                           num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,
                           test_type, gam_choice,klen=3)
@@ -114,7 +114,7 @@ cfd_testing_simulation <- function (num_replicas, start_time, end_time, timeseri
 # }
 
 
-source("source_code/R/time_track_function.R")
+source("./source_code/R/time_track_function.R")
 run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
@@ -158,7 +158,7 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            klen=3)
   #simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=4) #when gam has z1, z2 pvalue, it's 4 rows
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
-  save(simulation_pvalues, file = paste0("./outputsjan/simpvals3",
+  save(simulation_pvalues, file = paste0("./outputsnongampower/simpvals3",
                                                     "_i", exp_idx,
                                                     "_fl", fl_choice,
                                                     "_ttype", test_type,
@@ -218,21 +218,21 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 
 ########
 #type I error rate
-ed_table1=generate_ed_table()
-ed_table2=generate_ed_table(fl_choice_vector = c("200","7","21"),
-                                                         test_type_vector = c("Functional"))
-
-
-ed_table <- rbind(ed_table1,ed_table2)
+# ed_table1=generate_ed_table()
+# ed_table2=generate_ed_table(fl_choice_vector = c("200","7","21"),
+#                                                          test_type_vector = c("Functional"))
+# 
+# 
+# ed_table <- rbind(ed_table1,ed_table2)
 
 ###################
 #power
-# ed_table1 <- generate_ed_table(subjects_vector = c(1000,500,300,100),
-#                                 fl_choice_vector = c("6","7", "8","9","10"),
-#                                test_type_vector = c("Inclusion"))
-# ed_table2 <- generate_ed_table(subjects_vector = c(1000,500,300,100),
-#                              fl_choice_vector = c("21","22","23","24","25"))
-# ed_table <- rbind(ed_table1,ed_table2)
+ed_table1 <- generate_ed_table(subjects_vector = c(1000,500,300,100),
+                                fl_choice_vector = c("6","7", "8","9","10"),
+                               test_type_vector = c("Inclusion"))
+ed_table2 <- generate_ed_table(subjects_vector = c(1000,500,300,100),
+                             fl_choice_vector = c("21","22","23","24","25"))
+ed_table <- rbind(ed_table1,ed_table2)
 ###################
 
 colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")
@@ -251,7 +251,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                   fl_choice,
                                                   test_type,
                                                   gam_choice)
-  save(experiment_output, file = paste0("./outputsjan/exp3_", 
+  save(experiment_output, file = paste0("./outputsnongampower/exp3_", 
                                        "_i", row_index, 
                                        "_fl", fl_choice, 
                                        "_ttype", test_type, 
@@ -265,7 +265,7 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table,mu1_coef,mu2_coef,gam_choice,file = "EXP3_r5000_cfda2jan.RData")
+save(final_table,mu1_coef,mu2_coef,gam_choice,file = "EXP3_r5000_cfdanongampower.RData")
 
 end_exp_time <- Sys.time()
 
