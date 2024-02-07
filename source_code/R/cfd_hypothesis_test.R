@@ -140,7 +140,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
 }
 
 run_gam_for_cfd <- function(Y, num_indvs, Xmat_test_type, Zmat_test_type_2Zmat, Zmat_test_type_3Zmat){
-  gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+  gam_test <- try(gam(cbind(Y, 1 - Y) ~ 0 + Xmat_test_type + 
                         s(Zmat_test_type_2Zmat, bs = 're')+ 
                         s(Zmat_test_type_3Zmat, bs = 're'), family = 'binomial'))
   # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],

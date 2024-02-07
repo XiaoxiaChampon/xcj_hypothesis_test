@@ -229,12 +229,14 @@ n100n500t180fl678212226
 save(n100n500t180fl678212226,file="n100n500t180fl678212226.RData")
 ###########################fl 6, 200, 7
 load("EXP2_r5000_cfda2outputstypeI180fl200.RData")
+xtable(final_table,digits=4)
 typeI180fl200=final_table[,1:7]
 typeI180fl200
 xtable(typeI180fl200,digits=4)
 save(typeI180fl200,file="typeI180fl200.RData")
 ###########################
 load("EXP3_r5000_cfda2n300n1000t180typeI.RData")
+xtable(final_table,digits=4)
 n300n1000t180fl7fl200=final_table[,1:7]
 save(n300n1000t180fl7fl200,file="n300n1000t180fl7fl200.RData")
 #######################
@@ -294,6 +296,54 @@ save(n100n500t180fl11fl15finalmu,file="n100n500t180fl11fl15finalmu.RData")
 # load("power_censor_unbalance.RData")
 # xtable(power_censor_unbalance)
 
+##################################################
+####################################################
+####################################################
+##manuscript table
+load("EXP3_typeIJAN.RData")
+typeIjan9=final_table
+tpyeIjan9sub=typeIjan9[(typeIjan9$num_subjects!=1000 &typeIjan9$fl_choice %in% c(6,200,7,21)),]
+tpyeIjan9sub
+
+load("EXP3_typeIJAN3002.RData")
+EXP3_typeIJAN300=final_table
+EXP3_typeIJAN300_sub=EXP3_typeIJAN300[EXP3_typeIJAN300$fl_choice!=8,]
+table1_manuscrip=rbind(tpyeIjan9sub,EXP3_typeIJAN300_sub)
+table1_manuscrip
+#save(table1_manuscrip,file="./simulation_data/table1_manuscrip.RData")
+
+
+table_list_column=table1_manuscrip[,1:8]
+table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=15))
+colnames(table_part1_unlist)=c("power","se","power_01","se_01")
+table_part2=table1_manuscrip[,1:4]
+table_1_final=cbind(table_part1_unlist,table_part2)
+table_1_final
+save(table_1_final,file="./simulation_data/table_1_final.RData")
+
+########supplement for time points 180
+#from simulation results before
+load("EXP9_outputfl6200fl7.RData")
+typeIjan9=final_table[c(1,5:9,13:16),1:8]
+levels(typeIjan9$fl_choice) <- c("6", "200","7","21")
+
+load("EXP3_aRLRTFeb5.RData")
+EXP3_typeIJAN300=final_table[(final_table$num_subjects==300 & final_table$num_timepoints==180),1:8]
+EXP3_typeIJAN300
+table1_manuscrip=rbind(typeIjan9,EXP3_typeIJAN300)
+table1_manuscrip
+#save(table1_manuscrip,file="./simulation_data/table1_manuscrip.RData")
+
+
+table_list_column=table1_manuscrip[,1:8]
+table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=15))
+colnames(table_part1_unlist)=c("power","se","power_01","se_01")
+table_part2=table1_manuscrip[,1:4]
+table_1_final_180=cbind(table_part1_unlist,table_part2)
+table_1_final_180
+save(table_1_final_180,file="./simulation_data/table_1_final_180.RData")
+
+#################################
 ####################################################
 ####################################################
 ######Jan 9, 2024
@@ -342,7 +392,7 @@ power_by_time_plot
 ggsave("power_by_time_plot.png")
 power_by_time_new=power_by_time[,c(1,3:5,7)]
 
-
+load("power_by_time.RData")
 library(data.table)
 power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
                                variable.name = "power_both")
@@ -379,9 +429,10 @@ ggsave("power_by_time_plot_new_sub.png")
 # names(time.labs) <- c("90", "180")
 ########################################################
 ########################################################
-power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 180"', '"Timepoints = 90"')[as.factor(power_by_time_new_long$num_timepoints)]
+power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_new_long$num_timepoints)]
 power_by_time_new_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_new_long$power_both]
-
+##Feb7 power correct time points
+save(power_by_time_new_long,file="./simulation_data/power_by_time_new_long.RData")
 power_by_time_plot_new=ggplot(power_by_time_new_long,
                           aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
     geom_line() +
@@ -558,7 +609,7 @@ power_curve_final=final_table
 
 conditions <- c(6, 7,8, 9,10)
 
-power_by_time=power_curve_final[power_curve_final$fl_choice %in% conditions,]
+power_by_time=power_curve_final[(power_curve_final$fl_choice %in% conditions & power_curve_final$num_subjects!=300),]
 
 replacement_values <- c(0, 5,10,15,20)
 
@@ -621,7 +672,7 @@ power_by_test_type_subset_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" =
 power_by_test_type_subset_long$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long$test_type]
 
 save(power_by_test_type_subset_long,file="power_by_test_type_subset_long.RData")
-power_by_test_type_subset_plot_new_gam=ggplot(power_by_test_type_subset_long,
+power_by_test_type_subset_plot_new_gam=ggplot(power_by_test_type_subset_long[power_by_test_type_subset_long$num_subjects!=300,],
                                           aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
     geom_line() +
     facet_grid(  test_type_new~power_both_new,
@@ -645,10 +696,42 @@ power_by_test_type_subset_plot_new_gam
 ########################################
 #########no gam l2 penalty type I error
 load("EXP3_r5000_1febnogaml2penalty.RData")
-xtable(final_table,digits = 4)
+# xtable(final_table,digits = 4)
+# 
+# febnogaml2penalty=final_table
+# save(final_table,file="./simulation_data/febnogaml2penalty.RData")
+
+table_list_column=final_table[,1:8]
+table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=30))
+colnames(table_part1_unlist)=c("power","se","power_01","se_01")
+table_part2=final_table[,1:4]
+nogam_l2penalty=cbind(table_part1_unlist,table_part2)
+nogam_l2penalty
+#xtable(final_table,digits=4)
+#typeI90and180RData=final_table
+nogam_l2penaltytypeI90=nogam_l2penalty[nogam_l2penalty$num_timepoints==90,]
+nogam_l2penaltytypeI180=nogam_l2penalty[nogam_l2penalty$num_timepoints==180,]
+
+save(nogam_l2penaltytypeI90,nogam_l2penaltytypeI180,file="./simulation_data/nogaml2penaltytypeI.RData")
 ###############gam l2 penalty type I error
 load("EXP3_r5000_outputs_gam_feb2.RData")
-xtable(final_table,digits = 4)
+#xtable(final_table,digits = 4)
+
+# febgaml2penalty=final_table
+# save(final_table,file="./simulation_data/febgaml2penalty.RData")
+
+table_list_column=final_table[,1:8]
+table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=30))
+colnames(table_part1_unlist)=c("power","se","power_01","se_01")
+table_part2=final_table[,1:4]
+gam_l2penalty=cbind(table_part1_unlist,table_part2)
+gam_l2penalty
+#xtable(final_table,digits=4)
+#typeI90and180RData=final_table
+gam_l2penaltytypeI90=gam_l2penalty[gam_l2penalty$num_timepoints==90,]
+gam_l2penaltytypeI180=gam_l2penalty[gam_l2penalty$num_timepoints==180,]
+
+save(gam_l2penaltytypeI90,gam_l2penaltytypeI180,file="./simulation_data/gaml2penaltytypeI.RData")
 #############no gam l2 penalty power
 #power by time points
 load("EXP3_r5000_cfdanongampower.RData")
@@ -828,13 +911,19 @@ power_by_test_type_subset_plot_new_gam
 ########################################
 
 #######################################
-#aRLRT, difference_penalty start, type I error
+#Feb6, re do aRLRT, difference_penalty start, type I error
 ########################################
 load("EXP3_aRLRTFeb5.RData")
-xtable(final_table,digits=4)
-typeI90and180RData=final_table
-typeI90=typeI90and180[typeI90and180RData$num_timepoints==90,]
-typeI180=typeI90and180[typeI90and180RData$num_timepoints==180,]
+table_list_column=final_table[,1:8]
+table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=30))
+colnames(table_part1_unlist)=c("power","se","power_01","se_01")
+table_part2=final_table[,1:4]
+table_1_final=cbind(table_part1_unlist,table_part2)
+table_1_final
+#xtable(final_table,digits=4)
+#typeI90and180RData=final_table
+typeI90=table_1_final[table_1_final$num_timepoints==90,]
+typeI180=table_1_final[table_1_final$num_timepoints==180,]
 #######################################
 #aRLRT, difference_penalty end, type I error
 ########################################
