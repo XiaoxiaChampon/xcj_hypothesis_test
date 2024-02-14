@@ -96,7 +96,7 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
                             paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
                             "ones")
   } else if (test_type=="Functional"){
-    names(test_matrix) <- c('Y','X1','X2',"X3",
+    names(test_matrix) <- c('Y','X1','X2',"X3","X4",
                             paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
                             paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
                             "ones")
@@ -138,6 +138,84 @@ cfd_hypothesis_test <- function(Y, cfd, time_interval, response_family, test_typ
   # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
               # statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
 }
+
+cfd_hypothesis_test_aRLRTl2 <- function(Y, cfd, time_interval, response_family, test_type,gam_choice){
+    #X will be n*t*Q
+    # Y=cfd_test_data$true$yis
+    # cfd=cfd_test_data$true$Truecatcurve
+    
+    
+    X_cfd <- GetXFromW(cfd)
+    
+    num_indvs <- length(Y)
+    
+    Zmat_test_type_2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
+    #Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
+    
+    Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type="Linearity")
+    
+    Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
+    
+    if (test_type=="Functional"){
+        Xmat_test_type <- cbind(Xmat_test_type, Zmat_test_type_2$X.g2, Zmat_test_type_3$X.g2)
+    }
+    
+    test_matrix <- data.frame(Y=Y,
+                              X=Xmat_test_type,
+                              Z.test=Zmat_test_type_2$Zmat,
+                              Z.test3=Zmat_test_type_3$Zmat,
+                              ones=rep(1,num_indvs))
+    
+    if(test_type=="Inclusion"){
+        names(test_matrix) <- c('Y','X1',
+                                paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                                paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
+                                "ones")
+    } else if (test_type=="Functional"){
+        names(test_matrix) <- c('Y','X1','X2',"X3",
+                                paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                                paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
+                                "ones")
+    }
+    
+    
+    #For testing in models with multiple variance
+    #' components, the fitted model \code{m} must contain \bold{only} the random
+    #' effect set to zero under the null hypothesis, while \code{mA} and \code{m0}
+    #' are the models under the alternative and the null, respectively. 
+    if (gam_choice==0){
+        alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+        
+        result_try <- try(test.aRLRT(alternative_fit), silent=T)
+        
+        if(is.atomic(result_try)){
+            return(list(statistics=NULL, pvalue=NULL))
+        }
+        
+        result <- result_try$aRLRT
+        return(list(statistics=result$statistic, pvalue=result$p.value,
+                    alternative_fit=alternative_fit,test_matrix=test_matrix))
+    }
+    
+    if (gam_choice==1){
+        gam_results <- run_gam_for_cfd(Y, num_indvs, Xmat_test_type, Zmat_test_type_2$Zmat, Zmat_test_type_3$Zmat)
+        return(gam_results)
+    }
+    
+    # gam_test <- try(gam(cbind(Y, num_indvs - Y) ~ 0 + Xmat_test_type + 
+    #                    s(Zmat_test_type_2$Zmat, bs = 're')+ 
+    #                        s(Zmat_test_type_3$Zmat, bs = 're'), family = 'binomial'))
+    
+    #if('try-error' %in% class(gam_test)){return(list(statistics=NULL, pvalue=NULL))}
+    
+    #return(list(statistics=result$statistic, pvalue=result$p.value))
+    #save(gam_results,Y,Xmat_test_type,Zmat_test_type_2, Zmat_test_type_3,file="gamtest.RData")
+    
+    
+    # return(list(statistics=summary(gam_test)$s.table[1,3], pvalue=summary(gam_test)$s.table[1,4],
+    # statistics2=summary(gam_test)$s.table[2,3], pvalue2=summary(gam_test)$s.table[2,4]))
+}
+
 
 run_gam_for_cfd <- function(Y, num_indvs, Xmat_test_type, Zmat_test_type_2Zmat, Zmat_test_type_3Zmat){
   gam_test <- try(gam(cbind(Y, 1 - Y) ~ 0 + Xmat_test_type + 

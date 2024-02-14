@@ -157,6 +157,8 @@ run_experiment_hypothesis <- function(exp_idx,
 #                                            response_family='bernoulli',test_type='Functional',
 #                                            klen=3)
   #simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=4) #when gam has z1, z2 pvalue, it's 4 rows
+  #simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
+  #add x2fl2-not adding, since it's a vector itself
   simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
   save(simulation_pvalues, file = paste0("./outputsnongampower/simpvals3",
                                                     "_i", exp_idx,
@@ -176,6 +178,9 @@ run_experiment_hypothesis <- function(exp_idx,
   yip_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
   yip_wo_mean= mean(simulation_pvalues[3,])
   yip_wo_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
+  ################
+  # x2fl2 <- mean(simulation_pvalues[4,])
+  # x2fl2_se <- sd(simulation_pvalues[4,])/non_null_count
   ##############
   # power2 <- mean(simulation_pvalues[4,] < alpha)
   # power2_se <- sqrt(power2*(1-power2)/non_null_count)

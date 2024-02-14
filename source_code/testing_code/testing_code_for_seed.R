@@ -20,12 +20,13 @@ num_indvs=500
 #fl_choice=3 #not constant, expect to reject
 #fl_choice=8 #not constant, expect to reject
 
-fl_choice=10
+#fl_choice=10
 response_family='bernoulli'
 test_type='Functional'
 klen=3
-
-gam_choice=1
+mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
+gam_choice=0
 
 # cfd_testing_simulation  (num_replicas, start_time, end_time, timeseries_length,
 #                                     mu1_coef, mu2_coef,
@@ -34,6 +35,115 @@ gam_choice=1
 #test gam
 ###################
 set.seed(12345)
+#####################data generating process
+num_repeat=3
+fl_selection=c("6","7", "8","9","10")
+#fl_selection=c("21","22", "23","24","25")
+x2fl2data=array(0,dim=c(num_indvs,length(fl_selection),num_repeat))
+yip=matrix(0,ncol=num_repeat,nrow=length(fl_selection))
+yip_wo=matrix(0,ncol=num_repeat,nrow=length(fl_selection))
+pvalue=matrix(0,ncol=num_repeat,nrow=length(fl_selection))
+alternative_fit=list()
+test_matrix=list()
+for (j in length(fl_selection)){
+    for (i in 1:num_repeat){
+        # j=1
+        # i=1
+        cfd_test_data <- GenerateCategoricalFDTest(klen=3,mu1_coef,mu2_coef,
+                                                   num_indvs=num_indvs,
+                                                   timeseries_length = timeseries_length,
+                                                   time_interval = time_interval,
+                                                   fl_choice=fl_selection[j])
+        x2fl2data[,j,i]=cfd_test_data$true$x2fl2
+        
+        yip=sum(cfd_test_data$true$yis)/num_indvs
+        yip_wo=sum(cfd_test_data$true$yis_without)/num_indvs
+        
+        ########
+        Y=cfd_test_data$true$yis
+        cfd=cfd_test_data$true$Truecatcurve
+        
+        X_cfd <- GetXFromW(cfd)
+        
+        num_indvs <- length(Y)
+        
+        Zmat_test_type_2 <- get_Zmatrix(X_cfd[,,2], time_interval, test_type)
+        #Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type)
+        
+        Zmat_test_type_3 <- get_Zmatrix(X_cfd[,,3], time_interval, test_type="Linearity")
+       
+        
+        Xmat_test_type <- matrix(rep(1, num_indvs), ncol=1)
+        
+        if (test_type=="Functional"){
+            Xmat_test_type <- cbind(Xmat_test_type, Zmat_test_type_2$X.g2, Zmat_test_type_3$X.g2)
+        }
+        
+        test_matrix <- data.frame(Y=Y,
+                                  X=Xmat_test_type,
+                                  Z.test=Zmat_test_type_2$Zmat,
+                                  Z.test3=Zmat_test_type_3$Zmat,
+                                  ones=rep(1,num_indvs))
+        
+        if(test_type=="Inclusion"){
+            names(test_matrix) <- c('Y','X1',
+                                    paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                                    paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
+                                    "ones")
+        } else if (test_type=="Functional"){
+            #names(test_matrix) <- c('Y','X1','X2',"X3",
+                                    names(test_matrix) <- c('Y','X1','X2',"X3","X4",
+                                    paste0('Z.test',1:ncol(Zmat_test_type_2$Zmat)),
+                                    paste0('Z.test3',1:ncol(Zmat_test_type_3$Zmat)),
+                                    "ones")
+        }
+        
+        #########
+        # 
+        # result <- cfd_hypothesis_test_aRLRTl2(cfd_test_data$true$yis,
+        #                                       cfd_test_data$true$Truecatcurve,
+        #                                       time_interval = time_interval,
+        #                                       response_family=response_family,
+        #                                       test_type=test_type,gam_choice=0)
+        
+        #pvalue[j,i]=result$p.value
+        
+        alternative_fit <- fit.glmmPQL(test_matrix, response_family, num_indvs, test_type)
+        # 'try-error' chr "Error in lme.formula(fixed = zz ~ 0 + X1 + X2, random = list(ones = structure(numeric(0), class = c(\"pdIdent\""| __truncated__
+        # - attr(*, "condition")=List of 2
+        # ..$ message: chr "fewer observations than random effects in all level 1 groups"
+        # ..$ call   : language lme.formula(fixed = zz ~ 0 + X1 + X2, random = list(     ones = numeric(0)), data = list(prop = c(0.002,  ...
+        #                                                                                                                         ..- attr(*, "class")= chr [1:3] "simpleError" "error" "condition"
+        # 
+        # 
+        
+        result_try <- try(test.aRLRT(alternative_fit), silent=T)
+        
+        if(is.atomic(result_try)){
+            return(list(statistics=NULL, pvalue=NULL))
+        }
+        
+        result <- result_try$aRLRT
+        
+        
+        alternative_fit[[j]][[i]]=alternative_fit
+        test_matrix[[j]][[i]]=test_matrix
+        yip[j,i]=yip
+        yip_wo[j,i]=yip_wo
+    }
+    
+   #print( hist(x2fl2data[,j,i],main = paste("Histogram of Fl Choice" , fl_selection[j],"num_rep = ",i),xlab="Integral of Testing Item",ylab="Value") )
+
+    }
+#cfd_hypothesis_test_aRLRTl2 <- function(Y, cfd, time_interval, response_family, test_type,gam_choice)
+
+x2fl2data= x2fl2data
+
+# result <- cfd_testing(start_time, end_time, timeseries_length,
+#                       num_indvs,mu1_coef,mu2_coef,fl_choice,response_family,
+#                       test_type, gam_choice,klen=3)
+
+########################
 simulation_scenarios=cfd_testing_simulation  (5, start_time, end_time, timeseries_length,
                          mu1_coef, mu2_coef,
                          num_indvs,fl_choice,response_family,test_type,gam_choice,
