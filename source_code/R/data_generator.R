@@ -393,6 +393,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                   "Truecatcurve"=cat_data$W,
                   "fl"=flfn,
                   "yis"=Y_indvs,
+                  "x2fl2"=x2fl2,
                   "yis_without" = Y_indvs_without,
                   "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
                   "prob_ind"=prob_ind)

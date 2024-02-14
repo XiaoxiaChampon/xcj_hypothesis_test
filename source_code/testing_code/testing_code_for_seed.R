@@ -25,6 +25,8 @@ response_family='bernoulli'
 test_type='Functional'
 klen=3
 
+gam_choice=1
+
 # cfd_testing_simulation  (num_replicas, start_time, end_time, timeseries_length,
 #                                     mu1_coef, mu2_coef,
 #                                     num_indvs,fl_choice,response_family,test_type,
@@ -34,7 +36,7 @@ klen=3
 set.seed(12345)
 simulation_scenarios=cfd_testing_simulation  (5, start_time, end_time, timeseries_length,
                          mu1_coef, mu2_coef,
-                         num_indvs,fl_choice,response_family,test_type,
+                         num_indvs,fl_choice,response_family,test_type,gam_choice,
                          klen=3)
 simulation_scenarios
 # CFD Testing Simulation 

@@ -928,5 +928,233 @@ typeI180=table_1_final[table_1_final$num_timepoints==180,]
 #aRLRT, difference_penalty end, type I error
 ########################################
 
+#######################################
+#Feb7, re do gam, difference_penalty start, type I error, bernoulli 1-y instead of n-y
+########################################
+load("./simulation_data/EXP3_r5000_differencepenalty_gam_bernoulli1.RData")
+gam_differece_penalty=final_table[,1:8]
+gam_differece_penalty90_typeI=gam_differece_penalty[gam_differece_penalty$num_timepoints==90,]
+gam_differece_penalty180_typeI=gam_differece_penalty[gam_differece_penalty$num_timepoints==180,]
+save(gam_differece_penalty90_typeI,gam_differece_penalty180_typeI,
+     file="./simulation_data/gam_differece_penalty_typeI_ber1notn.RData")
+#######################################
+#Feb7, re do gam, difference_penalty start, type I error, bernoulli 1-y instead of n-y
+########################################
 
 
+#######################################
+#Feb7, re do gam, l2_penalty start, type I error, bernoulli 1-y instead of n-y
+########################################
+load("./simulation_data/EXP3_r5000_linear_gam_real.RData")
+gam_l2_penalty=final_table[,1:8]
+gam_l2_penalty90_typeI=gam_l2_penalty[gam_l2_penalty$num_timepoints==90,]
+gam_l2_penalty180_typeI=gam_l2_penalty[gam_l2_penalty$num_timepoints==180,]
+save(gam_l2_penalty90_typeI,gam_l2_penalty180_typeI,
+     file="./simulation_data/gam_l2_penalty_typeI_ber1notn.RData")
+#######################################
+#Feb7, re do gam, l2_penalty end, type I error, bernoulli 1-y instead of n-y
+########################################
+
+
+#######################################
+#Feb8, re do gam, l2_penalty start, power, bernoulli 1-y instead of n-y
+########################################
+load("EXP3_r5000_linear_gam_real_power.RData")
+power_curve_gam_l2=final_table
+
+conditions <- c(6, 7,8, 9,10)
+
+power_by_time_gaml2=power_curve_gam_l2[power_curve_gam_l2$fl_choice %in% conditions,]
+
+replacement_values <- c(0, 5,10,15,20)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_time_gaml2$fl_choice <- replace_all(power_by_time_gaml2$fl_choice, 
+                                       conditions, 
+                                       replacement_values)
+
+power_by_time_gaml2data=power_by_time_gaml2[,c(1,3:5,7)]
+
+
+library(data.table)
+power_by_time_gaml2long <- melt(setDT(power_by_time_gaml2data), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
+                               variable.name = "power_both")
+#power_by_time_new_long
+#######
+power_by_time_gaml2long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_gaml2long$num_timepoints)]
+power_by_time_gaml2long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_gaml2long$power_both]
+
+save(power_by_time_gaml2long,file="./simulation_data/power_by_time_gaml2long.RData")
+power_by_time_plot_gaml2=ggplot(power_by_time_gaml2long,
+                                  aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(as.factor(num_timepoints_new)~power_both_new,
+               labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.01, .99),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_time_plot_gaml2
+ggsave("./simulation_data/power_by_time_plot_gaml2.png")
+######not include 300
+power_by_time_plot_gaml2_no300=ggplot(power_by_time_gaml2long[power_by_time_gaml2long$num_subjects!=300],
+                                aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(as.factor(num_timepoints_new)~power_both_new,
+               labeller = label_parsed)+
+    ylab("Power")+
+    xlab(expression(~delta))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.01, .99),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_time_plot_gaml2_no300
+
+######
+#power by test type
+conditions_more <- c(6, 7,8, 9,10,14,15)
+power_by_test_type_gaml2= power_curve_gam_l2[!power_curve_gam_l2$fl_choice %in% conditions_more &power_curve_gam_l2$num_timepoints==90,]
+#power_by_test_type= power_curve_final[!power_curve_final$fl_choice %in% conditions_more &power_curve_final$num_timepoints==180,]
+
+
+# Define the conditions and replacement values
+####current run for only 90, fl 11-15
+# load("EXP3_r5000_gam_power_l2_bigger_fl.RData")
+# power_by_test_type_gaml2=final_table
+conditions_rep=c(21,22,23,24,25)
+replacement_values_fl <- c(0,10, 20,30,40)
+
+# conditions_rep=c(11,12,13,14,15)
+# replacement_values_fl <- c(0,20, 40,60,80)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_test_type_gaml2$fl_choice <- replace_all(power_by_test_type_gaml2$fl_choice, 
+                                            conditions_rep,
+                                            replacement_values_fl)
+power_by_test_type_subset_gaml2=power_by_test_type_gaml2[,c(1:3,5,7)]
+
+
+power_by_test_type_subset_long_gaml2 <- melt(setDT(power_by_test_type_subset_gaml2), 
+                                       id.vars = c("fl_choice", "num_subjects", "test_type"),
+                                       variable.name = "power_both")
+
+power_by_test_type_subset_long_gaml2$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_test_type_subset_long_gaml2 $power_both]
+power_by_test_type_subset_long_gaml2$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long_gaml2 $test_type]
+
+save(power_by_test_type_subset_long_gaml2,file="./simulation_data/power_by_test_type_subset_long_gaml2.RData")
+power_by_test_type_subset_plot_gaml2=ggplot(power_by_test_type_subset_long_gaml2,
+                                              aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(  test_type_new~power_both_new,
+                 labeller = label_parsed)+
+    ylab("Power")+
+    #xlab(expression(~delta~": Deivation from 0"))+
+    xlab(expression(~1~"+"~delta~"t"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.02, .95),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_test_type_subset_plot_gaml2
+
+########################################
+
+
+##fl11-15
+load("EXP3_r5000_gam_power_l2_bigger_fl.RData")
+power_by_test_type_gaml2_bigfl=final_table
+
+conditions_rep_newfl=c(11,12,13,14,15)
+replacement_values_flnewfl <- c(0,20, 40,60,80)
+
+# Use replace() to replace the names in the 'Names' column
+power_by_test_type_gaml2_bigfl$fl_choice <- replace_all(power_by_test_type_gaml2_bigfl$fl_choice, 
+                                                        conditions_rep_newfl,
+                                                        replacement_values_flnewfl)
+power_by_test_type_subset_gaml2bigfl=power_by_test_type_gaml2_bigfl[,c(1:3,5,7)]
+
+
+power_by_test_type_subset_long_gaml2bigfl <- melt(setDT(power_by_test_type_subset_gaml2bigfl), 
+                                             id.vars = c("fl_choice", "num_subjects", "test_type"),
+                                             variable.name = "power_both")
+
+power_by_test_type_subset_long_gaml2bigfl$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_test_type_subset_long_gaml2bigfl$power_both]
+power_by_test_type_subset_long_gaml2bigfl$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long_gaml2bigfl$test_type]
+
+save(power_by_test_type_subset_long_gaml2bigfl,file="./simulation_data/power_by_test_type_subset_long_gaml2bigfl.RData")
+
+power_by_test_type_subset_plot_gaml2bigfl=ggplot(power_by_test_type_subset_long_gaml2bigfl,
+                                            aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(  test_type_new~power_both_new,
+                 labeller = label_parsed)+
+    ylab("Power")+
+    #xlab(expression(~delta~": Deivation from 0"))+
+    xlab(expression(~1~"+"~delta~"t"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.01, .98),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_test_type_subset_plot_gaml2bigfl
+
+###########use fl 0,10,20,30,40,60
+load("./simulation_data/power_by_time_gaml2long.RData")
+#power_by_test_type_subset_long_gaml2
+power_by_test_type_subset_long_gaml2_sub=power_by_test_type_subset_long_gaml2[power_by_test_type_subset_long_gaml2$fl_choice %in% c(10,30) & power_by_test_type_subset_long_gaml2$num_subjects %in% c(1000,500,100),]
+power_by_test_type_subset_long_gaml2bigfl_sub=power_by_test_type_subset_long_gaml2bigfl[power_by_test_type_subset_long_gaml2bigfl$fl_choice %in% c(0,20,40,60),]
+power_test_type_finaldata=rbind(power_by_test_type_subset_long_gaml2_sub,power_by_test_type_subset_long_gaml2bigfl_sub)
+
+save(power_test_type_finaldata,file="./simulation_data/power_test_type_finaldata.RData")
+power_by_test_type_subset_plot_gaml2mixfl=ggplot(power_test_type_finaldata,
+                                                 aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+    geom_line() +
+    facet_grid(  test_type_new~power_both_new,
+                 labeller = label_parsed)+
+    ylab("Power")+
+    #xlab(expression(~delta~": Deivation from 0"))+
+    xlab(expression(~1~"+"~delta~"t"))+
+    guides(color = guide_legend(title = "Subjects")) +
+    theme(text = element_text(size = 20))  +
+    theme(
+        legend.position = c(.01, .98),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+    )#+
+#theme(strip.text.x = element_blank())
+power_by_test_type_subset_plot_gaml2mixfl
+
+#######################################
+#Feb7, re do gam, l2_penalty end, power, bernoulli 1-y instead of n-y
+########################################
+
+
+#######################################
+#Feb12, re do gam, l2_penalty start, power, bernoulli 1-y instead of n-y
+########################################
+load("EXP3_r5000_nonlinear_gam_power.RData")
+
+#######################################
+#Feb7, re do gam, l2_penalty end, power, bernoulli 1-y instead of n-y
+########################################
