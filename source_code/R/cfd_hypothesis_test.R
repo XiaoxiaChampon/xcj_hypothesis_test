@@ -303,9 +303,6 @@ get_Zmatrix <- function(X_matrix, time_interval, test_type, number_basis =30){
   # X.g2 <-  ximat %*% J_matrix %*% Q2
   Ztilde <-  J_matrix %*% Q[,1:(number_basis-difference_penalty)]
   X.g2 <-  J_matrix %*% Q2
-  
-  
-
   return(list(Zmat=Ztilde%*%Lambda1.inv.half, X.g2=X.g2,
        J=J_matrix,D=D,phi=bspline,Q=Q,Q2=Q2,Lambda1.inv.half=Lambda1.inv.half))
 }
