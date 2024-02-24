@@ -291,6 +291,10 @@ summary(gam_Inc)
 #                         s(Zmat_Func.mat3, bs = 're'), family = 'binomial'), silent = F)
 gam_Func <- gam(cbind(Y_label, 1- Y_label) ~ 0 + Xmat_Func + s(Zmat_Func.mat2, bs = 're')+
                         s(Zmat_Func.mat3, bs = 're'), family = 'binomial')
+
+library(mgcv)
+gam_Func_check <- gam(cbind(Y_label, 1- Y_label) ~ 0 + Xmat_Func + s(Zmat_Func.mat2, bs = 'cr')+
+                    s(Zmat_Func.mat3, bs = 'cr'), family = 'binomial')
 # gam.vcomp(gam_Func )
 # s(Zmat_Func.mat2) s(Zmat_Func.mat3) 
 # 1.2942934         0.0152765 

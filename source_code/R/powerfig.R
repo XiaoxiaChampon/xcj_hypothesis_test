@@ -919,11 +919,12 @@ table_part1_unlist=data.frame(matrix(unlist(table_list_column[,5:8]),nrow=30))
 colnames(table_part1_unlist)=c("power","se","power_01","se_01")
 table_part2=final_table[,1:4]
 table_1_final=cbind(table_part1_unlist,table_part2)
-table_1_final
 #xtable(final_table,digits=4)
 #typeI90and180RData=final_table
 typeI90=table_1_final[table_1_final$num_timepoints==90,]
 typeI180=table_1_final[table_1_final$num_timepoints==180,]
+save(typeI90,typeI180,
+     file="./simulation_data/aRLRT_typeI.RData")
 #######################################
 #aRLRT, difference_penalty end, type I error
 ########################################
@@ -937,6 +938,7 @@ gam_differece_penalty90_typeI=gam_differece_penalty[gam_differece_penalty$num_ti
 gam_differece_penalty180_typeI=gam_differece_penalty[gam_differece_penalty$num_timepoints==180,]
 save(gam_differece_penalty90_typeI,gam_differece_penalty180_typeI,
      file="./simulation_data/gam_differece_penalty_typeI_ber1notn.RData")
+load("./simulation_data/gam_differece_penalty_typeI_ber1notn.RData")
 #######################################
 #Feb7, re do gam, difference_penalty start, type I error, bernoulli 1-y instead of n-y
 ########################################
@@ -951,6 +953,8 @@ gam_l2_penalty90_typeI=gam_l2_penalty[gam_l2_penalty$num_timepoints==90,]
 gam_l2_penalty180_typeI=gam_l2_penalty[gam_l2_penalty$num_timepoints==180,]
 save(gam_l2_penalty90_typeI,gam_l2_penalty180_typeI,
      file="./simulation_data/gam_l2_penalty_typeI_ber1notn.RData")
+
+load("./simulation_data/gam_l2_penalty_typeI_ber1notn.RData")
 #######################################
 #Feb7, re do gam, l2_penalty end, type I error, bernoulli 1-y instead of n-y
 ########################################
