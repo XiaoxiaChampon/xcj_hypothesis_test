@@ -195,6 +195,10 @@ table(W_merge)
 # 0          1          2 
 # 0.49151156 0.43183801 0.07665043 
 
+
+
+
+
 X_cfd_twitter <- GetXFromW(W_merge)
 #sum(X_cfd_twitter[,,1])
 #[1] 29550
@@ -216,6 +220,53 @@ num_indvs <- length(Y_label)
 #Y_label
 #0        1 
 #0.502924 0.497076 
+
+
+
+#######################Dr. Xiao suggested Feb 22
+#estimate Fl
+time_interval_matrix=do.call("rbind", replicate( 
+    length(Y_label), time_interval, simplify = FALSE)) 
+
+fl_gam=gam(Y_label~s(time_interval_matrix,by=X_cfd_twitter[,,2])+s(time_interval_matrix,by=X_cfd_twitter[,,3]),family = 'binomial')
+##############
+library(mgcViz)
+fl_gam_model=getViz(fl_gam)
+print(plot(fl_gam_model, allTerms = T,xlab="Time",ylab="Value"), pages = 1)
+##########
+check(fl_gam_model,
+      a.qq = list(method = "tnorm", 
+                  a.cipoly = list(fill = "light blue")), 
+      a.respoi = list(size = 0.5), 
+      a.hist = list(bins = 10))
+
+# Method: UBRE   Optimizer: outer newton
+# full convergence after 7 iterations.
+# Gradient range [-3.441343e-07,3.181516e-09]
+# (score 0.3932711 & scale 1).
+# Hessian positive definite, eigenvalue range [3.440704e-07,0.0002321639].
+# Model rank =  21 / 21 
+# 
+# Basis dimension (k) checking results. Low p-value (k-index<1) may
+# indicate that k is too low, especially if edf is close to k'.
+# 
+#                                                 k'   edf k-index p-value
+# s(time_interval_matrix):X_cfd_twitter[, , 2] 10.00  2.27      NA      NA
+# s(time_interval_matrix):X_cfd_twitter[, , 3] 10.00  2.00      NA      NA
+#########
+o <- plot( sm(fl_gam_model, 2) )
+o + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
+    l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
+    xlab("Time")+
+    ylab("Value")+
+    theme(text = element_text(size = 20)) +
+    l_points(shape = 19, size = 1, alpha = 0.1) + theme_classic()
+########################################
+
+
+
+
+
 
 Zmat_Inc2<-get_Zmatrix(X_cfd_twitter[,1:104,2],time_interval,test_type='Inclusion')
 Zmat_Inc.mat2 <- Zmat_Inc2$Zmat
