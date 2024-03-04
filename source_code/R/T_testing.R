@@ -271,12 +271,12 @@ for (row_index in 1:dim(ed_table)[1]){
     experiment_output <- run_experiment_hypothesis( row_index,
                                                     num_indvs , 
                                                     timeseries_length,
-                                                    fl_choice,
-                                                    test_type)
+                                                    fl_choice
+                                                    )
     save(experiment_output, file = paste0("./outputsT/exp3_", 
                                           "_i", row_index, 
                                           "_fl", fl_choice, 
-                                          "_ttype", test_type, 
+                            
                                           "_n", num_indvs, 
                                           "_tlen", timeseries_length,
                                           ".RData"))
