@@ -49,3 +49,10 @@ integral_penalty <- function(time_interval, function_value) {
   )
   return(results)
 }
+
+integral_function <- function(time_interval, function_value){
+        dt = diff(x)/2.0
+        m=length(time_interval)
+        z = c(0, cumsum(dt*(function_value[1:(m-1)] + function_value[2:m])))
+    return(z)
+}

@@ -228,7 +228,31 @@ num_indvs <- length(Y_label)
 time_interval_matrix=do.call("rbind", replicate( 
     length(Y_label), time_interval, simplify = FALSE)) 
 
-fl_gam=gam(Y_label~s(time_interval_matrix,by=X_cfd_twitter[,,2])+s(time_interval_matrix,by=X_cfd_twitter[,,3]),family = 'binomial')
+fl_gam30=gam(Y_label~s(time_interval_matrix,by=X_cfd_twitter[,,2],k = 30)+s(time_interval_matrix,by=X_cfd_twitter[,,3],k = 30),family = 'binomial')
+
+#summary(fl_gam)
+# Family: binomial 
+# Link function: logit 
+# 
+# Formula:
+#     Y_label ~ s(time_interval_matrix, by = X_cfd_twitter[, , 2]) + 
+#     s(time_interval_matrix, by = X_cfd_twitter[, , 3])
+# 
+# Parametric coefficients:
+#     Estimate Std. Error z value Pr(>|z|)
+# (Intercept)  0.07601    0.19266   0.395    0.693
+# 
+# Approximate significance of smooth terms:
+#     edf Ref.df Chi.sq
+# s(time_interval_matrix):X_cfd_twitter[, , 2] 2.272  2.489  3.437
+# s(time_interval_matrix):X_cfd_twitter[, , 3] 2.000  2.000  1.632
+# p-value
+# s(time_interval_matrix):X_cfd_twitter[, , 2]   0.186
+# s(time_interval_matrix):X_cfd_twitter[, , 3]   0.442
+# 
+# R-sq.(adj) =  0.00495   Deviance explained = 0.977%
+# UBRE = 0.39327  Scale est. = 1         n = 513
+
 ##############
 library(mgcViz)
 fl_gam_model=getViz(fl_gam)
@@ -254,8 +278,8 @@ check(fl_gam_model,
 # s(time_interval_matrix):X_cfd_twitter[, , 2] 10.00  2.27      NA      NA
 # s(time_interval_matrix):X_cfd_twitter[, , 3] 10.00  2.00      NA      NA
 #########
-o <- plot( sm(fl_gam_model, 2) )
-o + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
+xlfl2plot <- plot( sm(fl_gam_model, 1) )
+xlfl2plot + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
     l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
     xlab("Time")+
     ylab("Value")+
