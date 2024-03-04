@@ -56,7 +56,7 @@ if(run_parallel)
 }
 
 ###test to get T
-source("./source_code/R/data_generator.R")
+
 
 # start_time=0.01
 # end_time=0.99
@@ -127,29 +127,20 @@ source("./source_code/R/data_generator.R")
 #                time_interval, fl_choice, lp_intercept=0.9998364)
 
 
-cfd_T_testing=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                       time_interval, fl_choice, lp_intercept=0.9998364){
-    WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                        time_interval, fl_choice, lp_intercept=0.9998364)
-                                     
-    T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
-                                                             number_basis =30,est_choice="binomial" )
-    two_sample_result <- t.test(T_example$rv_XF,T_example$rv_E_PF, var.equal = FALSE)
-    return(list("pvalue"=two_sample_result$p.value,"rvmean"=two_sample_result$estimate[[1]],
-                "rvemean"=two_sample_result$estimate[[2]]))
-}
 
 
 cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
                                     mu1_coef, mu2_coef,
-                                    num_indvs,fl_choice,response_family,test_type,gam_choice,
+                                    num_indvs,fl_choice,
                                     klen=3){
-    cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
+    cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas, "\nNum indvs:\t", num_indvs)
     #num_replicas=2
+    time_interval=seq(start_time,end_time,length.out=timeseries_length)
+    
     result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                           .packages=c("splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
+                           .packages=c("splines","mgcv","fda","fda.usc","MASS","stats")) %dorng% {
                                # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
-                               source("./source_code/R/data_generator.R")
+                               source("./source_code/R/T_testing_functions.R")
                                result <- cfd_T_testing(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                        time_interval, fl_choice, lp_intercept=0.9998364)
                                
@@ -162,379 +153,152 @@ cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timese
 }
 
 
+source("./source_code/R/time_track_function.R")
+run_experiment_hypothesis <- function(exp_idx,
+                                      num_indvs,
+                                      timeseries_length,
+                                      fl_choice,
+                                      num_replicas = 5000,
+                                      alpha = 0.05, 
+                                      start_time=0.01,
+                                      end_time=0.99){
+    
+    mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+    mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
+    exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                     "\n timeserires_length:\t",timeseries_length
+                    
+                     )
+    writeLines(exp_str)
+    timeKeeperStart(exp_str)
+
+    simulation_scenarios <- cfd_T_testing_simulation (num_replicas, start_time, end_time, timeseries_length,
+                                                      mu1_coef, mu2_coef,
+                                                      num_indvs,fl_choice,
+                                                      klen=3)
+    simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
+    save(simulation_pvalues, file = paste0("./outputsT/simpvals3",
+                                           "_i", exp_idx,
+                                           "_fl", fl_choice,
+                                           "_n", num_indvs,
+                                           "_tlen", timeseries_length,
+                                           ".RData"))
+    non_null_count <- dim(simulation_pvalues)[2]
+    power <- mean(simulation_pvalues[1,] < alpha)
+    power_se <- sqrt(power*(1-power)/non_null_count)
+    ############
+    power_01 <- mean(simulation_pvalues[1,] < 0.1)
+    power_se01 <- sqrt(power_01*(1-power_01)/non_null_count)
+    ##############
+    rv_mean= mean(simulation_pvalues[2,])
+    rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
+    rve_mean= mean(simulation_pvalues[3,])
+    rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
+    ################
+    # x2fl2 <- mean(simulation_pvalues[4,])
+    # x2fl2_se <- sd(simulation_pvalues[4,])/non_null_count
+    ##############
+    # power2 <- mean(simulation_pvalues[4,] < alpha)
+    # power2_se <- sqrt(power2*(1-power2)/non_null_count)
+    # power_012 <- mean(simulation_pvalues[4,] < 0.1)
+    # power_se012 <- sqrt(power_012*(1-power_012)/non_null_count)
+    ############
+    # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
+    timeKeeperNext()
+    # return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
+    #             "yip_mean"=yip_mean,"yip_wo_mean"=yip_wo_mean,"yip_sd"=yip_sd,
+    #             "yip_wo_sd"=yip_wo_sd,"power2"=power2,"se2"=power2_se,"power_012"=power_012 ,
+    #             "se012"=power_se012,"NAs"=num_replicas - non_null_count))
+    
+    return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
+                "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
+                "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
+}
+# 
+# run_experiment_hypothesis (0,
+#                                      100,
+#                                       90,
+#                                       6,
+#                                       num_replicas = 5,
+#                                       alpha = 0.05)
+
+begin_exp_time <- Sys.time()
+
+set.seed(123456)
+
+
+generate_ed_table <- function(subjects_vector = c(500,300,100),
+                              time_length_vector = c(180,90),
+                              fl_choice_vector = c("6"),
+                              test_type_vector = c("Inclusion", "Functional")){
+    ed_table_ret <- expand.grid(fl_choice_vector, test_type_vector, subjects_vector, time_length_vector)
+    return(ed_table_ret)
+}
+
+########
+#type I error rate
+ed_table1 <- generate_ed_table(
+                               fl_choice_vector = c("6"),
+                               time_length_vector = c(90),
+                               test_type_vector = c("Inclusion", "Functional"))
+ed_table2=generate_ed_table(fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
+                                                         test_type_vector = c("Functional"))
+
+
+ed_table <- rbind(ed_table1,ed_table2)
+
+###################
+#power
+# ed_table1 <- generate_ed_table(subjects_vector = c(500,300,100),
+#                                fl_choice_vector = c("6","7", "8","9","10"),
+#                                time_length_vector = c(90),
+#                                test_type_vector = c("Inclusion"))
+# ed_table2 <- generate_ed_table(subjects_vector = c(1000,500,300,100),
+#                                fl_choice_vector = c("21","22","23","24","25"))
+# ed_table <- rbind(ed_table1,ed_table2)
+# ###################
+
+colnames(ed_table) <- c("fl_choice", "test_type", "num_subjects", "num_timepoints")
+########################
+#gam_choice=0
+##########################
+all_experiment_outputs <- list()
+for (row_index in 1:dim(ed_table)[1]){
+    num_indvs <- ed_table[row_index,]$num_subjects
+    timeseries_length <- ed_table[row_index,]$num_timepoints
+    fl_choice <- as.character(ed_table[row_index,]$fl_choice)
+    test_type <- as.character(ed_table[row_index,]$test_type)
+    experiment_output <- run_experiment_hypothesis( row_index,
+                                                    num_indvs , 
+                                                    timeseries_length,
+                                                    fl_choice,
+                                                    test_type)
+    save(experiment_output, file = paste0("./outputsT/exp3_", 
+                                          "_i", row_index, 
+                                          "_fl", fl_choice, 
+                                          "_ttype", test_type, 
+                                          "_n", num_indvs, 
+                                          "_tlen", timeseries_length,
+                                          ".RData"))
+    all_experiment_outputs <- rbind(all_experiment_outputs, experiment_output)
+}
+
+final_table <- cbind(ed_table, all_experiment_outputs)
+
+mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
+save(final_table,mu1_coef,mu2_coef,file = "EXP3_outputsT.RData")
+
+end_exp_time <- Sys.time()
+
+cat("\n====================\n",
+    "\tAll Experiemnts Took:", capture.output(end_exp_time - begin_exp_time), 
+    "\n====================\n")
 
 
 # @param W 2D array, t*n: t is the timestamp and n is the number of the observation
 # @return X 3D array, n*t*Q, Q: the total number of the category
 # GetXFromW <- function(W)
-
-#for getxfromW function
-source("./source_code/R/cfd_hypothesis_test.R")
-
-get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
-    # W=WY_sample$true$Truecatcurve
-    # Y=WY_sample$true$yis
-    # est_choice="binomial"
-    #Estimation
-    
-    categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
-    X_array=categFD_est$X_array
-    num_indv <- nrow(X_array[,,1])
-    category_count <- dim(X_array)[3]
-    timeseries_length<- length(time_interval)
-    # @return list of 2D array: True Z curves , Est Z curves, True p curves, Est p curves
-    #                          all have dimension t*n
-    
-    #p<-array(0, c( timeseries_length,num_indv, category_count))
-    
-    pl_matrix=array(c(categFD_est$pl$p1_est,categFD_est$pl$p2_est,categFD_est$pl$p3_est),dim=c(timeseries_length,num_indvs,category_count))
-    number_col <- number_basis
-    knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
-    bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
-    mub_matrix <- foreach(this_row = 1:num_indv ) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- integral_penalty(time_interval,pl_matrix[,this_row,category_count-1]*bspline[,this_col])$value
-            }
-            return(temp)
-        }
-    mub_matrix <- do.call(rbind, mub_matrix)
-    
-    
-    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
-    
-    ##parallel use each row of X to multiple each column of bspline
-    
-    # J_matrix <- matrix(0,nrow=nrow(X_matrix),ncol=number_basis) #empty
-    # for(row in 1:number_row){
-    #   for(col in 1:number_col){
-    #     J_matrix[row,col] <- integral_penalty(time_interval,X_matrix[row,]*bspline[,col])$value
-    #   }
-    # }
-    
-    
-    J_matrix <- foreach(this_row = 1:num_indv) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- integral_penalty(time_interval,X_array[this_row,,2]*bspline[,this_col])$value
-            }
-            return(temp)
-        }
-    J_matrix <- do.call(rbind, J_matrix)
-    
-    
-    DBB_matrix <- foreach(this_row = 1:number_col) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,this_row]*bspline[,this_col]))$value)*(cov(X_array[,,2])[this_row,this_col])
-            }
-            return(temp)
-        }
-    DBB_matrix <- do.call(rbind, DBB_matrix)
-    
-    
-    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis)+s(time_interval_matrix,by=X_array[,,3],k = number_basis),family = 'binomial')
-    betal=logit_model$coefficients[2:(number_basis+1)]
-    
-    logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis)+s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis),family = 'binomial')
-    gammal=logit_model_p$coefficients[2:(number_basis+1)]
-    
-    
-    
-    ## 
-    T_vector <- foreach(this_row = 1:num_indv ) %do%
-    {
-        source("./source_code/R/integral_penalty_function.R")
-
-       
-            temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
-            #temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
-        
-        return(temp)
-    }
-    T_vector <- do.call(cbind, T_vector)
-    
-    T_vectorp <- foreach(this_row = 1:num_indv ) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            
-            #temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
-            temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
-            
-            return(temp)
-        }
-    T_vectorp <- do.call(cbind, T_vectorp)
-    
-    rv_XF=J_matrix%*%betal
-    rv_E_PF=mub_matrix%*%gammal
-    
-    
-    #R*R, R*1, n*R,n*1
-    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
-                "T_vector"=T_vector,"T_vectorp"=T_vectorp,
-                "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))}
-
-
-
-
-
-#' Function to select 
-#' @param choice "probit", "binomial",  or "multinormial"
-#' @param timestamps01, 1D array, time interval that cfd is observed
-#' @param  W: 2D array, t*n, t: the number of time points, n: the number of individuals
-#' @param  basis_size=25, the number of basis function used 
-#' @param  method="ML"
-#' @return list of 2D array: True Z curves , Est Z curves, True p curves, Est p curves
-#'                           all have dimension t*n
-EstimateCategFuncDataX <- function(choice, timestamps01, W, basis_size=25, method="ML")
-{
-    if(choice == "probit"){
-        X <- GetXFromW(W)
-        pl=EstimateCategFuncData_probit(timestamps01, X, basis_size, method, 1/150)
-        return(list("pl"=pl,"X_array"=X))
-    }else if(choice == "binomial"){
-        X <- GetXFromW(W)
-        #timestamps01=time_interval
-        # basis_size=25
-        # method="ML"
-        pl=EstimateCategFuncData_binorm(timestamps01, X, basis_size, method)
-        return(list("pl"=pl,"X_array"=X))
-    }
-}
-
-
-
-
-#'Function to estimate z and p using probit
-#' @param timestamps01, 1D array, time interval that cfd is observed
-#' @param  X: 3D array, t*n*Q, t: the number of time points, n: the number of individuals, Q: the number of categories
-#' @param  basis_size=25, the number of basis function used 
-#' @param  method="ML"
-#' @return list of 2D array: True Z curves , Est Z curves, True p curves, Est p curves
-#'                           all have dimension t*n
-EstimateCategFuncData_probit <- function(timestamps01, X, basis_size=25, method="ML", threshold_probability=0.004)
-{
-    num_indv<- dim(X)[1]
-    timeseries_length<- dim(X)[2]
-    category_count <- dim(X)[3]
-    
-    Z<-NULL
-    p<-array(0, c(num_indv, timeseries_length, category_count))
-    # for (indv in 1:num_indv){
-    #   #i=93
-    #   #basis_size=25
-    #   x1<- X[indv,,1]
-    #   x2<- X[indv,,2]
-    #   x3<- X[indv,,3]
-    # 
-    #   if (timeseries_length<=301 && sum(x1)/timeseries_length<threshold_probability){
-    # 
-    #     gam_result_1 <- RunGam(timestamps01, x1, "probit", basis_size, method)
-    #     p1 <- gam_result_1$prob
-    #     p1_linpred <- gam_result_1$linpred
-    # 
-    #     gam_result_2 <- RunGam(timestamps01, x2, "probit", basis_size, method)
-    #     p2 <- gam_result_2$prob
-    #     p2_linpred <- gam_result_2$linpred
-    # 
-    #     gam_result_3 <- RunGam(timestamps01, x3, "probit", basis_size, method)
-    #     p3 <- gam_result_3$prob
-    #     p3_linpred <- gam_result_3$linpred
-    #     denominator_p <- 1+exp(p3_linpred)
-    #     z1<- (p1_linpred-p3_linpred)-log( (1+exp(p1_linpred))/(denominator_p))
-    #     z2<- (p2_linpred-p3_linpred)-log( (1+exp(p2_linpred))/(denominator_p))
-    #   }else{
-    #     gam_result_1 <- RunGam(timestamps01, x1, "binomial", basis_size, method)
-    #     p1 <- gam_result_1$prob
-    #     p1_linpred <- gam_result_1$linpred
-    # 
-    #     gam_result_2 <- RunGam(timestamps01, x2, "binomial", basis_size, method)
-    #     p2 <- gam_result_2$prob
-    #     p2_linpred <- gam_result_2$linpred
-    # 
-    #     gam_result_3 <- RunGam(timestamps01, x3, "binomial", basis_size, method)
-    #     p3 <- gam_result_3$prob
-    #     p3_linpred <- gam_result_3$linpred
-    # 
-    #     # estimate the latent curves Z
-    #     exp_p3_linepred <- exp(p3_linpred)
-    #     z1 <- (p1_linpred-p3_linpred)-log( (1+exp(p1_linpred))/(1+exp_p3_linepred))
-    #     z2 <- (p2_linpred-p3_linpred)-log( (1+exp(p2_linpred))/(1+exp_p3_linepred))
-    # 
-    # 
-    #   } # end if special case for probit
-    # 
-    #   Z <- cbind(Z, c(z1,z2))
-    #   psum <- (p1+p2+p3)
-    #   p[indv,,] <- cbind(p1/psum, p2/psum, p3/psum)
-    # }
-    # return(list(Z1_est=Z[1:timeseries_length,],
-    #             Z2_est=Z[1:timeseries_length+timeseries_length,],
-    #             p1_est=t(p[,,1]),
-    #             p2_est=t(p[,,2]),
-    #             p3_est=t(p[,,3]) ))
-    
-    zp <- foreach (indv = 1:num_indv, .combine = cbind, .init = NULL, .packages = c("mgcv")) %dorng%
-        {
-            source("./source_code/R/run_gam_function.R")
-            
-            x1<- X[indv,,1]
-            x2<- X[indv,,2]
-            x3<- X[indv,,3]
-            
-            probit_binom <- function(x_binary){
-                if (sum(x_binary)/timeseries_length < threshold_probability){
-                    gam_result_binary <- RunGam(timestamps01, x_binary, "probit", basis_size, method)
-                    p_binary <- gam_result_binary$prob
-                    p_binary_linpred <- gam_result_binary$linpred
-                }else{
-                    gam_result_binary <- RunGam(timestamps01, x_binary, "binomial", basis_size, method)
-                    p_binary <- gam_result_binary$prob
-                    p_binary_linpred <- gam_result_binary$linpred
-                }
-                return(list("p_binary"=p_binary,"p_binary_linpred"=p_binary_linpred))
-            }
-            
-            r_1 <- probit_binom(x1)
-            p1 <- r_1$p_binary
-            p1_linpred <- r_1$p_binary_linpred
-            
-            r_2 <- probit_binom(x2)
-            p2 <- r_2$p_binary
-            p2_linpred <- r_2$p_binary_linpred
-            
-            r_3 <- probit_binom(x3)
-            p3 <- r_3$p_binary
-            p3_linpred <- r_3$p_binary_linpred
-            
-            # estimate the latent curves Z
-            denominator_p <- 1 + exp(p3_linpred)
-            z1 <- (p1_linpred-p3_linpred)-log( (1+exp(p1_linpred))/(denominator_p))
-            z2 <- (p2_linpred-p3_linpred)-log( (1+exp(p2_linpred))/(denominator_p))
-            
-            psum <- p1 + p2 + p3
-            return(c(c(z1,z2), cbind(p1/psum, p2/psum, p3/psum)))
-        }
-    # Unravel the two variables from zp
-    z_rows_count <- timeseries_length * 2
-    Z <- array(zp[1:z_rows_count, ], c(z_rows_count, num_indv))
-    p <- array(t(matrix(zp[(z_rows_count + 1):dim(zp)[1], ], ncol=num_indv)), c(num_indv, timeseries_length, category_count))
-    
-    
-    return(list(Z1_est=Z[1:timeseries_length,],
-                Z2_est=Z[1:timeseries_length+timeseries_length,],
-                p1_est=t(p[,,1]),
-                p2_est=t(p[,,2]),
-                p3_est=t(p[,,3]) ))
-}
-
-#'Function to estimate z and p using binom
-#' @param timestamps01, 1D array, time interval that cfd is observed
-#' @param  X: 3D array, t*n*Q, t: the number of time points, n: the number of individuals, Q: the number of categories
-#' @param  basis_size=25, the number of basis function used 
-#' @param  method="ML"
-#' @return list of 2D array: True Z curves , Est Z curves, True p curves, Est p curves
-#'                           all have dimension t*n
-
-EstimateCategFuncData_binorm <- function(timestamps01, X, basis_size=25, method="ML")
-{
-    num_indv<- dim(X)[1]
-    timeseries_length<- dim(X)[2]
-    category_count <- dim(X)[3]
-    
-    Z<-NULL
-    p<-array(0, c(num_indv, timeseries_length, category_count))
-    ##########################
-    ###########################
-    # num_indv is the subject and this step is done by subject level
-    # can parallel
-    #############################
-    #############################
-    #   for (indv in 1:num_indv)
-    #   {
-    #     x1<- X[indv,,1]
-    #     x2<- X[indv,,2]
-    #     x3<- X[indv,,3]
-    #
-    #     # fit the Binom model
-    #     ###################################################
-    #     ###################################################
-    #     ##updated estimation
-    #
-    #     gam_result_1 <- RunGam(timestamps01, x1, "binomial", basis_size, method)
-    #     p1 <- gam_result_1$prob
-    #     p1_linpred <- gam_result_1$linpred
-    #
-    #     gam_result_2 <- RunGam(timestamps01, x2, "binomial", basis_size, method)
-    #     p2 <- gam_result_2$prob
-    #     p2_linpred <- gam_result_2$linpred
-    #
-    #     gam_result_3 <- RunGam(timestamps01, x3, "binomial", basis_size, method)
-    #     p3 <- gam_result_3$prob
-    #     p3_linpred <- gam_result_3$linpred
-    #
-    #     # estimate the latent tranjecotries Z
-    #     exp_p3_linepred <- exp(p3_linpred)
-    #     z1 <- (p1_linpred-p3_linpred)-log( (1+exp(p1_linpred))/(1+exp_p3_linepred))
-    #     z2 <- (p2_linpred-p3_linpred)-log( (1+exp(p2_linpred))/(1+exp_p3_linepred))
-    #
-    #     Z <- cbind(Z, c(z1,z2))
-    #     psum <- (p1+p2+p3)
-    #     p[indv,,] <- cbind(p1/psum, p2/psum, p3/psum)
-    #   }
-    # return(p)
-    # return(list(Z=Z,p=p))
-    
-    
-    zp <- foreach (indv = 1:num_indv, .combine = cbind, .init = NULL, .packages = c("mgcv")) %dorng%
-        {
-            source("./source_code/R/run_gam_function.R")
-            
-            x1<- X[indv,,1]
-            x2<- X[indv,,2]
-            x3<- X[indv,,3]
-            
-            gam_result_1 <- RunGam(timestamps01, x1, "binomial", basis_size, method)
-            p1 <- gam_result_1$prob
-            p1_linpred <- gam_result_1$linpred
-            
-            gam_result_2 <- RunGam(timestamps01, x2, "binomial", basis_size, method)
-            p2 <- gam_result_2$prob
-            p2_linpred <- gam_result_2$linpred
-            
-            gam_result_3 <- RunGam(timestamps01, x3, "binomial", basis_size, method)
-            p3 <- gam_result_3$prob
-            p3_linpred <- gam_result_3$linpred
-            
-            # estimate the latent tranjecotries Z
-            denominator_p <- 1 + exp(p3_linpred)
-            z1 <- (p1_linpred-p3_linpred)-log( (1+exp(p1_linpred))/(denominator_p))
-            z2 <- (p2_linpred-p3_linpred)-log( (1+exp(p2_linpred))/(denominator_p))
-            
-            psum <- p1 + p2 + p3
-            return(c(c(z1,z2), cbind(p1/psum, p2/psum, p3/psum)))
-        }
-    # Unravel the two variables from zp
-    z_rows_count <- timeseries_length * 2
-    Z <- array(zp[1:z_rows_count, ], c(z_rows_count, num_indv))
-    p <- array(t(matrix(zp[(z_rows_count + 1):dim(zp)[1], ], ncol=num_indv)), c(num_indv, timeseries_length, category_count))
-    
-    return(list(Z1_est=Z[1:timeseries_length,],
-                Z2_est=Z[1:timeseries_length+timeseries_length,],
-                p1_est=t(p[,,1]),
-                p2_est=t(p[,,2]),
-                p3_est=t(p[,,3]) ))
-}
 
 
 
