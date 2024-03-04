@@ -118,9 +118,9 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
                         s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial')
     betal=logit_model$coefficients[2:(number_basis+1)]
     
-    logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
-                          s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
-    gammal=logit_model_p$coefficients[2:(number_basis+1)]
+    #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
+    #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
+    #gammal=logit_model_p$coefficients[2:(number_basis+1)]
     
     
     
@@ -137,29 +137,31 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
         }
     T_vector <- do.call(cbind, T_vector)
     
-    T_vectorp <- foreach(this_row = 1:num_indv ) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            
-            #temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
-            temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
-            
-            return(temp)
-        }
-    T_vectorp <- do.call(cbind, T_vectorp)
+    # T_vectorp <- foreach(this_row = 1:num_indv ) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #         
+    #         #temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
+    #         temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
+    #         
+    #         return(temp)
+    #     }
+    # T_vectorp <- do.call(cbind, T_vectorp)
     
     rv_XF=J_matrix%*%betal
-    rv_E_PF=mub_matrix%*%gammal
+    #rv_E_PF=mub_matrix%*%gammal
+    rv_E_PF=mub_matrix%*%betal
     
     
     #R*R, R*1, n*R,n*1
+    # return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
+    #             "T_vector"=T_vector,"T_vectorp"=T_vectorp,
+    #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
     return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
-                "T_vector"=T_vector,"T_vectorp"=T_vectorp,
+                "T_vector"=T_vector,
                 "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
     }
-
-
 
 
 #' Function to select 

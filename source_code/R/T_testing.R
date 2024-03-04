@@ -99,36 +99,36 @@ if(run_parallel)
 #                         time_interval, fl_choice, lp_intercept=0.9998364){
 #     WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                                         time_interval, fl_choice, lp_intercept=0.9998364)
-#     
-#     T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
+# 
+#     T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval,
 #                     number_basis =30,est_choice="binomial" )
 #     fit_data=c(T_example$T_vector)
 #     #fit_result <- fitdistr(fit_data, "log-normal")
 #     fit_result <- fitdistr(fit_data, "chi-squared", list(df=3), lower = 0.001)
 #     estimated_df <- fit_result$estimate
 #     print(estimated_df)
-#     
+# 
 #     #####
-#     fit_datap=c(T_example$T_vectorp)
-#     #fit_result <- fitdistr(fit_data, "log-normal")
-#     fit_resultp <- fitdistr(fit_datap, "chi-squared", list(df=3), lower = 0.001)
-#     estimated_dfp <- fit_resultp$estimate
-#     print(estimated_dfp)
+#     # fit_datap=c(T_example$T_vectorp)
+#     # #fit_result <- fitdistr(fit_data, "log-normal")
+#     # fit_resultp <- fitdistr(fit_datap, "chi-squared", list(df=3), lower = 0.001)
+#     # estimated_dfp <- fit_resultp$estimate
+#     # print(estimated_dfp)
 #     ##
 #     two_sample_result <- t.test(T_example$rv_XF,T_example$rv_E_PF, var.equal = FALSE)
 #     print(two_sample_result)
-#     
+# 
 #     par(mfrow=c(1,2))
 #     hist(T_example$T_vector,xlab="T",main=paste0("Historgram of T for", num_indvs," Subjects"))
-#     hist(T_example$T_vectorp,xlab="T",main=paste0("Historgram of Tp for", num_indvs," Subjects"))
-#     
+#     #hist(T_example$T_vectorp,xlab="T",main=paste0("Historgram of Tp for", num_indvs," Subjects"))
+# 
 # }
 # num_indvs=100
 # get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                         time_interval, fl_choice, lp_intercept=0.9998364)
 # num_indvs=500
-# get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-#                time_interval, fl_choice, lp_intercept=0.9998364)
+get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+               time_interval, fl_choice, lp_intercept=0.9998364)
 # num_indvs=1000
 # get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                time_interval, fl_choice, lp_intercept=0.9998364)
