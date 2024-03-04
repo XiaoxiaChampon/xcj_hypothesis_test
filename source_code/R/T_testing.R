@@ -58,57 +58,112 @@ if(run_parallel)
 ###test to get T
 source("./source_code/R/data_generator.R")
 
-start_time=0.01
-end_time=0.99
-timeseries_length=90
-time_interval=seq(start_time,end_time,length=timeseries_length)
-num_indvs=500
-#fl_choice=3 #not constant, expect to reject
-#fl_choice=8 #not constant, expect to reject
+# start_time=0.01
+# end_time=0.99
+# timeseries_length=90
+# time_interval=seq(start_time,end_time,length=timeseries_length)
+# num_indvs=500
+# #fl_choice=3 #not constant, expect to reject
+# #fl_choice=8 #not constant, expect to reject
+# 
+# fl_choice=6
+# klen=3
+# mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
+# mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
+# 
+# 
+# WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                       time_interval, fl_choice, lp_intercept=0.9998364)
+# 
+# num_indvs=1000
+# T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
+#                 number_basis =30,est_choice="binomial" )
+# 
+# 
+# library(MASS)
+# fit_data=c(T_example$T_vector)
+# fit_result <- fitdistr(fit_data, "log-normal")
+# estimated_df <- fit_result$estimate
+# print(estimated_df)
+# 
+# num_indvs=500
+# 
+# get_T_for_hist=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                         time_interval, fl_choice, lp_intercept=0.9998364){
+#     WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                         time_interval, fl_choice, lp_intercept=0.9998364)
+#     
+#     T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
+#                     number_basis =30,est_choice="binomial" )
+#     fit_data=c(T_example$T_vector)
+#     #fit_result <- fitdistr(fit_data, "log-normal")
+#     fit_result <- fitdistr(fit_data, "chi-squared", list(df=3), lower = 0.001)
+#     estimated_df <- fit_result$estimate
+#     print(estimated_df)
+#     
+#     #####
+#     fit_datap=c(T_example$T_vectorp)
+#     #fit_result <- fitdistr(fit_data, "log-normal")
+#     fit_resultp <- fitdistr(fit_datap, "chi-squared", list(df=3), lower = 0.001)
+#     estimated_dfp <- fit_resultp$estimate
+#     print(estimated_dfp)
+#     ##
+#     two_sample_result <- t.test(T_example$rv_XF,T_example$rv_E_PF, var.equal = FALSE)
+#     print(two_sample_result)
+#     
+#     par(mfrow=c(1,2))
+#     hist(T_example$T_vector,xlab="T",main=paste0("Historgram of T for", num_indvs," Subjects"))
+#     hist(T_example$T_vectorp,xlab="T",main=paste0("Historgram of Tp for", num_indvs," Subjects"))
+#     
+# }
+# num_indvs=100
+# get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                         time_interval, fl_choice, lp_intercept=0.9998364)
+# num_indvs=500
+# get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                time_interval, fl_choice, lp_intercept=0.9998364)
+# num_indvs=1000
+# get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                time_interval, fl_choice, lp_intercept=0.9998364)
 
-fl_choice=6
-klen=3
-mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
-mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 
-
-WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice, lp_intercept=0.9998364)
-
-T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
-                number_basis =30,est_choice="binomial" )
-
-
-library(MASS)
-fit_data=c(T_example$T_vector)
-fit_result <- fitdistr(fit_data, "log-normal")
-estimated_df <- fit_result$estimate
-print(estimated_df)
-
-num_indvs=500
-
-get_T_for_hist=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                        time_interval, fl_choice, lp_intercept=0.9998364){
+cfd_T_testing=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                       time_interval, fl_choice, lp_intercept=0.9998364){
     WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                         time_interval, fl_choice, lp_intercept=0.9998364)
-    
+                                     
     T_example=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval, 
-                    number_basis =30,est_choice="binomial" )
-    fit_data=c(T_example$T_vector)
-    fit_result <- fitdistr(fit_data, "log-normal")
-    estimated_df <- fit_result$estimate
-    print(estimated_df)
-    hist(T_example$T_vector,xlab="T",main=paste0("Historgram of T for", num_indvs," Subjects"))
+                                                             number_basis =30,est_choice="binomial" )
+    two_sample_result <- t.test(T_example$rv_XF,T_example$rv_E_PF, var.equal = FALSE)
+    return(list("pvalue"=two_sample_result$p.value,"rvmean"=two_sample_result$estimate[[1]],
+                "rvemean"=two_sample_result$estimate[[2]]))
 }
-num_indvs=100
-get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                        time_interval, fl_choice, lp_intercept=0.9998364)
-num_indvs=500
-get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-               time_interval, fl_choice, lp_intercept=0.9998364)
-num_indvs=1000
-get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-               time_interval, fl_choice, lp_intercept=0.9998364)
+
+
+cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
+                                    mu1_coef, mu2_coef,
+                                    num_indvs,fl_choice,response_family,test_type,gam_choice,
+                                    klen=3){
+    cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas)
+    #num_replicas=2
+    result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
+                           .packages=c("splines","mgcv","fda","fda.usc","devtools","RLRsim","MASS")) %dorng% {
+                               # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
+                               source("./source_code/R/data_generator.R")
+                               result <- cfd_T_testing(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                       time_interval, fl_choice, lp_intercept=0.9998364)
+                               
+                               #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
+                               #return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
+                               return(list("pvalue"=result$pvalue,"rvmean"=result$rvmean,"rvemean"=result$rvemean))
+                           } 
+    return(result_all)
+    
+}
+
+
+
+
 # @param W 2D array, t*n: t is the timestamp and n is the number of the observation
 # @return X 3D array, n*t*Q, Q: the total number of the category
 # GetXFromW <- function(W)
@@ -161,17 +216,17 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     # }
     
     
-    # J_matrix <- foreach(this_row = 1:number_row) %do%
-    #     {
-    #         source("./source_code/R/integral_penalty_function.R")
-    #         
-    #         temp <- array(-123, number_col)
-    #         for(this_col in 1:number_col){
-    #             temp[this_col] <- integral_penalty(time_interval,X_matrix[this_row,]*bspline[,this_col])$value
-    #         }
-    #         return(temp)
-    #     }
-    # J_matrix <- do.call(rbind, J_matrix)
+    J_matrix <- foreach(this_row = 1:num_indv) %do%
+        {
+            source("./source_code/R/integral_penalty_function.R")
+
+            temp <- array(-123, number_col)
+            for(this_col in 1:number_col){
+                temp[this_col] <- integral_penalty(time_interval,X_array[this_row,,2]*bspline[,this_col])$value
+            }
+            return(temp)
+        }
+    J_matrix <- do.call(rbind, J_matrix)
     
     
     DBB_matrix <- foreach(this_row = 1:number_col) %do%
@@ -190,6 +245,9 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis)+s(time_interval_matrix,by=X_array[,,3],k = number_basis),family = 'binomial')
     betal=logit_model$coefficients[2:(number_basis+1)]
     
+    logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis)+s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis),family = 'binomial')
+    gammal=logit_model_p$coefficients[2:(number_basis+1)]
+    
     
     
     ## 
@@ -197,16 +255,34 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     {
         source("./source_code/R/integral_penalty_function.R")
 
-        
+       
             temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
+            #temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
         
         return(temp)
     }
     T_vector <- do.call(cbind, T_vector)
     
+    T_vectorp <- foreach(this_row = 1:num_indv ) %do%
+        {
+            source("./source_code/R/integral_penalty_function.R")
+            
+            
+            #temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
+            temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
+            
+            return(temp)
+        }
+    T_vectorp <- do.call(cbind, T_vectorp)
     
-    #R*R, R*1, n*R
-    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,"T_vector"=T_vector))}
+    rv_XF=J_matrix%*%betal
+    rv_E_PF=mub_matrix%*%gammal
+    
+    
+    #R*R, R*1, n*R,n*1
+    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
+                "T_vector"=T_vector,"T_vectorp"=T_vectorp,
+                "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))}
 
 
 
