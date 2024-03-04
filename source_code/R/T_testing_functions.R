@@ -114,10 +114,12 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     DBB_matrix <- do.call(rbind, DBB_matrix)
     
     
-    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis)+s(time_interval_matrix,by=X_array[,,3],k = number_basis),family = 'binomial')
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial')
     betal=logit_model$coefficients[2:(number_basis+1)]
     
-    logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis)+s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis),family = 'binomial')
+    logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
+                          s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     gammal=logit_model_p$coefficients[2:(number_basis+1)]
     
     
