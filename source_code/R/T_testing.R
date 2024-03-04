@@ -119,7 +119,7 @@ source("./source_code/R/cfd_hypothesis_test.R")
 get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     # W=WY_sample$true$Truecatcurve
     # Y=WY_sample$true$yis
-    #est_choice="binomial"
+    # est_choice="binomial"
     #Estimation
     
     categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
@@ -142,7 +142,7 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
             
             temp <- array(-123, number_col)
             for(this_col in 1:number_col){
-                temp[this_col] <- integral_penalty(time_interval,integral_function(time_interval,pl_matrix[,this_row,category_count-1]*bspline[,this_col]))$value
+                temp[this_col] <- integral_penalty(time_interval,pl_matrix[,this_row,category_count-1]*bspline[,this_col])$value
             }
             return(temp)
         }
@@ -180,7 +180,7 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
             
             temp <- array(-123, number_col)
             for(this_col in 1:number_col){
-                temp[this_col] <- (integral_penalty(time_interval,bspline[,this_row]*bspline[,this_col])$value)*(cov(X_array[,,2])[this_row,this_col])
+                temp[this_col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,this_row]*bspline[,this_col]))$value)*(cov(X_array[,,2])[this_row,this_col])
             }
             return(temp)
         }
