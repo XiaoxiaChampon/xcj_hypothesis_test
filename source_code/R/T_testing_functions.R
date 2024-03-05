@@ -59,21 +59,34 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     
     #p<-array(0, c( timeseries_length,num_indv, category_count))
     
-    pl_matrix=array(c(categFD_est$pl$p1_est,categFD_est$pl$p2_est,categFD_est$pl$p3_est),dim=c(timeseries_length,num_indv,category_count))
+    #pl_matrix=array(c(categFD_est$pl$p1_est,categFD_est$pl$p2_est,categFD_est$pl$p3_est),dim=c(timeseries_length,num_indv,category_count))
+    pl_vector=apply(X_array[,,category_count-1],2,mean)
     number_col <- number_basis
     knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
     bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
-    mub_matrix <- foreach(this_row = 1:num_indv ) %do%
+    # mub_matrix <- foreach(this_row = 1:num_indv ) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #         temp <- array(-123, number_col)
+    #         for(this_col in 1:number_col){
+    #             temp[this_col] <- integral_penalty(time_interval,pl_matrix[,this_row,category_count-1]*bspline[,this_col])$value
+    #         }
+    #         return(temp)
+    #     }
+    # mub_matrix <- do.call(rbind, mub_matrix)
+    
+    mub_vector <- foreach(this_row = 1:num_col ) %do%
         {
             source("./source_code/R/integral_penalty_function.R")
             
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- integral_penalty(time_interval,pl_matrix[,this_row,category_count-1]*bspline[,this_col])$value
-            }
+          
+                temp <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
+          
             return(temp)
         }
-    mub_matrix <- do.call(rbind, mub_matrix)
+    mub_vector <- do.call(cbind, mub_vector)
+    
     
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
@@ -122,20 +135,20 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     #gammal=logit_model_p$coefficients[2:(number_basis+1)]
     
-    
+    T_statistics=t(betal)%*%((mub_vector)%*%t(mub_vector)+DBB_matrix)%*%(betal)
     
     ## 
-    T_vector <- foreach(this_row = 1:num_indv ) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            
-            temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
-            #temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
-            
-            return(temp)
-        }
-    T_vector <- do.call(cbind, T_vector)
+    # T_vector <- foreach(this_row = 1:num_indv ) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #         
+    #         temp <-t(betal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(betal)
+    #         #temp <-t(gammal)%*% (mub_matrix[this_row,]%*%t(mub_matrix[this_row,])+DBB_matrix)%*%(gammal)
+    #         
+    #         return(temp)
+    #     }
+    # T_vector <- do.call(cbind, T_vector)
     
     # T_vectorp <- foreach(this_row = 1:num_indv ) %do%
     #     {
@@ -151,15 +164,17 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     
     rv_XF=J_matrix%*%betal
     #rv_E_PF=mub_matrix%*%gammal
-    rv_E_PF=mub_matrix%*%betal
+   # rv_E_PF=mub_matrix%*%betal
+    rv_E_PF=t(mub_vector)%*%betal
+    
     
     
     #R*R, R*1, n*R,n*1
     # return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
     #             "T_vector"=T_vector,"T_vectorp"=T_vectorp,
     #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
-    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
-                "T_vector"=T_vector,
+    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_vector"=mub_vector,
+                "T_statistics"=T_statistics,
                 "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
     }
 
