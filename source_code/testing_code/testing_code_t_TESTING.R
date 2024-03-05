@@ -21,7 +21,7 @@ mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 #est_choice="binomial"
 get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replications, lp_intercept=0.9998364){
-    T_rep <- foreach(this_row = 1:num_replications ) %do%
+    T_rep <- foreach(this_row = 1:num_replications ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
             source("./source_code/R/T_testing_functions.R")
@@ -42,56 +42,54 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
     
 fl_choice="6"
 #fl_choice="25"
-par(mfrow=c(1,3))
-num_indvs=100
-num_replications=1000
-source("./source_code/R/time_track_function.R")
-exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
-                 "\n timeserires_length:\t",timeseries_length,
-                 "\n fl_choice:\t",fl_choice
-                )
-writeLines(exp_str)
-timeKeeperStart(exp_str)
-null_100=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                        time_interval, fl_choice, num_replications,lp_intercept=0.9998364)
-timeKeeperNext()
-num_indvs=500
-exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
-                 "\n timeserires_length:\t",timeseries_length,
-                 "\n fl_choice:\t",fl_choice)
-writeLines(exp_str)
-timeKeeperStart(exp_str)
-null_500=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                        time_interval, fl_choice,num_replications, lp_intercept=0.9998364)
-timeKeeperNext()
-num_indvs=1000
-exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
-                 "\n timeserires_length:\t",timeseries_length,
-                 "\n fl_choice:\t",fl_choice)
-null_1000=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                         time_interval, fl_choice,num_replications, lp_intercept=0.9998364)
-timeKeeperNext()
-par(mfrow=c(1,3))
+
+hist_T_simulation=function(fl_choice,num_replications=1000){
+    par(mfrow=c(1,3))
+    num_indvs=100
+    source("./source_code/R/time_track_function.R")
+    exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                     "\n timeserires_length:\t",timeseries_length,
+                     "\n fl_choice:\t",fl_choice
+                    )
+    writeLines(exp_str)
+    timeKeeperStart(exp_str)
+    null_100=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                            time_interval, fl_choice, num_replications,lp_intercept=0.9998364)
+    timeKeeperNext()
+    num_indvs=500
+    exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                     "\n timeserires_length:\t",timeseries_length,
+                     "\n fl_choice:\t",fl_choice)
+    writeLines(exp_str)
+    timeKeeperStart(exp_str)
+    null_500=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                            time_interval, fl_choice,num_replications, lp_intercept=0.9998364)
+    timeKeeperNext()
+    num_indvs=1000
+    exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                     "\n timeserires_length:\t",timeseries_length,
+                     "\n fl_choice:\t",fl_choice)
+    null_1000=get_T_simulations(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                             time_interval, fl_choice,num_replications, lp_intercept=0.9998364)
+    timeKeeperNext()
+    par(mfrow=c(1,3))
+    num_indvs=100
+    hist(null_100,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
+    num_indvs=500
+    hist(null_500,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
+    num_indvs=1000
+    hist(null_1000,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
+}
+
+
+par(mfrow=c(1,2))
 num_indvs=100
 hist(null_100,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
 num_indvs=500
 hist(null_500,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
-num_indvs=1000
-hist(null_1000,xlab="T",main=paste0("T for", num_indvs," Subjects", " with", num_replications," simulations"))
 
 
-fl_choice="25"
-par(mfrow=c(1,3))
-num_indvs=100
-alt_100=get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                       time_interval, fl_choice, num_replications,lp_intercept=0.9998364)
-num_indvs=500
-alt_500=get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                       time_interval, fl_choice, num_replications,lp_intercept=0.9998364)
-num_indvs=1000
-alt_1000=get_T_for_hist(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                        time_interval, fl_choice,num_replications, lp_intercept=0.9998364)
-
+hist_T_simulation("25",num_replications=10)
 
 
 #
