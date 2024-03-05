@@ -76,7 +76,7 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     #     }
     # mub_matrix <- do.call(rbind, mub_matrix)
     
-    mub_vector <- foreach(this_row = 1:num_col ) %do%
+    mub_vector <- foreach(this_col = 1:number_col ) %do%
         {
             source("./source_code/R/integral_penalty_function.R")
             
@@ -85,7 +85,7 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
           
             return(temp)
         }
-    mub_vector <- do.call(cbind, mub_vector)
+    mub_vector <- do.call(rbind, mub_vector)
     
     
     
@@ -128,14 +128,16 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     
     
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
-                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial')
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial',
+                    control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+                    optimizer=c("outer","bfgs"),method="ML")
     betal=logit_model$coefficients[2:(number_basis+1)]
     
     #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     #gammal=logit_model_p$coefficients[2:(number_basis+1)]
     
-    T_statistics=t(betal)%*%((mub_vector)%*%t(mub_vector)+DBB_matrix)%*%(betal)
+    T_statistics=t(betal)%*%(mub_vector%*%t(mub_vector)+DBB_matrix)%*%(betal)
     
     ## 
     # T_vector <- foreach(this_row = 1:num_indv ) %do%
