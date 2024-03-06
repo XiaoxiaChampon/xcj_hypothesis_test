@@ -136,7 +136,8 @@ run_experiment_hypothesis <- function(exp_idx,
     mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
     mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
     exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
-                     "\n timeserires_length:\t",timeseries_length
+                     "\n timeserires_length:\t",timeseries_length,
+                     "\n fl_choice:\t",fl_choice
                     
                      )
     writeLines(exp_str)
@@ -144,21 +145,21 @@ run_experiment_hypothesis <- function(exp_idx,
     time_interval=seq(start_time,end_time,length.out=timeseries_length)
     simulation_scenarios <- cfd_T_testing_simulation (klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                       time_interval, fl_choice,num_replicas, lp_intercept=0.9998364)
-    simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
-    save(simulation_pvalues, file = paste0("./outputsTbootstrap/simpvals3",
+    #simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
+    save(simulation_scenarios, file = paste0("./outputsTbootstrap/simpvals3",
                                            "_i", exp_idx,
                                            "_fl", fl_choice,
                                            "_n", num_indvs,
                                            "_tlen", timeseries_length,
                                            ".RData"))
     #non_null_count <- dim(simulation_pvalues)[2]
-    power <- mean(simulation_pvalues[,2] )
+    power <- mean(simulation_scenarios[,2] )
     power_se <- sqrt(power*(1-power)/num_replicas)
     ############
-    power_01 <- mean(simulation_pvalues[,3] )
+    power_01 <- mean(simulation_scenarios[,3] )
     power_se01 <- sqrt(power_01*(1-power_01)/num_replicas)
     ##############
-    T_rv= simulation_pvalues[1,]
+    T_rv= simulation_scenarios[,1]
     #rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
     # rve_mean= mean(simulation_pvalues[3,])
     # rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
@@ -197,7 +198,7 @@ begin_exp_time <- Sys.time()
 set.seed(123456)
 
 
-generate_ed_table <- function(subjects_vector = c(1000,500,100),
+generate_ed_table <- function(subjects_vector = c(1000,500,300,100),
                               time_length_vector = c(180,90),
                               fl_choice_vector = c("6"),
                               test_type_vector = c("Inclusion", "Functional")){
@@ -254,10 +255,12 @@ for (row_index in 1:dim(ed_table)[1]){
 }
 
 final_table <- cbind(ed_table, all_experiment_outputs)
-
+final_table_pvalue=final_table[1:8]
+final_table_rv=final_table[9]
+#hist(final_table_rv$T_rv[[1]])
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table,mu1_coef,mu2_coef,file = "EXP3_outputsTbootstrap.RData")
+save(final_table_pvalue,final_table_rv,mu1_coef,mu2_coef,file = "EXP3_outputsTbootstrap.RData")
 
 end_exp_time <- Sys.time()
 
