@@ -59,29 +59,68 @@ if(run_parallel)
 
 
 
-cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
-                                    mu1_coef, mu2_coef,
-                                    num_indvs,fl_choice,
-                                    klen=3){
-    cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas, "\nNum indvs:\t", num_indvs)
-    #num_replicas=2
-    time_interval=seq(start_time,end_time,length.out=timeseries_length)
-    
-    result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-                           .packages=c("splines","mgcv","fda","fda.usc","MASS","stats")) %dorng% {
-                               # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
-                               source("./source_code/R/T_testing_functions.R")
-                               result <- cfd_T_testing(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                                       time_interval, fl_choice, lp_intercept=0.9998364)
-                               
-                               #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
-                               #return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
-                               return(list("pvalue"=result$pvalue,"rvmean"=result$rvmean,"rvemean"=result$rvemean))
-                           } 
-    return(result_all)
-    
+# cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
+#                                     mu1_coef, mu2_coef,
+#                                     num_indvs,fl_choice,
+#                                     klen=3){
+#     cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas, "\nNum indvs:\t", num_indvs)
+#     #num_replicas=2
+#     time_interval=seq(start_time,end_time,length.out=timeseries_length)
+#     
+#     result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
+#                            .packages=c("splines","mgcv","fda","fda.usc","MASS","stats")) %dorng% {
+#                                # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
+#                                source("./source_code/R/T_testing_functions.R")
+#                                result <- cfd_T_testing(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                                        time_interval, fl_choice, lp_intercept=0.9998364)
+#                                
+#                                #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
+#                                #return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
+#                                return(list("pvalue"=result$pvalue,"rvmean"=result$rvmean,"rvemean"=result$rvemean))
+#                            } 
+#     return(result_all)
+#     
+# }
+cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                           time_interval, fl_choice,num_replicas, lp_intercept=0.9998364){
+    T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
+        { source("./source_code/R/data_generator.R")
+            source("./source_code/R/integral_penalty_function.R")
+            source("./source_code/R/T_testing_functions.R")
+            #T_rv_erv <- list()
+            WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                time_interval, fl_choice, lp_intercept=0.9998364)
+            
+            temp=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval,
+                       number_basis =30,est_choice="binomial" )
+            T_stat=array(0,3)
+            T_stat[1]=temp$T_statistics #scalar
+            #bootstrap
+            ################
+            temp_series <- foreach(this_col = 1:num_replicas ) %do%
+                {
+                    source("./source_code/R/integral_penalty_function.R")
+                    source("./source_code/R/T_testing_functions.R")
+                    
+                    temp[this_col ]=get_T(WY_sample$true$Truecatcurve,sample(WY_sample$true$yis, num_indvs, replace=T),time_interval,
+                                          number_basis =30,est_choice="binomial")$T_statistics
+                    
+                    return(temp[this_col ])
+                }
+            temp_series  <- do.call(rbind, temp_series)
+            
+            ###############
+            T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
+            T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
+            
+            # T_rv_erv[2]=temp$rv_XF #1D vector
+            # T_rv_erv[3]=temp$rv_E_PF #scalar
+            return(T_stat)
+        }
+    T_rep <- do.call(rbind, T_rep)
+    #three columns, T, and T_binary, T_binary0.1
+    return(T_rep)
 }
-
 
 source("./source_code/R/time_track_function.R")
 run_experiment_hypothesis <- function(exp_idx,
@@ -91,7 +130,8 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_replicas = 5000,
                                       alpha = 0.05, 
                                       start_time=0.01,
-                                      end_time=0.99){
+                                      end_time=0.99,
+                                      klen=3){
     
     mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
     mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
@@ -101,29 +141,27 @@ run_experiment_hypothesis <- function(exp_idx,
                      )
     writeLines(exp_str)
     timeKeeperStart(exp_str)
-
-    simulation_scenarios <- cfd_T_testing_simulation (num_replicas, start_time, end_time, timeseries_length,
-                                                      mu1_coef, mu2_coef,
-                                                      num_indvs,fl_choice,
-                                                      klen=3)
+    time_interval=seq(start_time,end_time,length.out=timeseries_length)
+    simulation_scenarios <- cfd_T_testing_simulation (klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                      time_interval, fl_choice,num_replicas, lp_intercept=0.9998364)
     simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
-    save(simulation_pvalues, file = paste0("./outputsT/simpvals3",
+    save(simulation_pvalues, file = paste0("./outputsTbootstrap/simpvals3",
                                            "_i", exp_idx,
                                            "_fl", fl_choice,
                                            "_n", num_indvs,
                                            "_tlen", timeseries_length,
                                            ".RData"))
-    non_null_count <- dim(simulation_pvalues)[2]
-    power <- mean(simulation_pvalues[1,] < alpha)
-    power_se <- sqrt(power*(1-power)/non_null_count)
+    #non_null_count <- dim(simulation_pvalues)[2]
+    power <- mean(simulation_pvalues[,2] )
+    power_se <- sqrt(power*(1-power)/num_replicas)
     ############
-    power_01 <- mean(simulation_pvalues[1,] < 0.1)
-    power_se01 <- sqrt(power_01*(1-power_01)/non_null_count)
+    power_01 <- mean(simulation_pvalues[,3] )
+    power_se01 <- sqrt(power_01*(1-power_01)/num_replicas)
     ##############
-    rv_mean= mean(simulation_pvalues[2,])
-    rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
-    rve_mean= mean(simulation_pvalues[3,])
-    rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
+    T_rv= simulation_pvalues[1,]
+    #rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
+    # rve_mean= mean(simulation_pvalues[3,])
+    # rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
     ################
     # x2fl2 <- mean(simulation_pvalues[4,])
     # x2fl2_se <- sd(simulation_pvalues[4,])/non_null_count
@@ -140,9 +178,11 @@ run_experiment_hypothesis <- function(exp_idx,
     #             "yip_wo_sd"=yip_wo_sd,"power2"=power2,"se2"=power2_se,"power_012"=power_012 ,
     #             "se012"=power_se012,"NAs"=num_replicas - non_null_count))
     
+    # return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
+    #             "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
+    #             "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
     return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
-                "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
-                "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
+                "T_rv"=T_rv))
 }
 # 
 # run_experiment_hypothesis (0,
@@ -157,7 +197,7 @@ begin_exp_time <- Sys.time()
 set.seed(123456)
 
 
-generate_ed_table <- function(subjects_vector = c(500,300,100),
+generate_ed_table <- function(subjects_vector = c(1000,500,100),
                               time_length_vector = c(180,90),
                               fl_choice_vector = c("6"),
                               test_type_vector = c("Inclusion", "Functional")){
@@ -170,7 +210,7 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 ed_table1 <- generate_ed_table(
                                fl_choice_vector = c("6"),
                                time_length_vector = c(90),
-                               test_type_vector = c("Inclusion", "Functional"))
+                               test_type_vector = c("Inclusion"))
 ed_table2=generate_ed_table(fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
                                                          test_type_vector = c("Functional"))
 
@@ -203,7 +243,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                     timeseries_length,
                                                     fl_choice
                                                     )
-    save(experiment_output, file = paste0("./outputsT/exp3_", 
+    save(experiment_output, file = paste0("./outputsTbootstrap/exp3_", 
                                           "_i", row_index, 
                                           "_fl", fl_choice, 
                             
@@ -217,7 +257,7 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table,mu1_coef,mu2_coef,file = "EXP3_outputsT.RData")
+save(final_table,mu1_coef,mu2_coef,file = "EXP3_outputsTbootstrap.RData")
 
 end_exp_time <- Sys.time()
 
