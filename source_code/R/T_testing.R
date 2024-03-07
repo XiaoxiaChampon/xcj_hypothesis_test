@@ -92,7 +92,8 @@ if(run_parallel)
 #     
 # }
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                           time_interval, fl_choice,num_replicas, lp_intercept=0.9998364){
+                           time_interval, fl_choice,num_replicas, 
+                           lp_intercept=0.9998364,boot_number=1000){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -100,28 +101,43 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             #T_rv_erv <- list()
             WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                 time_interval, fl_choice, lp_intercept=0.9998364)
-            
+            #W is t*n
             temp=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval,
                        number_basis =30,est_choice="binomial" )
             T_stat=array(0,3)
             T_stat[1]=temp$T_statistics #scalar
             #bootstrap
             ################
-            temp_series <- foreach(this_col = 1:num_replicas ) %do%
-                {
-                    source("./source_code/R/integral_penalty_function.R")
-                    source("./source_code/R/T_testing_functions.R")
-                    
-                    temp[this_col ]=get_T(WY_sample$true$Truecatcurve,sample(WY_sample$true$yis, num_indvs, replace=T),time_interval,
-                                          number_basis =30,est_choice="binomial")$T_statistics
-                    
-                    return(temp[this_col ])
-                }
-            temp_series  <- do.call(rbind, temp_series)
+            #####################################################################
+            #temp_series <- foreach(this_col = 1:num_replicas ) %do%
+            #     temp_series <- foreach(this_col = 1:10 ) %do%
+            #     {
+            #         source("./source_code/R/integral_penalty_function.R")
+            #         source("./source_code/R/T_testing_functions.R")
+            #         boot_index=sample(1:num_indvs, num_indvs,replace=T)
+            # 
+            #         temp[this_col ]=get_T(WY_sample$true$Truecatcurve[,boot_index],
+            #                               WY_sample$true$yis[boot_index],time_interval,
+            #                               number_basis =30,est_choice="binomial")$T_statistics
+            # 
+            #         return(temp[this_col ])
+            #     }
+            # temp_series  <- do.call(rbind, temp_series)
+            # T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
+            # T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
+            
+            temp_series=c(0)
+            for (this_col in 1:boot_number){
+                boot_index=sample(1:num_indvs, num_indvs,replace=T)
+                
+                temp_series[this_col ]=get_T(WY_sample$true$Truecatcurve[,boot_index],
+                                      WY_sample$true$yis[boot_index],time_interval,
+                                      number_basis =30,est_choice="binomial")$T_statistics
+            }
             
             ###############
-            T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
-            T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
+            T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
+            T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
             
             # T_rv_erv[2]=temp$rv_XF #1D vector
             # T_rv_erv[3]=temp$rv_E_PF #scalar
@@ -208,7 +224,7 @@ begin_exp_time <- Sys.time()
 set.seed(123456)
 
 
-generate_ed_table <- function(subjects_vector = c(1000,500,300,100),
+generate_ed_table <- function(subjects_vector = c(500,300,100),
                               time_length_vector = c(180,90),
                               fl_choice_vector = c("6"),
                               test_type_vector = c("Inclusion", "Functional")){

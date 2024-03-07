@@ -42,7 +42,7 @@ cfd_T_testing=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 
 #for getxfromW function
 source("./source_code/R/cfd_hypothesis_test.R")
-
+source("./source_code/R/integral_penalty_function.R")
 get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     # W=WY_sample$true$Truecatcurve
     # Y=WY_sample$true$yis
@@ -76,16 +76,28 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     #     }
     # mub_matrix <- do.call(rbind, mub_matrix)
     
-    mub_vector <- foreach(this_col = 1:number_col ) %do%
+    
+    #########################################################################
+    # mub_vector <- foreach(this_col = 1:number_col ) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #       
+    #             temp <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
+    #       
+    #         return(temp)
+    #     }
+    # mub_vector <- do.call(rbind, mub_vector)
+    
+    
+    mub_vector=c(0)
+      for(this_col in 1:number_col )
         {
-            source("./source_code/R/integral_penalty_function.R")
-            
-          
-                temp <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
-          
-            return(temp)
-        }
-    mub_vector <- do.call(rbind, mub_vector)
+          mub_vector[this_col] <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
+    }
+    ##################################################################################
+    
+    
     
     
     
@@ -100,31 +112,53 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     #   }
     # }
     
+  ##############################################################################################  
+    # J_matrix <- foreach(this_row = 1:num_indv) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #         temp <- array(-123, number_col)
+    #         for(this_col in 1:number_col){
+    #             temp[this_col] <- integral_penalty(time_interval,X_array[this_row,,2]*bspline[,this_col])$value
+    #         }
+    #         return(temp)
+    #     }
+    # J_matrix <- do.call(rbind, J_matrix)
+    J_matrix <- matrix(0,nrow=num_indv,ncol=number_col) #empty
+    for(row in 1:num_indv){
+      for(col in 1:number_col){
+        J_matrix[row,col] <- integral_penalty(time_interval,X_array[row,,2]*bspline[,col])$value
+      }
+    }
+   ############################################################################################## 
     
-    J_matrix <- foreach(this_row = 1:num_indv) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- integral_penalty(time_interval,X_array[this_row,,2]*bspline[,this_col])$value
-            }
-            return(temp)
+    
+    
+    
+    ##############################################################
+    # DBB_matrix <- foreach(this_row = 1:number_col) %do%
+    #     {
+    #         source("./source_code/R/integral_penalty_function.R")
+    #         
+    #         temp <- array(-123, number_col)
+    #         for(this_col in 1:number_col){
+    #             temp[this_col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,this_row]*bspline[,this_col]))$value)*(cov(X_array[,,2])[this_row,this_col])
+    #         }
+    #         return(temp)
+    #     }
+    # DBB_matrix <- do.call(rbind, DBB_matrix)
+    
+    DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    
+    for(row in 1:number_col){
+        for(col in 1:number_col){
+            DBB_matrix[row,col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,row]*bspline[,col]))$value)*(cov(X_array[,,2])[row,col])
         }
-    J_matrix <- do.call(rbind, J_matrix)
+    }
+    ###############################################################
     
     
-    DBB_matrix <- foreach(this_row = 1:number_col) %do%
-        {
-            source("./source_code/R/integral_penalty_function.R")
-            
-            temp <- array(-123, number_col)
-            for(this_col in 1:number_col){
-                temp[this_col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,this_row]*bspline[,this_col]))$value)*(cov(X_array[,,2])[this_row,this_col])
-            }
-            return(temp)
-        }
-    DBB_matrix <- do.call(rbind, DBB_matrix)
+    
     
     
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
