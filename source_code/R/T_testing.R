@@ -93,19 +93,54 @@ if(run_parallel)
 # }
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=1000){
+                           lp_intercept=0.9998364,boot_number=100){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
             source("./source_code/R/T_testing_functions.R")
+            
+            number_basis =30
+            
+            
             #T_rv_erv <- list()
             WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                 time_interval, fl_choice, lp_intercept=0.9998364)
+            
+           
             #W is t*n
-            temp=get_T(WY_sample$true$Truecatcurve, WY_sample$true$yis,time_interval,
-                       number_basis =30,est_choice="binomial" )
+            #categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, WY_sample$true$Truecatcurve)
+        
+            temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
+                       WY_sample$true$yis,time_interval,
+                       number_basis =number_basis,est_choice="binomial" )
             T_stat=array(0,3)
             T_stat[1]=temp$T_statistics #scalar
+            betals=temp$betals
+            #########
+            #get Y from X, and betals, betals 1: intercept, 2:31, 32:62
+            get_Y_star=function( X_2t,X_3t,betals,time_interval,num_indvs,number_basis){
+                
+                vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
+                beta0=betals[1]
+                betal=betals[2:(number_basis+1)]
+                betal3=betals[(number_basis+2):(2*number_basis+1)]
+                
+                knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
+                bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
+                
+                x1fl1 <- rep(beta0,num_indvs)
+                x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, X_2t[x,]*(bspline%*%betal), equi = TRUE, method = "TRAPZ")})
+                x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, X_3t[x,]*(bspline%*%betal3), equi = TRUE, method = "TRAPZ")})
+                
+                linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 )
+                y_star <- apply(linear_predictor, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+                return(y_star)
+            }
+            # y_star=get_Y_star(WY_sample$true$TrueX2,WY_sample$true$TrueX3,
+            #                   betals,time_interval,num_indvs,number_basis)
+            
+            
+            
             #bootstrap
             ################
             #####################################################################
@@ -128,11 +163,16 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             
             temp_series=c(0)
             for (this_col in 1:boot_number){
-                boot_index=sample(1:num_indvs, num_indvs,replace=T)
                 
-                temp_series[this_col ]=get_T(WY_sample$true$Truecatcurve[,boot_index],
-                                      WY_sample$true$yis[boot_index],time_interval,
-                                      number_basis =30,est_choice="binomial")$T_statistics
+                boot_index=sample(1:num_indvs, num_indvs,replace=T)
+                y_star=get_Y_star(WY_sample$true$TrueX2[boot_index,],
+                                  WY_sample$true$TrueX3[boot_index,],
+                                  betals,time_interval,num_indvs,number_basis)
+                temp_series[this_col ]=get_T(WY_sample$true$TrueX1[boot_index,],
+                                             WY_sample$true$TrueX2[boot_index,],
+                                             WY_sample$true$TrueX3[boot_index,],
+                                             y_star,time_interval,
+                                      number_basis =number_basis,est_choice="binomial")$T_statistics
             }
             
             ###############
@@ -153,7 +193,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
                                       fl_choice,
-                                      num_replicas = 5000,
+                                      num_replicas = 5,
                                       alpha = 0.05, 
                                       start_time=0.01,
                                       end_time=0.99,

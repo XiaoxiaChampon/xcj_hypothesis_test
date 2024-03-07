@@ -43,17 +43,21 @@ cfd_T_testing=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #for getxfromW function
 source("./source_code/R/cfd_hypothesis_test.R")
 source("./source_code/R/integral_penalty_function.R")
-get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
-    # W=WY_sample$true$Truecatcurve
+get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
+    # W=WY_sample$true$Truecatcurve #t*n
     # Y=WY_sample$true$yis
     # est_choice="binomial"
     #Estimation
     
-    categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
-    X_array=categFD_est$X_array
-    num_indv <- nrow(X_array[,,1])
-    category_count <- dim(X_array)[3]
+    #categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
+    #List of 2 $ pl     :List of 5 Z1_est t*n p1_est t*n
+    #$X-array n*t*3
+    
+    num_indv <- nrow(X_2t)
     timeseries_length<- length(time_interval)
+    
+    X_array=array(c(X_1t,X_2t,X_3t),dim=c(num_indv,timeseries_length,category_count))
+    
     # @return list of 2D array: True Z curves , Est Z curves, True p curves, Est p curves
     #                          all have dimension t*n
     
@@ -166,7 +170,8 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
     betal=logit_model$coefficients[2:(number_basis+1)]
-    
+    #betal3=logit_model$coefficients[(number_basis+2):(2*number_basis+1)]
+    betals=logit_model$coefficients
     #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     #gammal=logit_model_p$coefficients[2:(number_basis+1)]
@@ -209,7 +214,7 @@ get_T <- function(W, Y,time_interval, number_basis =30,est_choice ){
     # return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
     #             "T_vector"=T_vector,"T_vectorp"=T_vectorp,
     #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
-    return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_vector"=mub_vector,
+    return(list("DBB_matrix"=DBB_matrix, "betals"=betals,"mub_vector"=mub_vector,
                 "T_statistics"=T_statistics,
                 "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
     }
