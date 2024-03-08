@@ -91,9 +91,10 @@ if(run_parallel)
 #     return(result_all)
 #     
 # }
+
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=100){
+                           lp_intercept=0.9998364,boot_number=1000){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -193,7 +194,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
                                       fl_choice,
-                                      num_replicas = 5,
+                                      num_replicas = 14,
                                       alpha = 0.05, 
                                       start_time=0.01,
                                       end_time=0.99,
@@ -274,11 +275,11 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 
 ########
 #type I error rate
-ed_table1 <- generate_ed_table(
+ed_table1 <- generate_ed_table(subjects_vector = c(500),
                                fl_choice_vector = c("6"),
                                time_length_vector = c(90),
                                test_type_vector = c("Inclusion"))
-ed_table2=generate_ed_table(fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
+ed_table2=generate_ed_table(subjects_vector = c(500),fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
                                                          test_type_vector = c("Functional"))
 
 
