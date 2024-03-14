@@ -547,3 +547,41 @@ wftest_functional$fit$fit$coefficients
 # Z.test27   Z.test28   Z.test29
 # 1 0.04930252 -0.3321262 -0.5838096
 ##########
+#march 8 , 2024, create a figfure for tweets
+brand_controvercial_users=read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/data/2041500801/catFDA_paper2_finaltesting.csv",
+                                   skip=5)
+save(brand_controvercial_users,file="brand_controvercial_users.RData")
+#########
+library(stringr)
+library(dplyr)
+
+find_unique_authors_brand_cond=function(key_brand){
+  subset_brand_controvercial_users=brand_controvercial_users %>%
+    filter(str_detect(Title, key_brand))
+  unique(subset_brand_controvercial_users$Author)
+}
+
+#########
+find_unique_authors_brand_cond("MacDonald")#1
+#########
+starbucks_user=find_unique_authors_brand_cond("Starbucks") #129
+########
+starbucks_positive=brand_controvercial_users[(brand_controvercial_users$Author%in% starbucks_user)&(brand_controvercial_users$Sentiment) %in% c("positive","negative"),]
+unique(starbucks_positive$Author) #positive 77, neg, posi 98
+#######nypost
+find_sentiment_table=function(author_name_vector,index_start,index_end){
+    
+       for (i in index_start:index_end){
+           cat("----------------","\n","User : ", author_name_vector[i], "\n",
+                         table(brand_controvercial_users[brand_controvercial_users$Author==author_name_vector[i],c("Sentiment")]),
+                        "----------------","\n")
+           
+          }
+    
+     }
+ ####
+  find_sentiment_table(starbucks_positive$Author,21,40)
+##
+  # User :  SBWorkersUnited 
+  # 12 32 8 ---------------- 9/25-10/27
+brand_controvercial_users[brand_controvercial_users$Author=="SBWorkersUnited",c("Title","Sentiment","Date")]
