@@ -94,7 +94,7 @@ if(run_parallel)
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=1000){
+                           lp_intercept=0.9998364,boot_number=99){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -117,6 +117,9 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             T_stat=array(0,3)
             T_stat[1]=temp$T_statistics #scalar
             betals=temp$betals
+            ####################
+            #T_star_series=c(0)
+            ####################
             #########
             #get Y from X, and betals, betals 1: intercept, 2:31, 32:62
             get_Y_star=function( X_2t,X_3t,betals,time_interval,num_indvs,number_basis){
@@ -182,10 +185,14 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             
             T_stat[2]=(T_stat>=quantile(temp_series, .95))[[1]]
             T_stat[3]=(T_stat>=quantile(temp_series, .90))[[1]]
-            
+            ################
+            #T_star_series=temp_series
+            ################
             # T_rv_erv[2]=temp$rv_XF #1D vector
             # T_rv_erv[3]=temp$rv_E_PF #scalar
+            ######save T star series as well
             return(T_stat)
+            ##############################
         }
     T_rep <- do.call(rbind, T_rep)
     #three columns, T, and T_binary, T_binary0.1

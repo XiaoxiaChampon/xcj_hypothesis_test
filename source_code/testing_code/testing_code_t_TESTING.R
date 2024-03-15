@@ -62,6 +62,8 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
     
 fl_choice="6"
 num_indvs=100
+number_basis=30
+# boot_number=99
 source("./source_code/R/time_track_function.R")
 exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
                  "\n timeserires_length:\t",timeseries_length,
