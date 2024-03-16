@@ -94,7 +94,7 @@ if(run_parallel)
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=99){
+                           lp_intercept=0.9998364,boot_number=1000){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -164,8 +164,8 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # temp_series  <- do.call(rbind, temp_series)
             # T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
-            
-            temp_series=c(0)
+            # start_time_boot=Sys.time()
+             temp_series=c(0)
             for (this_col in 1:boot_number){
                 
                 boot_index=sample(1:num_indvs, num_indvs,replace=T)
@@ -178,7 +178,9 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                                              y_star,time_interval,
                                       number_basis =number_basis,est_choice="binomial")$T_statistics
             }
-            
+            # end_time_boot=Sys.time()
+            # cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
+            # boot 1000 for 500 useres takes 50.5146
             ###############
             # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]

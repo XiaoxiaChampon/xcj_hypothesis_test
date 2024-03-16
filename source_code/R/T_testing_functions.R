@@ -221,6 +221,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
 
 
 
+
 #' Function to select 
 #' @param choice "probit", "binomial",  or "multinormial"
 #' @param timestamps01, 1D array, time interval that cfd is observed
