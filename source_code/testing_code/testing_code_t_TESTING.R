@@ -213,6 +213,217 @@ timeKeeperNext()
 # took: Time difference of 7.039114 mins 
 # ====================
 
+#####################
+#save(T_star_1000,file ="T_star_1000.RData")
+#save(n500_rep_justT,file="n500_rep_justT.RData")
+
+T_Tstar=data.frame(matrix(c(n500_rep_justT,T_star_1000),
+                          ncol=1))
+T_Tstar$Label=c(rep("T",1000),rep("T*",1000))
+colnames(T_Tstar)=c("Ts","Label")                
+
+# Interleaved histograms
+# Add mean lines
+library(plyr)
+mu <- ddply(T_Tstar, "Label", summarise, grp.mean=mean(Ts))
+library(ggplot2)
+p<-ggplot(T_Tstar, aes(x=Ts, color=Label)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=mu, aes(xintercept=grp.mean, color=Label),
+               linetype="dashed")+
+    theme(legend.position="top")
+p
+
+quantile_ttstar <- ddply(T_Tstar, "Label", summarise, grp.mean=quantile(Ts,0.95))
+pttstarq<-ggplot(T_Tstar, aes(x=Ts, color=Label)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=quantile_ttstar, aes(xintercept=grp.mean, color=Label),
+               linetype="dashed")+
+    theme(legend.position="top")+
+    annotate(geom="text", x=0.0006, y=300, label="T: 0.95 Quantile 0.0002",
+               color="red",size=6)+
+    annotate(geom="text", x=0.0006, y=270, label="T*: 0.95 Quantile 0.0003",
+             color="#69b3a2",size=6)+
+    theme(text = element_text(size = 20))+
+    labs(y= "Count")
+pttstarq
+
+# library(ggpubr)
+# ggsummarystats(
+#     T_Tstar, x = "Ts", 
+#     ggfunc = gghistogram, 
+#     color = "Label", palette = "npg"
+# )
+
+source("./source_code/R/time_track_function.R")
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
+fl_choice="25"
+num_replications=1000
+time_interval=seq(start_time,end_time,length.out=timeseries_length)
+n500_rep_justT_fl25=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                  time_interval=time_interval, fl_choice,num_replications,
+                                  lp_intercept=0.9998364)
+
+timeKeeperNext()
+# 
+# --------------------
+#     Track time for 
+# Num Subjects:	 500 
+# timeserires_length:	 90 
+# fl_choice:	 25 
+# took: Time difference of 26.00438 mins 
+# ====================
+
+#quantile(n500_rep_justT_fl25,0.95)
+Tnull_Tal=data.frame(matrix(c(n500_rep_justT,n500_rep_justT_fl25),
+                          ncol=1))
+Tnull_Tal$Label=c(rep("Null",1000),rep("Alt",1000))
+colnames(Tnull_Tal)=c("Ts","Label")   
+
+mu_tt <- ddply(Tnull_Tal, "Label", summarise, grp.mean=mean(Ts))
+ptt<-ggplot(Tnull_Tal, aes(x=Ts, color=Label)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=mu_tt, aes(xintercept=grp.mean, color=Label),
+               linetype="dashed")+
+    theme(legend.position="top")
+ptt
+
+quantile_tt_final=data.frame(matrix(c(round(quantile(n500_rep_justT,0.95),4),"Null"),nrow=1))
+colnames(quantile_tt_final)=c("QuantileValue","Label")
+quantile_tt_final[2,]=c(round(quantile(n500_rep_justT_fl25,0.05),4),"Alt")
+
+pttq_new<-ggplot(Tnull_Tal, aes(x=Ts, color=Label)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=quantile_tt_final, aes(xintercept=as.numeric(QuantileValue), color=Label),
+               linetype="dashed")+
+    theme(legend.position="top")+
+    theme(text = element_text(size = 20))+
+    annotate(geom="text", x=0.0035, y=600, label="Null: 0.95 Quantile 0.0002",
+             color="#69b3a2",size=6)+
+    annotate(geom="text", x=0.0035, y=550, label="Alt : 0.05 Quantile 0.0007",
+             color="red",size=6)+
+    labs(y= "Count")
+#+
+    #stat_bin(binwidth = 0.0001)
+pttq_new
+
+source("./source_code/R/time_track_function.R")
+fl_choice="22"
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
+num_replications=1000
+time_interval=seq(start_time,end_time,length.out=timeseries_length)
+n500_rep_justT_fl22=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                       time_interval=time_interval, fl_choice,num_replications,
+                                       lp_intercept=0.9998364)
+
+timeKeeperNext()
+
+# --------------------
+#     Track time for 
+# Num Subjects:	 500 
+# timeserires_length:	 90 
+# fl_choice:	 22 
+# took: Time difference of 10.32481 mins 
+# ====================
+Tnull_Talfl22=data.frame(matrix(c(n500_rep_justT,n500_rep_justT_fl22),
+                            ncol=1))
+Tnull_Talfl22$Label=c(rep("Null",1000),rep("Alt",1000))
+colnames(Tnull_Talfl22)=c("Ts","Label") 
+save(Tnull_Talfl22,file="Tnull_Talfl22.Rdata")
+
+quantile_tt_fl22=data.frame(matrix(c(round(quantile(n500_rep_justT,0.95),4),"Null"),nrow=1))
+colnames(quantile_tt_fl22)=c("QuantileValue","Label")
+quantile_tt_fl22[2,]=c(round(quantile(n500_rep_justT_fl22,0.05),5),"Alt")
+
+pttq_newfl22<-ggplot(Tnull_Talfl22, aes(x=Ts, color=Label)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=quantile_tt_fl22, aes(xintercept=as.numeric(QuantileValue), color=Label),
+               linetype="dashed")+
+    theme(legend.position="top")+
+    theme(text = element_text(size = 20))+
+    annotate(geom="text", x=0.00075, y=600, label=paste0("Null : 0.95 Quantile ", quantile_tt_fl22[2,1]),
+             color="#69b3a2",size=6)+
+    annotate(geom="text", x=0.00075, y=550, label=paste0("Alt  : 0.05 Quantile ", quantile_tt_fl22[1,1]),
+             color="red",size=6)+
+    labs(y= "Count")
+#+
+#stat_bin(binwidth = 0.0001)
+pttq_newfl22
+
+#function to output hist for T and T null based on the fl choice
+hist_Tnull_Talt=function(fl_choice,n500_rep_justT,digit_null,digit_alt,start_time,end_time,klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                         time_interval=time_interval, num_replications,
+                         lp_intercept=0.9998364,ynull_hight=600,yalt_hight=550){
+    exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                     "\n timeserires_length:\t",timeseries_length,
+                     "\n fl_choice:\t",fl_choice
+    )
+    writeLines(exp_str)
+    timeKeeperStart(exp_str)
+    time_interval=seq(start_time,end_time,length.out=timeseries_length)
+    n500_rep_justT_fl22=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                           time_interval=time_interval, fl_choice,num_replications,
+                                           lp_intercept=0.9998364)
+    
+    timeKeeperNext()
+    
+    # --------------------
+    #     Track time for 
+    # Num Subjects:	 500 
+    # timeserires_length:	 90 
+    # fl_choice:	 22 
+    # took: Time difference of 10.32481 mins 
+    # ====================
+    Tnull_Talfl22=data.frame(matrix(c(n500_rep_justT,n500_rep_justT_fl22),
+                                    ncol=1))
+    Tnull_Talfl22$Label=c(rep("Null",1000),rep("Alt",1000))
+    colnames(Tnull_Talfl22)=c("Ts","Label") 
+    save(Tnull_Talfl22,file="Tnull_Talfl22.Rdata")
+    
+    quantile_tt_fl22=data.frame(matrix(c(round(quantile(n500_rep_justT,0.95),digit_null),"Null"),nrow=1))
+    colnames(quantile_tt_fl22)=c("QuantileValue","Label")
+    quantile_tt_fl22[2,]=c(round(quantile(n500_rep_justT_fl22,0.05),digit_alt),"Alt")
+    
+    pttq_newfl22<-ggplot(Tnull_Talfl22, aes(x=Ts, color=Label)) +
+        geom_histogram(fill="white", position="dodge")+
+        geom_vline(data=quantile_tt_fl22, aes(xintercept=as.numeric(QuantileValue), color=Label),
+                   linetype="dashed")+
+        theme(legend.position="top")+
+        theme(text = element_text(size = 20))+
+        annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=ynull_hight, label=paste0("Null : 0.95 Quantile ", quantile_tt_fl22[2,1]),
+                 color="#69b3a2",size=6)+
+        annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=yalt_hight, label=paste0("Alt  : 0.05 Quantile ", quantile_tt_fl22[1,1]),
+                 color="red",size=6)+
+        labs(y= "Count")
+    #+
+    #stat_bin(binwidth = 0.0001)
+    pttq_newfl22
+}
+###########
+load("n500_rep_justT.Rdata")
+digit_null=4
+digit_alt=5
+fl_choice="22"
+num_replications=1000
+num_indvs=500
+library(ggplot2)
+hist_Tnull_Talt(fl_choice,n500_rep_justT,digit_null,digit_alt,start_time,end_time,klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                         time_interval=time_interval, num_replications,
+                         lp_intercept=0.9998364,ynull_hight=600,yalt_hight=550)
+fl_choice="23"
+hist_Tnull_Talt(fl_choice,n500_rep_justT,digit_null,digit_alt,start_time,end_time,klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                time_interval=time_interval, num_replications,
+                lp_intercept=0.9998364,ynull_hight=600,yalt_hight=550)
 # hist_T_simulation=function(fl_choice,num_replications=1000){
 #     par(mfrow=c(1,3))
 #     num_indvs=100
