@@ -361,7 +361,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     #lp_intercept= 0.6206897
     linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
-    linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
+    #linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
     generate_y_indvs <- function(lp){
       ys <- apply(lp, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
@@ -383,21 +383,27 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
       return(ys)
     }
     Y_indvs <- generate_y_indvs(linear_predictor)
-    Y_indvs_without <- generate_y_indvs(linear_predictor_without)
+    #Y_indvs_without <- generate_y_indvs(linear_predictor_without)
     
     prob_ind=1/(1+exp(-linear_predictor))
     
+    # truelist=list("TrueX1"=cat_data$X[,,1],
+    #               "TrueX2"=cat_data$X[,,2],
+    #               "TrueX3"=cat_data$X[,,3],
+    #               "Truecatcurve"=cat_data$W,
+    #               "fl"=flfn,
+    #               "yis"=Y_indvs,
+    #               "x2fl2"=x2fl2,
+    #               "yis_without" = Y_indvs_without,
+    #               "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
+    #               "prob_ind"=prob_ind)
     truelist=list("TrueX1"=cat_data$X[,,1],
                   "TrueX2"=cat_data$X[,,2],
                   "TrueX3"=cat_data$X[,,3],
                   "Truecatcurve"=cat_data$W,
-                  "fl"=flfn,
                   "yis"=Y_indvs,
-                  "x2fl2"=x2fl2,
-                  "yis_without" = Y_indvs_without,
-                  "linear_predictor"=list("linearw"=linear_predictor,"linearwo"=linear_predictor_without),
-                  "prob_ind"=prob_ind)
-   
+                  "x2fl2"=x2fl2
+                  )
     return(list("true"=truelist))
 }
 

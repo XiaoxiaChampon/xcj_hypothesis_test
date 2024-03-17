@@ -111,7 +111,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #mu_st=Sys.time()
     # for (i in 1:10000){
         
-        mub_vector_new <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
+        mub_vector <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
         ##################################################################################
     # }
     #mu_et=Sys.time()
