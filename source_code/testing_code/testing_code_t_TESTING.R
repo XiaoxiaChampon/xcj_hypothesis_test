@@ -204,7 +204,7 @@ n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                             lp_intercept=0.9998364)
 
 timeKeeperNext()
-
+load("n500_rep_justT.RData")
 # --------------------
 #     Track time for 
 # Num Subjects:	 500 
@@ -341,6 +341,12 @@ Tnull_Talfl22$Label=c(rep("Null",1000),rep("Alt",1000))
 colnames(Tnull_Talfl22)=c("Ts","Label") 
 save(Tnull_Talfl22,file="Tnull_Talfl22.Rdata")
 
+
+load("Tnull_Talfl22.Rdata")
+null_95=round(quantile(n500_rep_justT,0.95),4)
+sum(n500_rep_justT_fl22>null_95)
+#873
+
 quantile_tt_fl22=data.frame(matrix(c(round(quantile(n500_rep_justT,0.95),4),"Null"),nrow=1))
 colnames(quantile_tt_fl22)=c("QuantileValue","Label")
 quantile_tt_fl22[2,]=c(round(quantile(n500_rep_justT_fl22,0.05),5),"Alt")
@@ -363,7 +369,7 @@ pttq_newfl22
 #function to output hist for T and T null based on the fl choice
 hist_Tnull_Talt=function(fl_choice,n500_rep_justT,digit_null,digit_alt,start_time,end_time,klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                          time_interval=time_interval, num_replications,
-                         lp_intercept=0.9998364,ynull_hight=600,yalt_hight=550){
+                         lp_intercept=0.9998364,ynull_hight=600,yalt_hight=550,yfl_hight=500){
     exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
                      "\n timeserires_length:\t",timeseries_length,
                      "\n fl_choice:\t",fl_choice
@@ -374,7 +380,7 @@ hist_Tnull_Talt=function(fl_choice,n500_rep_justT,digit_null,digit_alt,start_tim
     n500_rep_justT_fl22=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                            time_interval=time_interval, fl_choice,num_replications,
                                            lp_intercept=0.9998364)
-    
+    save(n500_rep_justT_fl22,file="n500_rep_justT_flchoice.RData")
     timeKeeperNext()
     
     # --------------------
@@ -390,9 +396,10 @@ hist_Tnull_Talt=function(fl_choice,n500_rep_justT,digit_null,digit_alt,start_tim
     colnames(Tnull_Talfl22)=c("Ts","Label") 
     save(Tnull_Talfl22,file="Tnull_Talfl22.Rdata")
     
-    quantile_tt_fl22=data.frame(matrix(c(round(quantile(n500_rep_justT,0.95),digit_null),"Null"),nrow=1))
+    null_95=round(quantile(n500_rep_justT,0.95),digit_null)
+    quantile_tt_fl22=data.frame(matrix(c(null_95,"Null"),nrow=1))
     colnames(quantile_tt_fl22)=c("QuantileValue","Label")
-    quantile_tt_fl22[2,]=c(round(quantile(n500_rep_justT_fl22,0.05),digit_alt),"Alt")
+    quantile_tt_fl22[2,]=c(sum(n500_rep_justT_fl22>null_95)/num_replications,"Alt")
     
     pttq_newfl22<-ggplot(Tnull_Talfl22, aes(x=Ts, color=Label)) +
         geom_histogram(fill="white", position="dodge")+
@@ -402,12 +409,15 @@ hist_Tnull_Talt=function(fl_choice,n500_rep_justT,digit_null,digit_alt,start_tim
         theme(text = element_text(size = 20))+
         annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=ynull_hight, label=paste0("Null : 0.95 Quantile ", quantile_tt_fl22[2,1]),
                  color="#69b3a2",size=6)+
-        annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=yalt_hight, label=paste0("Alt  : 0.05 Quantile ", quantile_tt_fl22[1,1]),
+        annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=yalt_hight, label=paste0("Alt  : Power ", quantile_tt_fl22[1,1]),
+                 color="red",size=6)+
+        annotate(geom="text", x=0.75*max(Tnull_Talfl22$Ts), y=yfl_hight, label=paste0("Fl Choice  : ", fl_choice),
                  color="red",size=6)+
         labs(y= "Count")
     #+
     #stat_bin(binwidth = 0.0001)
     pttq_newfl22
+    ggsave("pttq_newfl22.png")
 }
 ###########
 load("n500_rep_justT.Rdata")

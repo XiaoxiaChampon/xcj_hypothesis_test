@@ -48,6 +48,9 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     # Y=WY_sample$true$yis
     # est_choice="binomial"
     #Estimation
+    # X_1t=WY_sample$true$TrueX1
+    # X_2t=WY_sample$true$TrueX2
+    # X_3t=WY_sample$true$TrueX3
     
     #categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
     #List of 2 $ pl     :List of 5 Z1_est t*n p1_est t*n
@@ -92,18 +95,35 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #         return(temp)
     #     }
     # mub_vector <- do.call(rbind, mub_vector)
+
+    # mu_st=Sys.time()
+    #  for (i in 1:10000){
+    #     
+    #     mub_vector=c(0)
+    #     for(this_col in 1:number_col ){
+    #           mub_vector[this_col] <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
+    #     }
+    #     ##################################################################################
+    #  }
+    # mu_et=Sys.time()
+    # cat("1000 for loop takes",mu_et-mu_st,"/n")
     
+    #mu_st=Sys.time()
+    # for (i in 1:10000){
+        
+        mub_vector_new <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
+        ##################################################################################
+    # }
+    #mu_et=Sys.time()
+    #cat("1000 for loop takes",mu_et-mu_st,"/n")
     
-    mub_vector=c(0)
-      for(this_col in 1:number_col )
-        {
-          mub_vector[this_col] <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
-    }
-    ##################################################################################
-    
-    
-    
-    
+    # mu_st=Sys.time()
+    # for (i in 1:10000){
+    # 
+    # vec_apply=matrix(1:number_basis,ncol=1)
+    # mub_vector=apply(vec_apply,1,function(x){integral_penalty(time_interval,pl_vector*bspline[,x])$value})
+    # mu_et=Sys.time()}
+    # cat("1000 apply takes",mu_et-mu_st,"/n")
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
     
