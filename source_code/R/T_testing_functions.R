@@ -44,13 +44,6 @@ cfd_T_testing=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 source("./source_code/R/cfd_hypothesis_test.R")
 source("./source_code/R/integral_penalty_function.R")
 get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
-    # W=WY_sample$true$Truecatcurve #t*n
-    # Y=WY_sample$true$yis
-    # est_choice="binomial"
-    #Estimation
-    # X_1t=WY_sample$true$TrueX1
-    # X_2t=WY_sample$true$TrueX2
-    # X_3t=WY_sample$true$TrueX3
     
     #categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, W)
     #List of 2 $ pl     :List of 5 Z1_est t*n p1_est t*n
