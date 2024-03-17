@@ -1160,5 +1160,27 @@ power_by_test_type_subset_plot_gaml2mixfl
 load("EXP3_r5000_nonlinear_gam_power.RData")
 
 #######################################
-#Feb7, re do gam, l2_penalty end, power, bernoulli 1-y instead of n-y
+#March17, re do gam, l2_penalty end, power, bernoulli 1-y instead of n-y, type I
 ########################################
+load("EXP3_r5000_cfdagamTypeImarch.RData")
+march7_gam_typeI_90=final_table[final_table$num_timepoints==90,1:8]
+
+march7_gam_typeI_90=march7_gam_typeI_90[!rownames(march7_gam_typeI_90)%in% c(
+    "experiment_output.6","experiment_output.7","experiment_output.8",
+    "experiment_output.18","experiment_output.19","experiment_output.20",
+    "experiment_output.24","experiment_output.25","experiment_output.26",
+    "experiment_output.30","experiment_output.31","experiment_output.32",
+    "experiment_output.36","experiment_output.37","experiment_output.38"),]
+march7_gam_typeI_90=march7_gam_typeI_90[,-4]
+save(march7_gam_typeI_90,file="march7_gam_typeI_90.RData")
+
+write.csv(march7_gam_typeI_90, "gam_90.csv")
+#march7_gam_typeI_180=final_table[final_table$num_timepoints==180,1:8]
+
+####################################
+
+
+
+
+
+

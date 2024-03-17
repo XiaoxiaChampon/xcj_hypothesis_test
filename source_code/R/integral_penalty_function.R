@@ -76,10 +76,12 @@ integral_penalty_matrix <- function(time_interval, function_value_matrix) {
     integral = delta_h * (approx_value_y[,2 * (1:number_points) - 1] 
                           + 4 * approx_value_y[,2 * (1:number_points)] 
                           + approx_value_y[,2 * (1:number_points) + 1]) / 3
-    results = list(value = rowSums(integral), cdf = list(
-        x = approx_value_x[,2 * (1:number_points)], 
-        y = rowCumsums(integral))
-    )
+    # results = list(value = rowSums(integral), cdf = list(
+    #     x = approx_value_x[,2 * (1:number_points)], 
+    #     y = rowCumsums(integral))
+    # )
+    results = list(value = rowSums(integral))
+ 
     return(results)
 }
 
