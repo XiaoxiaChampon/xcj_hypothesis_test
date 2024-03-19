@@ -183,7 +183,8 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
                        number_basis =number_basis,est_choice="binomial" )
             
             T_stat=temp$T_statistics #scalar
-            return(T_stat)
+            betahat=temp$betals[2:(number_basis+1)]
+            return(c(T_stat,betahat))
         }
     T_rep <- do.call(rbind, T_rep)
     #three columns, T, and T_binary, T_binary0.1
