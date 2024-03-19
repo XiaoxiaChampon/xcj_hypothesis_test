@@ -39,6 +39,7 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
            T_stat=array(0,3)
            T_stat[1]=temp$T_statistics #scalar
            betals=temp$betals
+           #betals=temp$betals*0
            ####################
            #T_star_series=c(0)
            ####################
@@ -94,7 +95,7 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                    
                    vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
                    beta0=betals[1]
-                   betal=betals[2:(number_basis+1)]
+                   betal=betals[2:(number_basis+1)]*0
                    betal3=betals[(number_basis+2):(2*number_basis+1)]
                    
                    knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
