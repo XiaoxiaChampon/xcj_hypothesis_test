@@ -1174,6 +1174,7 @@ march7_gam_typeI_90=march7_gam_typeI_90[!rownames(march7_gam_typeI_90)%in% c(
 march7_gam_typeI_90=march7_gam_typeI_90[,-4]
 save(march7_gam_typeI_90,file="march7_gam_typeI_90.RData")
 
+load("march7_gam_typeI_90.RData")
 write.csv(march7_gam_typeI_90, "gam_90.csv",row.names = FALSE)
 #march7_gam_typeI_180=final_table[final_table$num_timepoints==180,1:8]
 

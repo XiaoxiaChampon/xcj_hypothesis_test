@@ -201,9 +201,13 @@ writeLines(exp_str)
 timeKeeperStart(exp_str)
 num_replications=1000
 time_interval=seq(start_time,end_time,length.out=timeseries_length)
-n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                            time_interval=time_interval, fl_choice,num_replications,
-                            lp_intercept=0.9998364)
+# n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                             time_interval=time_interval, fl_choice,num_replications,
+#                             lp_intercept=0.9998364)
+
+n500_rep_justT_sp0=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                  time_interval=time_interval, fl_choice,num_replications,
+                                  lp_intercept=0.9998364)
 
 timeKeeperNext()
 load("n500_rep_justT.RData")
