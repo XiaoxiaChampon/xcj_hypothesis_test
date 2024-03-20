@@ -94,7 +94,7 @@ if(run_parallel)
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=1000){
+                           lp_intercept=0.9998364,boot_number=99){
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -126,7 +126,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                 
                 vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
                 beta0=betals[1]
-                betal=betals[2:(number_basis+1)]
+                betal=betals[2:(number_basis+1)]*0
                 betal3=betals[(number_basis+2):(2*number_basis+1)]
                 
                 knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
@@ -206,7 +206,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
                                       fl_choice,
-                                      num_replicas = 14,
+                                      num_replicas = 100,
                                       alpha = 0.05, 
                                       start_time=0.01,
                                       end_time=0.99,
@@ -291,12 +291,12 @@ ed_table1 <- generate_ed_table(subjects_vector = c(500),
                                fl_choice_vector = c("6"),
                                time_length_vector = c(90),
                                test_type_vector = c("Inclusion"))
-ed_table2=generate_ed_table(subjects_vector = c(500),fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
-                                                         test_type_vector = c("Functional"))
+# ed_table2=generate_ed_table(subjects_vector = c(500),fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
+#                                                          test_type_vector = c("Functional"))
 
 
-ed_table <- rbind(ed_table1,ed_table2)
-
+#ed_table <- rbind(ed_table1,ed_table2)
+ed_table <- ed_table1
 ###################
 #power
 # ed_table1 <- generate_ed_table(subjects_vector = c(500,300,100),
