@@ -178,8 +178,8 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     
     
     
-    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],sp=0,k = number_basis,bs = "cr", m=2)+
-                        s(time_interval_matrix,by=X_array[,,3],sp=0,k = number_basis,bs = "cr", m=2),family = 'binomial',
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
     betal=logit_model$coefficients[2:(number_basis+1)]

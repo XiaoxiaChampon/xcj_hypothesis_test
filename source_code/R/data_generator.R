@@ -28,10 +28,10 @@
 library(mgcv)
 library(fda)
 library(fda.usc)
-library(devtools)
+#library(devtools)
 #install_github("stchen3/glmmVCtest")
-library("glmmVCtest")
-library(RLRsim)
+#library("glmmVCtest")
+#library(RLRsim)
 library(MASS)
 #for splineDesign
 library(splines)

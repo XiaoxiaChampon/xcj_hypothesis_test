@@ -1179,6 +1179,28 @@ write.csv(march7_gam_typeI_90, "gam_90.csv",row.names = FALSE)
 #march7_gam_typeI_180=final_table[final_table$num_timepoints==180,1:8]
 
 ####################################
+#Final run for type I error gam L2 penalty March 23
+###################################
+load("EXP3_r5000_cfdagamtyieIL2March.RData")
+RLRT_final_gam_type_I=final_table[,1:8]
+RLRT_final_gam_type_I$power=unlist(RLRT_final_gam_type_I$power)
+RLRT_final_gam_type_I$se=unlist(RLRT_final_gam_type_I$se)
+RLRT_final_gam_type_I$power_01=unlist(RLRT_final_gam_type_I$power_01)
+RLRT_final_gam_type_I$se01=unlist(RLRT_final_gam_type_I$se01)
+write.csv(RLRT_final_gam_type_I, file = "RLRT_final_gam_type_I.csv")
+
+#write a function to create csv file
+load("EXP3_r5000_cfdagamtyieIL2March.RData")
+gam_typeI_csv=function(final_table,number_time_points){
+    RLRT_final_gam_type_I=final_table[,1:8]
+    RLRT_final_gam_type_I$power=unlist(RLRT_final_gam_type_I$power)
+    RLRT_final_gam_type_I$se=unlist(RLRT_final_gam_type_I$se)
+    RLRT_final_gam_type_I$power_01=unlist(RLRT_final_gam_type_I$power_01)
+    RLRT_final_gam_type_I$se01=unlist(RLRT_final_gam_type_I$se01)
+    write.csv(RLRT_final_gam_type_I, file = paste0("RLRT_final_gam_type_I_",number_time_points,".csv") )
+}
+gam_typeI_csv(final_table,90)
+###################################time points 180
 
 
 
