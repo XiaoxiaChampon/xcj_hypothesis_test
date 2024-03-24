@@ -1201,7 +1201,8 @@ gam_typeI_csv=function(final_table,number_time_points){
 }
 gam_typeI_csv(final_table,90)
 ###################################time points 180
-
+load("EXP3_r5000_cfdagam180.RData")
+gam_typeI_csv(final_table,180)
 
 
 
