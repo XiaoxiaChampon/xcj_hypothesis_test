@@ -267,7 +267,7 @@ run_experiment_hypothesis <- function(exp_idx,
     # power_se <- sqrt(power*(1-power)/num_replicas)
     
     power <- simulation_scenarios[,2] 
-   
+    power_01 <- simulation_scenarios[,3] 
     ############
     # power_01 <- mean(simulation_scenarios[,3] )
     # power_se01 <- sqrt(power_01*(1-power_01)/num_replicas)
@@ -295,7 +295,7 @@ run_experiment_hypothesis <- function(exp_idx,
     # return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
     #             "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
     #             "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
-    return(list("power"=power,
+    return(list("power"=power,"power_01"=power_01,
                 "T_rv"=T_rv))
 }
 # 
@@ -308,7 +308,7 @@ run_experiment_hypothesis <- function(exp_idx,
 
 begin_exp_time <- Sys.time()
 
-set.seed(123456)
+set.seed(123456 + 10 * options$jobid)
 
 
 generate_ed_table <- function(subjects_vector = c(500,300,100),
@@ -375,8 +375,9 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 save(final_table,file =paste0("./final_table_output/Hazel_outputsTbootstrap_",
-                              options$jobid,"_",options$numcpus,options$subjects,options$replicas,
-                              options$boots,".RData"))
+                              options$jobid,"_",options$numcpus,"_",options$subjects,"_",
+                              options$replicas,"_",
+                              options$boots,"_",".RData"))
 
 end_exp_time <- Sys.time()
 

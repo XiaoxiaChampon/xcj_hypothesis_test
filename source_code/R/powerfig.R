@@ -964,6 +964,11 @@ load("./simulation_data/gam_l2_penalty_typeI_ber1notn.RData")
 #Feb8, re do gam, l2_penalty start, power, bernoulli 1-y instead of n-y
 ########################################
 load("EXP3_r5000_linear_gam_real_power.RData")
+
+#march 26th, after the type I error
+#######################
+load("EXP3_r5000_gampower90180inclusion.RData")
+###############################
 power_curve_gam_l2=final_table
 
 conditions <- c(6, 7,8, 9,10)
@@ -1037,6 +1042,12 @@ power_by_test_type_gaml2= power_curve_gam_l2[!power_curve_gam_l2$fl_choice %in% 
 ####current run for only 90, fl 11-15
 # load("EXP3_r5000_gam_power_l2_bigger_fl.RData")
 # power_by_test_type_gaml2=final_table
+
+
+#####################
+#powerbytesttype march 26
+#load("EXP3_r5000_gampowertesttypemarch26.RData")
+#######################
 conditions_rep=c(21,22,23,24,25)
 replacement_values_fl <- c(0,10, 20,30,40)
 
@@ -1205,7 +1216,156 @@ load("EXP3_r5000_cfdagam180.RData")
 gam_typeI_csv(final_table,180)
 #user python code to write the table
 ######################################
+#function graph power
+replace_all <- function(old_vector, old_values, new_values){
+    c(new_values, old_vector)[match(old_vector, c(old_values, old_vector))]
+}
+library(data.table)
+library(ggplot2)
 
+power_by_time_points_plot=function(final_table){
+    power_curve_final=final_table
+    conditions <- c(6, 7,8, 9,10)
+    
+    power_by_time=power_curve_final[power_curve_final$fl_choice %in% conditions,]
+    
+    replacement_values <- c(0, 5,10,15,20)
+    
+    # Use replace() to replace the names in the 'Names' column
+    power_by_time$fl_choice <- replace_all(power_by_time$fl_choice, 
+                                           conditions, 
+                                           replacement_values)
+    
+    power_by_time_new=power_by_time[,c(1,3:5,7)]
 
+    power_by_time_new_long <- melt(setDT(power_by_time_new), id.vars = c("fl_choice", "num_subjects", "num_timepoints"),
+                                   variable.name = "power_both")
+    #power_by_time_new_long
+    #######
+    power_by_time_new_long$num_timepoints_new <- c('"Timepoints = 90"', '"Timepoints = 180"')[as.factor(power_by_time_new_long$num_timepoints)]
+    power_by_time_new_long$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_time_new_long$power_both]
+    
+    power_by_time_plot_new_gam=ggplot(power_by_time_new_long,
+                                      aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+        geom_line() +
+        facet_grid(as.factor(num_timepoints_new)~power_both_new,
+                   labeller = label_parsed)+
+        ylab("Power")+
+        xlab(expression(~delta))+
+        guides(color = guide_legend(title = "Subjects")) +
+        theme(text = element_text(size = 20))  +
+        theme(
+            legend.position = c(.02, .98),
+            legend.justification = c("left", "top"),
+            legend.box.just = "right",
+            legend.margin = margin(6, 6, 6, 6)
+        )#+
+    #theme(strip.text.x = element_blank())
+    print(power_by_time_plot_new_gam)
+}
+load("EXP3_r5000_gampower90180inclusion.RData")
+power_by_time_points_plot(final_table)
 
+power_by_test_type_plot=function(final_table){
+    power_by_test_type_gaml2=final_table
+    conditions_rep=c(21,22,23,24,25,14)
+    replacement_values_fl <- c(0,10, 20,30,40,60)
+    
+    # conditions_rep=c(11,12,13,14,15)
+    # replacement_values_fl <- c(0,20, 40,60,80)
+    
+    # Use replace() to replace the names in the 'Names' column
+    power_by_test_type_gaml2$fl_choice <- replace_all(power_by_test_type_gaml2$fl_choice, 
+                                                      conditions_rep,
+                                                      replacement_values_fl)
+    power_by_test_type_subset_gaml2=power_by_test_type_gaml2[,c(1:3,5,7)]
+    
+    
+    power_by_test_type_subset_long_gaml2 <- melt(setDT(power_by_test_type_subset_gaml2), 
+                                                 id.vars = c("fl_choice", "num_subjects", "test_type"),
+                                                 variable.name = "power_both")
+    
+    power_by_test_type_subset_long_gaml2$power_both_new <- c('alpha*" = 0.05"', 'alpha*" = 0.10"')[power_by_test_type_subset_long_gaml2 $power_both]
+    power_by_test_type_subset_long_gaml2$test_type_new <- c('tilde(F[l])(t)*" = 0"', 'tilde(F[l])(t)*" = "*c')[power_by_test_type_subset_long_gaml2 $test_type]
+    
+    #save(power_by_test_type_subset_long_gaml2,file="./simulation_data/power_by_test_type_subset_long_gaml2.RData")
+    power_by_test_type_subset_plot_gaml2=ggplot(power_by_test_type_subset_long_gaml2,
+                                                aes(x=fl_choice,y=unlist(value),color=as.factor(num_subjects),shape=as.factor(num_subjects)))+
+        geom_line() +
+        facet_grid(  test_type_new~power_both_new,
+                     labeller = label_parsed)+
+        ylab("Power")+
+        #xlab(expression(~delta~": Deivation from 0"))+
+        xlab(expression(~1~"+"~delta~"t"))+
+        guides(color = guide_legend(title = "Subjects")) +
+        theme(text = element_text(size = 20))  +
+        theme(
+            legend.position = c(.02, .98),
+            legend.justification = c("left", "top"),
+            legend.box.just = "right",
+            legend.margin = margin(6, 6, 6, 6)
+        )#+
+    #theme(strip.text.x = element_blank())
+    print(power_by_test_type_subset_plot_gaml2)
+}
 
+load("EXP3_r5000_gampowertesttypemarch26.RData")
+power_by_test_type_plot(final_table)
+
+##3/25. T testing
+#write a function to get all 5 dataset
+load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_1_16_100_1000_1000_.RData")
+n100_1=final_table$power
+
+load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_2_16_100_1000_1000_.RData")
+n100_2=final_table$power
+
+load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_3_16_100_1000_1000_.RData")
+n100_3=final_table$power
+
+load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_4_16_100_1000_1000_.RData")
+n100_4=final_table$power
+
+load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_5_16_100_1000_1000_.RData")
+n100_5=final_table$power
+
+n_100_p=mean(unlist(c(n100_1,n100_2,n100_3,n100_4,n100_5)))
+n_100_p #0.049
+#[1] 0.048
+
+n_100_se=sqrt(n_100_p*(1-n_100_p)/5000)
+n_100_se #0.003052835 [1] 0.003023111
+
+#######
+# load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/testrun/Hazel_outputsTbootstrap_2_16300100100.RData")
+# mean(unlist(final_table$power))
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_4_1630010001000.RData")
+n300_4=final_table$power
+mean(unlist(n300_4))
+#[1] 0.01
+########
+# load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/testrun/Hazel_outputsTbootstrap_2_32500100100.RData")
+# mean(unlist(final_table$power))
+# [1] 0.05
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_1_3250010001000.RData")
+n500_1=final_table$power
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_2_3250010001000.RData")
+n500_2=final_table$power
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_3_3250010001000.RData")
+n500_3=final_table$power
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_4_3250010001000.RData")
+n500_4=final_table$power
+
+load("./hazel_final_table_output/Hazel_outputsTbootstrap_5_3250010001000.RData")
+n500_5=final_table$power
+
+n_500_p=mean(unlist(c(n500_1,n500_2,n500_3,n500_4,n500_5)))
+n_500_p #0.015
+
+n_500_se=sqrt(n_500_p*(1-n_500_p)/5000)
+n_500_se #0.003052835

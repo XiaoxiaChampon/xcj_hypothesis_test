@@ -192,6 +192,8 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
     return(T_rep)
     }
 
+
+fl_choice="7"
 source("./source_code/R/time_track_function.R")
 exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
                  "\n timeserires_length:\t",timeseries_length,
@@ -205,12 +207,16 @@ time_interval=seq(start_time,end_time,length.out=timeseries_length)
 #                             time_interval=time_interval, fl_choice,num_replications,
 #                             lp_intercept=0.9998364)
 
-n500_rep_justT_sp0=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                  time_interval=time_interval, fl_choice,num_replications,
-                                  lp_intercept=0.9998364)
+# n500_rep_justT_sp0=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                   time_interval=time_interval, fl_choice,num_replications,
+#                                   lp_intercept=0.9998364)
+
+n500_rep_justT_constant_null=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                      time_interval=time_interval, fl_choice,num_replications,
+                                      lp_intercept=0.9998364)
 
 timeKeeperNext()
-load("n500_rep_justT.RData")
+#load("n500_rep_justT.RData")
 # --------------------
 #     Track time for 
 # Num Subjects:	 500 
