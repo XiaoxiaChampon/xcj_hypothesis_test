@@ -86,7 +86,8 @@ if(run_parallel)
     {
         parallel::stopCluster(cl = my.cluster)
     }
-    n.cores <- parallel::detectCores()
+    # n.cores <- parallel::detectCores()
+    n.cores <- options$numcpus
     my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
     doParallel::registerDoParallel(cl = my.cluster)
     cat("Parellel Registered: ", foreach::getDoParRegistered(), " (num cores=", n.cores, ")\n")
