@@ -1340,28 +1340,50 @@ n_100_se #0.003052835 [1] 0.003023111
 # load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/testrun/Hazel_outputsTbootstrap_2_16300100100.RData")
 # mean(unlist(final_table$power))
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_4_1630010001000.RData")
-n300_4=final_table$power
-mean(unlist(n300_4))
+# load("./hazel_final_table_output/oldsamereplica/Hazel_outputsTbootstrap_4_1630010001000.RData")
+# n300_4=final_table$power
+# mean(unlist(n300_4))
 #[1] 0.01
+#####
+load("./hazel_final_table_output/hazel16_300_1000_1000/Hazel_outputsTbootstrap_1_16_300_1000_1000_.RData")
+n300_1=final_table$power
+
+load("./hazel_final_table_output/hazel16_300_1000_1000/Hazel_outputsTbootstrap_2_16_300_1000_1000_.RData")
+n300_2=final_table$power
+
+load("./hazel_final_table_output/hazel16_300_1000_1000/Hazel_outputsTbootstrap_3_16_300_1000_1000_.RData")
+n300_3=final_table$power
+
+load("./hazel_final_table_output/hazel16_300_1000_1000/Hazel_outputsTbootstrap_4_16_300_1000_1000_.RData")
+n300_4=final_table$power
+
+load("./hazel_final_table_output/hazel16_300_1000_1000/Hazel_outputsTbootstrap_5_16_300_1000_1000_.RData")
+n300_5=final_table$power
+
+n_300_p=mean(unlist(c(n300_1,n300_2,n300_3,n300_4,n300_5)))
+n_300_p #0.015
+
+n_300_se=sqrt(n_300_p*(1-n_300_p)/5000)
+n_300_se #0.003052835
+
 ########
 # load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/testrun/Hazel_outputsTbootstrap_2_32500100100.RData")
 # mean(unlist(final_table$power))
-# [1] 0.05
+#[1] 0.05
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_1_3250010001000.RData")
+load("./hazel_final_table_output/hazel32_500_1000_1000/Hazel_outputsTbootstrap_1_32_300_1000_1000_.RData")
 n500_1=final_table$power
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_2_3250010001000.RData")
+load("./hazel_final_table_output/hazel32_500_1000_1000/Hazel_outputsTbootstrap_2_32_300_1000_1000_.RData")
 n500_2=final_table$power
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_3_3250010001000.RData")
+load("./hazel_final_table_output/hazel32_500_1000_1000/Hazel_outputsTbootstrap_3_32_300_1000_1000_.RData")
 n500_3=final_table$power
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_4_3250010001000.RData")
+load("./hazel_final_table_output/hazel32_500_1000_1000/Hazel_outputsTbootstrap_4_32_300_1000_1000_.RData")
 n500_4=final_table$power
 
-load("./hazel_final_table_output/Hazel_outputsTbootstrap_5_3250010001000.RData")
+load("./hazel_final_table_output/hazel32_500_1000_1000/Hazel_outputsTbootstrap_5_32_300_1000_1000_.RData")
 n500_5=final_table$power
 
 n_500_p=mean(unlist(c(n500_1,n500_2,n500_3,n500_4,n500_5)))

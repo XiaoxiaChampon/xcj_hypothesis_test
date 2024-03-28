@@ -290,8 +290,6 @@ xlfl2plot + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0
 
 
 
-
-
 Zmat_Inc2<-get_Zmatrix(X_cfd_twitter[,1:104,2],time_interval,test_type='Inclusion')
 Zmat_Inc.mat2 <- Zmat_Inc2$Zmat
 

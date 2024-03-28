@@ -211,11 +211,40 @@ time_interval=seq(start_time,end_time,length.out=timeseries_length)
 #                                   time_interval=time_interval, fl_choice,num_replications,
 #                                   lp_intercept=0.9998364)
 
-n500_rep_justT_constant_null=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+n500_rep_justT_constant_null_fl7=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval=time_interval, fl_choice,num_replications,
                                       lp_intercept=0.9998364)
-
+save(n500_rep_justT_constant_null_fl7,file="n500_rep_justT_constant_null_fl7.RData")
+load("n500_rep_justT_constant_null_fl7.RData")
 timeKeeperNext()
+
+num_indvs=100
+n100_rep_justT_constant_null_fl7=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                    time_interval=time_interval, fl_choice,num_replications,
+                                                    lp_intercept=0.9998364)
+timeKeeperNext()
+save(n100_rep_justT_constant_null_fl7,file="n100_rep_justT_constant_null_fl7.RData")
+num_indvs=1000
+n1000_rep_justT_constant_null_fl7=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                    time_interval=time_interval, fl_choice,num_replications,
+                                                    lp_intercept=0.9998364)
+save(n1000_rep_justT_constant_null_fl7,file="n1000_rep_justT_constant_null_fl7.RData")
+timeKeeperNext()
+
+fl_choice="9"
+source("./source_code/R/time_track_function.R")
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
+n500_rep_justT_constant_null_fl9=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                                time_interval=time_interval, fl_choice,num_replications,
+                                                lp_intercept=0.9998364)
+save(n500_rep_justT_constant_null_fl9,file="n500_rep_justT_constant_null_fl9.RData")
+timeKeeperNext()
+
 #load("n500_rep_justT.RData")
 # --------------------
 #     Track time for 
