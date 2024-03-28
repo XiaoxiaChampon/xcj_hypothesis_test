@@ -178,14 +178,27 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
             number_basis=30
             WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                 time_interval, fl_choice, lp_intercept=0.9998364)
-            
-            temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
-                       WY_sample$true$yis,time_interval,
-                       number_basis =number_basis,est_choice="binomial" )
+          
+                temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
+                           WY_sample$true$yis,time_interval,
+                           number_basis =number_basis,est_choice="binomial" )  
             
             T_stat=temp$T_statistics #scalar
-            betahat=temp$betals[2:(number_basis+1)]
-            return(c(T_stat,betahat))
+            betahat=temp$betals[2:(number_basis+1)] #30 num_basis
+            mub_vector=temp$mub_vector #30 num_basis
+            DBB_matrix_vector=c(temp$DBB_matrix)#30*30
+            muD_vector=c(temp$muD)#30*30
+            #1,2:31,32:61,62:961,962:1861
+            
+            #1862, 1863:1892
+            # T_stat_sp=temp$T_statistics_sp #scalar
+            # betahat_sp=temp$betals_sp[2:(number_basis+1)] #30 num_basis
+           
+            # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector,
+            #          T_stat_sp,betahat_sp))
+            
+            return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector
+                     ))
         }
     T_rep <- do.call(rbind, T_rep)
     #three columns, T, and T_binary, T_binary0.1
@@ -207,15 +220,19 @@ time_interval=seq(start_time,end_time,length.out=timeseries_length)
 #                             time_interval=time_interval, fl_choice,num_replications,
 #                             lp_intercept=0.9998364)
 
-# n500_rep_justT_sp0=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-#                                   time_interval=time_interval, fl_choice,num_replications,
-#                                   lp_intercept=0.9998364)
+n500_rep_justT_sp0=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                  time_interval=time_interval, fl_choice,num_replications,
+                                  lp_intercept=0.9998364)
 
-n500_rep_justT_constant_null_fl7=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval=time_interval, fl_choice,num_replications,
-                                      lp_intercept=0.9998364)
-save(n500_rep_justT_constant_null_fl7,file="n500_rep_justT_constant_null_fl7.RData")
-load("n500_rep_justT_constant_null_fl7.RData")
+n500_rep_justT_sp0_nosp0=n500_rep_justT_sp0
+
+save(n500_rep_justT_sp0_nosp0,file="n500_rep_justT_sp0_nosp0.RData")
+#took: Time difference of 9.757369 mins 
+# n500_rep_justT_constant_null_fl7=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                                       time_interval=time_interval, fl_choice,num_replications,
+#                                       lp_intercept=0.9998364)
+# save(n500_rep_justT_constant_null_fl7,file="n500_rep_justT_constant_null_fl7.RData")
+# load("n500_rep_justT_constant_null_fl7.RData")
 timeKeeperNext()
 
 num_indvs=100

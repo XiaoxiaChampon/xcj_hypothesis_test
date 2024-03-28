@@ -92,10 +92,10 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     # mu_st=Sys.time()
     #  for (i in 1:10000){
     #     
-    #     mub_vector=c(0)
-    #     for(this_col in 1:number_col ){
-    #           mub_vector[this_col] <- integral_penalty(time_interval,pl_vector*bspline[,this_col])$value
-    #     }
+        mub_vector=c(0)
+        for(this_col in 1:number_col ){
+              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
+        }
     #     ##################################################################################
     #  }
     # mu_et=Sys.time()
@@ -103,8 +103,8 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     
     #mu_st=Sys.time()
     # for (i in 1:10000){
-        
-        mub_vector <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
+        ############################################################################
+        # mub_vector <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
         ##################################################################################
     # }
     #mu_et=Sys.time()
@@ -141,12 +141,12 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #         return(temp)
     #     }
     # J_matrix <- do.call(rbind, J_matrix)
-    J_matrix <- matrix(0,nrow=num_indv,ncol=number_col) #empty
-    for(row in 1:num_indv){
-      for(col in 1:number_col){
-        J_matrix[row,col] <- integral_penalty(time_interval,X_array[row,,2]*bspline[,col])$value
-      }
-    }
+    # J_matrix <- matrix(0,nrow=num_indv,ncol=number_col) #empty
+    # for(row in 1:num_indv){
+    #   for(col in 1:number_col){
+    #     J_matrix[row,col] <- integral_penalty(time_interval,X_array[row,,2]*bspline[,col])$value
+    #   }
+    # }
    ############################################################################################## 
     
     
@@ -166,10 +166,11 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     # DBB_matrix <- do.call(rbind, DBB_matrix)
     
     DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
-    
+    #x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     for(row in 1:number_col){
         for(col in 1:number_col){
-            DBB_matrix[row,col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,row]*bspline[,col]))$value)*(cov(X_array[,,2])[row,col])
+            #DBB_matrix[row,col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,row]*bspline[,col]))$value)*(cov(X_array[,,2])[row,col])
+            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
         }
     }
     ###############################################################
@@ -182,14 +183,30 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
                         s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
-    betal=logit_model$coefficients[2:(number_basis+1)]
-    #betal3=logit_model$coefficients[(number_basis+2):(2*number_basis+1)]
+
+    
+  
     betals=logit_model$coefficients
+    betal= betals[2:(number_basis+1)]
+    
+    muD=mub_vector%*%t(mub_vector)+DBB_matrix
+    
+    T_statistics=t(betal)%*%(muD)%*%(betal)
+    ############sp
+    # logit_model_sp=gam(Y~s(time_interval_matrix,by=X_array[,,2],sp=0,k = number_basis,bs = "cr", m=2)+
+    #                        s(time_interval_matrix,by=X_array[,,3],sp=0,k = number_basis,bs = "cr", m=2),family = 'binomial',
+    #                    control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+    #                    optimizer=c("outer","bfgs"),method="ML")
+    # betal_sp=logit_model_sp$coefficients[2:(number_basis+1)]
+    # betals_sp=logit_model_sp$coefficients
+    # 
+    # T_statistics_sp=t(betal_sp)%*%(muD)%*%(betal_sp)
+    ##############
     #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     #gammal=logit_model_p$coefficients[2:(number_basis+1)]
-    
-    T_statistics=t(betal)%*%(mub_vector%*%t(mub_vector)+DBB_matrix)%*%(betal)
+   
+  
     
     ## 
     # T_vector <- foreach(this_row = 1:num_indv ) %do%
@@ -216,10 +233,10 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #     }
     # T_vectorp <- do.call(cbind, T_vectorp)
     
-    rv_XF=J_matrix%*%betal
+    #rv_XF=J_matrix%*%betal
     #rv_E_PF=mub_matrix%*%gammal
    # rv_E_PF=mub_matrix%*%betal
-    rv_E_PF=t(mub_vector)%*%betal
+   # rv_E_PF=t(mub_vector)%*%betal
     
     
     
@@ -227,12 +244,23 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     # return(list("DBB_matrix"=DBB_matrix, "betal"=betal,"mub_matrix"=mub_matrix,
     #             "T_vector"=T_vector,"T_vectorp"=T_vectorp,
     #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
-    return(list("DBB_matrix"=DBB_matrix, "betals"=betals,"mub_vector"=mub_vector,
-                "T_statistics"=T_statistics,
-                "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
+    # return(list("DBB_matrix"=DBB_matrix, "betals"=betals,"mub_vector"=mub_vector,"muD"=muD,
+    #             "T_statistics"=T_statistics,"betals_sp"=betals_sp,"T_statistics_sp"=T_statistics_sp,
+    #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
+    # 
+    # return(list("DBB_matrix"=DBB_matrix, "betals"=betals,"mub_vector"=mub_vector,"muD"=muD,
+    #             "T_statistics"=T_statistics,"betals_sp"=betals_sp,"T_statistics_sp"=T_statistics_sp,
+    #             "rv_XF"=rv_XF,"rv_E_PF"=rv_E_PF))
+    # 
+    
+    # return(list("DBB_matrix"=DBB_matrix, "betals"=betals,"mub_vector"=mub_vector,"muD"=muD,
+    #             "T_statistics"=T_statistics,"betals_sp"=betals_sp,"T_statistics_sp"=T_statistics_sp
+    #             ))
+    
+    return(list("betals"=betals,
+                "T_statistics"=T_statistics
+    ))
     }
-
-
 
 
 #' Function to select 
