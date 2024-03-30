@@ -68,33 +68,10 @@ if(run_parallel)
 
 
 
-
-# cfd_T_testing_simulation <- function (num_replicas, start_time, end_time, timeseries_length,
-#                                     mu1_coef, mu2_coef,
-#                                     num_indvs,fl_choice,
-#                                     klen=3){
-#     cat("CFD Testing Simulation \nNum Replicas:\t", num_replicas, "\nNum indvs:\t", num_indvs)
-#     #num_replicas=2
-#     time_interval=seq(start_time,end_time,length.out=timeseries_length)
-#     
-#     result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL,
-#                            .packages=c("splines","mgcv","fda","fda.usc","MASS","stats")) %dorng% {
-#                                # result_all <- foreach (number_simulation = 1:num_replicas, .combine = cbind, .init = NULL) %dorng% {
-#                                source("./source_code/R/T_testing_functions.R")
-#                                result <- cfd_T_testing(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-#                                                        time_interval, fl_choice, lp_intercept=0.9998364)
-#                                
-#                                #return(list("pvalue"=result$pvalue,"teststat"=result$test_statistics,"fl"=result$flt))
-#                                #return(list("pvalue"=result$pvalue,"yip"=result$yip,"yip_wo"=result$yip_wo,"pvalue2"=result$pvalue2))
-#                                return(list("pvalue"=result$pvalue,"rvmean"=result$rvmean,"rvemean"=result$rvemean))
-#                            } 
-#     return(result_all)
-#     
-# }
-
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                            time_interval, fl_choice,num_replicas, 
-                           lp_intercept=0.9998364,boot_number=99){
+                           lp_intercept=0.9998364,boot_number=1000){
+    cat("num_replicas: ", num_replicas, "\nboot_number: ", boot_number)
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
@@ -114,9 +91,11 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                        WY_sample$true$yis,time_interval,
                        number_basis =number_basis,est_choice="binomial" )
-            T_stat=array(0,3)
-            T_stat[1]=temp$T_statistics #scalar
+            T_stat=numeric(6)
+            T_stat[1] = temp$T_statistics #scalar
             betals=temp$betals
+            T_stat[4]=temp$T_statistics_sp #scalar
+            betals_sp=temp$betals_sp
             ####################
             #T_star_series=c(0)
             ####################
@@ -125,9 +104,10 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             get_Y_star=function( X_2t,X_3t,betals,time_interval,num_indvs,number_basis){
                 
                 vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
+                
                 beta0=betals[1]
                 betal=betals[2:(number_basis+1)]*0
-                betal3=betals[(number_basis+2):(2*number_basis+1)]
+                betal3=betals[(number_basis+2):(2*number_basis+1)] 
                 
                 knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
                 bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
@@ -138,60 +118,45 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                 
                 linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 )
                 y_star <- apply(linear_predictor, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+                
                 return(y_star)
+            
             }
-            # y_star=get_Y_star(WY_sample$true$TrueX2,WY_sample$true$TrueX3,
-            #                   betals,time_interval,num_indvs,number_basis)
-            
-            
-            
-            #bootstrap
-            ################
-            #####################################################################
-            #temp_series <- foreach(this_col = 1:num_replicas ) %do%
-            #     temp_series <- foreach(this_col = 1:10 ) %do%
-            #     {
-            #         source("./source_code/R/integral_penalty_function.R")
-            #         source("./source_code/R/T_testing_functions.R")
-            #         boot_index=sample(1:num_indvs, num_indvs,replace=T)
-            # 
-            #         temp[this_col ]=get_T(WY_sample$true$Truecatcurve[,boot_index],
-            #                               WY_sample$true$yis[boot_index],time_interval,
-            #                               number_basis =30,est_choice="binomial")$T_statistics
-            # 
-            #         return(temp[this_col ])
-            #     }
-            # temp_series  <- do.call(rbind, temp_series)
-            # T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
-            # T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
-            # start_time_boot=Sys.time()
-             temp_series=c(0)
+          
+         
+            temp_series=numeric(boot_number)
+            temp_series_sp=numeric(boot_number)
             for (this_col in 1:boot_number){
                 
                 boot_index=sample(1:num_indvs, num_indvs,replace=T)
                 y_star=get_Y_star(WY_sample$true$TrueX2[boot_index,],
                                   WY_sample$true$TrueX3[boot_index,],
                                   betals,time_interval,num_indvs,number_basis)
-                temp_series[this_col ]=get_T(WY_sample$true$TrueX1[boot_index,],
-                                             WY_sample$true$TrueX2[boot_index,],
-                                             WY_sample$true$TrueX3[boot_index,],
-                                             y_star,time_interval,
-                                      number_basis =number_basis,est_choice="binomial")$T_statistics
+                y_star_sp=get_Y_star(WY_sample$true$TrueX2[boot_index,],
+                                     WY_sample$true$TrueX3[boot_index,],
+                                     betals_sp,time_interval,num_indvs,number_basis)
+                ############
+                #y_star_sp=y_star_ysp$ y_star_sp
+                #############
+                temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
+                                                    WY_sample$true$TrueX2[boot_index,],
+                                                    WY_sample$true$TrueX3[boot_index,],
+                                                    y_star,time_interval,
+                                                    number_basis =number_basis,est_choice="binomial")$T_statistics
+                temp_series_sp[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
+                                                       WY_sample$true$TrueX2[boot_index,],
+                                                       WY_sample$true$TrueX3[boot_index,],
+                                                       y_star_sp,time_interval,
+                                                       number_basis =number_basis,est_choice="binomial")$T_statistics
             }
-            # end_time_boot=Sys.time()
-            # cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
-            # boot 1000 for 500 useres takes 50.5146
-            ###############
-            # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
-            # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
+          
             
-            T_stat[2]=(T_stat>=quantile(temp_series, .95))[[1]]
-            T_stat[3]=(T_stat>=quantile(temp_series, .90))[[1]]
-            ################
-            #T_star_series=temp_series
-            ################
-            # T_rv_erv[2]=temp$rv_XF #1D vector
-            # T_rv_erv[3]=temp$rv_E_PF #scalar
+            T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+            T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
+            
+            T_stat[5]=(((T_stat[4]>=quantile(temp_series_sp, .975))[[1]] ) | ((T_stat[4]<=quantile(temp_series_sp, .025))[[1]]))
+            T_stat[6]=(((T_stat[4]>=quantile(temp_series_sp, .95))[[1]] ) | ((T_stat[4]<=quantile(temp_series_sp, .05))[[1]]))
+          
             ######save T star series as well
             return(T_stat)
             ##############################
@@ -206,7 +171,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
                                       fl_choice,
-                                      num_replicas = 100,
+                                      num_replicas = 1000,
                                       alpha = 0.05, 
                                       start_time=0.01,
                                       end_time=0.99,
@@ -238,7 +203,15 @@ run_experiment_hypothesis <- function(exp_idx,
     power_01 <- mean(simulation_scenarios[,3] )
     power_se01 <- sqrt(power_01*(1-power_01)/num_replicas)
     ##############
+    power_sp <- mean(simulation_scenarios[,5] )
+    power_se_sp <- sqrt(power_sp*(1-power_sp)/num_replicas)
+    ############
+    power_01_sp <- mean(simulation_scenarios[,6] )
+    power_se01_sp <- sqrt(power_01_sp*(1-power_01_sp)/num_replicas)
+    
+    ##########
     T_rv= simulation_scenarios[,1]
+    T_rv_sp= simulation_scenarios[,4]
     #rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
     # rve_mean= mean(simulation_pvalues[3,])
     # rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
@@ -262,7 +235,10 @@ run_experiment_hypothesis <- function(exp_idx,
     #             "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
     #             "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
     return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
-                "T_rv"=T_rv))
+               
+                "power_sp"=power_sp,"se_sp"=power_se_sp,"power_01_sp"=power_01_sp ,"se01_sp"=power_se01_sp,
+                "T_rv"=T_rv,
+                "T_rv_sp"=T_rv_sp))
 }
 # 
 # run_experiment_hypothesis (0,
@@ -287,7 +263,7 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 
 ########
 #type I error rate
-ed_table1 <- generate_ed_table(subjects_vector = c(500),
+ed_table1 <- generate_ed_table(subjects_vector = c(100,300,500),
                                fl_choice_vector = c("6"),
                                time_length_vector = c(90),
                                test_type_vector = c("Inclusion"))
@@ -334,12 +310,12 @@ for (row_index in 1:dim(ed_table)[1]){
 }
 
 final_table <- cbind(ed_table, all_experiment_outputs)
-final_table_pvalue=final_table[1:8]
-final_table_rv=final_table[9]
+# final_table_pvalue=final_table[1:12]
+# final_table_rv=final_table[9]
 #hist(final_table_rv$T_rv[[1]])
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table_pvalue,final_table_rv,mu1_coef,mu2_coef,file = "EXP3_outputsTbootstrap.RData")
+save(final_table, mu1_coef,mu2_coef,file = "EXP3_outputsTbootstrap.RData")
 
 end_exp_time <- Sys.time()
 
