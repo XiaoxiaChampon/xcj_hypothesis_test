@@ -193,14 +193,15 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     
     T_statistics=t(betal)%*%(muD)%*%(betal)
     ############sp
-    # logit_model_sp=gam(Y~s(time_interval_matrix,by=X_array[,,2],sp=0,k = number_basis,bs = "cr", m=2)+
-    #                        s(time_interval_matrix,by=X_array[,,3],sp=0,k = number_basis,bs = "cr", m=2),family = 'binomial',
-    #                    control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
-    #                    optimizer=c("outer","bfgs"),method="ML")
+    logit_model_sp=gam(Y~s(time_interval_matrix,by=X_array[,,2],sp=0,k = number_basis,bs = "cr", m=2)+
+                           s(time_interval_matrix,by=X_array[,,3],sp=0,k = number_basis,bs = "cr", m=2),family = 'binomial',
+                       control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+                       optimizer=c("outer","bfgs"),method="ML")
     # betal_sp=logit_model_sp$coefficients[2:(number_basis+1)]
-    # betals_sp=logit_model_sp$coefficients
+    betals_sp=logit_model_sp$coefficients
+    betal_sp= betals_sp[2:(number_basis+1)]
     # 
-    # T_statistics_sp=t(betal_sp)%*%(muD)%*%(betal_sp)
+    T_statistics_sp=t(betal_sp)%*%(muD)%*%(betal_sp)
     ##############
     #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
@@ -258,11 +259,54 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #             ))
     
     return(list("betals"=betals,
-                "T_statistics"=T_statistics
+                "T_statistics"=T_statistics,"betals_sp"=betals_sp,"T_statistics_sp"=T_statistics_sp
     ))
     }
 
-
+get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
+    
+    num_indv <- nrow(X_2t)
+    timeseries_length<- length(time_interval)
+    
+    X_array=array(c(X_1t,X_2t,X_3t),dim=c(num_indv,timeseries_length,category_count))
+    
+   
+    pl_vector=apply(X_array[,,category_count-1],2,mean)
+    number_col <- number_basis
+    knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
+    bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
+    mub_vector=c(0)
+    for(this_col in 1:number_col ){
+        mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
+    }
+  
+    
+    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
+    
+    DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
+   
+    for(row in 1:number_col){
+        for(col in 1:number_col){
+           
+            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+        }
+    }
+    
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial',
+                    control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+                    optimizer=c("outer","bfgs"),method="ML")
+    
+    betals=logit_model$coefficients
+    betal= betals[2:(number_basis+1)]
+    
+    muD=mub_vector%*%t(mub_vector)+DBB_matrix
+    
+    T_statistics=t(betal)%*%(muD)%*%(betal)
+    return(list("betals"=betals,
+                "T_statistics"=T_statistics
+    ))
+}
 #' Function to select 
 #' @param choice "probit", "binomial",  or "multinormial"
 #' @param timestamps01, 1D array, time interval that cfd is observed

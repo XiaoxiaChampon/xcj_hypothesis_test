@@ -1330,7 +1330,7 @@ load("./hazel_final_table_output/hazel16_100_1000_1000/Hazel_outputsTbootstrap_5
 n100_5=final_table$power
 
 n_100_p=mean(unlist(c(n100_1,n100_2,n100_3,n100_4,n100_5)))
-n_100_p #0.049
+n_100_p #0.049 #0.0472
 #[1] 0.048
 
 n_100_se=sqrt(n_100_p*(1-n_100_p)/5000)
@@ -1390,3 +1390,13 @@ n_500_p #0.015 #0.0138
 
 n_500_se=sqrt(n_500_p*(1-n_500_p)/5000)
 n_500_se #0.003052835
+
+#######196 cores, 3/29/2024
+# load("EXP3_outputsTbootstrap_500acj.RData")
+# There were 24 warnings (use warnings() to see them)
+# > final_table_pvalue
+# fl_choice test_type num_subjects num_timepoints power          se power_01        se01
+# experiment_output         6 Inclusion          500             90 0.017 0.004087909     0.04 0.006196773
+
+
+

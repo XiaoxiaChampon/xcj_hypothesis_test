@@ -126,7 +126,10 @@ if(run_parallel)
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
                                   lp_intercept=0.9998364,boot_number=options$boots){
+    set.seed(123)
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
+    
+        #T_rep <- foreach(this_row = 1:5) %dorng%
         { source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
             source("./source_code/R/T_testing_functions.R")
@@ -145,9 +148,12 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                        WY_sample$true$yis,time_interval,
                        number_basis =number_basis,est_choice="binomial" )
-            T_stat=array(0,3)
-            T_stat[1]=temp$T_statistics #scalar
+            #T_stat=array(0,3)
+            T_stat=numeric(6)
+            T_stat[1] = temp$T_statistics #scalar
             betals=temp$betals
+            T_stat[4]=temp$T_statistics_sp #scalar
+            betals_sp=temp$betals_sp
             ####################
             #T_star_series=c(0)
             ####################
@@ -156,10 +162,11 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             get_Y_star=function( X_2t,X_3t,betals,time_interval,num_indvs,number_basis){
                 
                 vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
-                beta0=betals[1]
-                betal=betals[2:(number_basis+1)]*0
-                betal3=betals[(number_basis+2):(2*number_basis+1)]
-                
+                  
+                       beta0=betals[1]
+                       betal=betals[2:(number_basis+1)]*0
+                       betal3=betals[(number_basis+2):(2*number_basis+1)] 
+
                 knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
                 bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
                 
@@ -169,7 +176,10 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                 
                 linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 )
                 y_star <- apply(linear_predictor, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+                
                 return(y_star)
+                
+                #return(list("y_star"=y_star,"y_star_sp"=y_star_sp)
             }
             # y_star=get_Y_star(WY_sample$true$TrueX2,WY_sample$true$TrueX3,
             #                   betals,time_interval,num_indvs,number_basis)
@@ -196,18 +206,30 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # T_stat[2]=(T_stat<=quantile(unlist(temp_series), .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(unlist(temp_series), .10))[[1]]
             # start_time_boot=Sys.time()
-            temp_series=c(0)
+            temp_series=numeric(boot_number)
+            temp_series_sp=numeric(boot_number)
             for (this_col in 1:boot_number){
                 
                 boot_index=sample(1:num_indvs, num_indvs,replace=T)
                 y_star=get_Y_star(WY_sample$true$TrueX2[boot_index,],
                                   WY_sample$true$TrueX3[boot_index,],
                                   betals,time_interval,num_indvs,number_basis)
-                temp_series[this_col ]=get_T(WY_sample$true$TrueX1[boot_index,],
+                y_star_sp=get_Y_star(WY_sample$true$TrueX2[boot_index,],
+                                     WY_sample$true$TrueX3[boot_index,],
+                                     betals_sp,time_interval,num_indvs,number_basis)
+                ############
+                #y_star_sp=y_star_ysp$ y_star_sp
+                #############
+                temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
                                              WY_sample$true$TrueX2[boot_index,],
                                              WY_sample$true$TrueX3[boot_index,],
                                              y_star,time_interval,
                                              number_basis =number_basis,est_choice="binomial")$T_statistics
+                temp_series_sp[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
+                                                       WY_sample$true$TrueX2[boot_index,],
+                                                       WY_sample$true$TrueX3[boot_index,],
+                                                       y_star_sp,time_interval,
+                                                       number_basis =number_basis,est_choice="binomial")$T_statistics
             }
             # end_time_boot=Sys.time()
             # cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
@@ -216,8 +238,11 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
             
-            T_stat[2]=(T_stat>=quantile(temp_series, .95))[[1]]
-            T_stat[3]=(T_stat>=quantile(temp_series, .90))[[1]]
+            T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+            T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
+            
+            T_stat[5]=(((T_stat[4]>=quantile(temp_series_sp, .975))[[1]] ) | ((T_stat[4]<=quantile(temp_series_sp, .025))[[1]]))
+            T_stat[6]=(((T_stat[4]>=quantile(temp_series_sp, .95))[[1]] ) | ((T_stat[4]<=quantile(temp_series_sp, .05))[[1]]))
             ################
             #T_star_series=temp_series
             ################
@@ -269,11 +294,15 @@ run_experiment_hypothesis <- function(exp_idx,
     
     power <- simulation_scenarios[,2] 
     power_01 <- simulation_scenarios[,3] 
+    
+    power_sp <- simulation_scenarios[,5] 
+    power_01_sp <- simulation_scenarios[,6] 
     ############
     # power_01 <- mean(simulation_scenarios[,3] )
     # power_se01 <- sqrt(power_01*(1-power_01)/num_replicas)
     ##############
     T_rv= simulation_scenarios[,1]
+    T_rv_sp= simulation_scenarios[,4]
     #rv_sd= sd(simulation_pvalues[2,])/sqrt(non_null_count)
     # rve_mean= mean(simulation_pvalues[3,])
     # rve_sd= sd(simulation_pvalues[3,])/sqrt(non_null_count)
@@ -296,8 +325,8 @@ run_experiment_hypothesis <- function(exp_idx,
     # return(list("power"=power,"se"=power_se,"power_01"=power_01 ,"se01"=power_se01,
     #             "rv_mean"=rv_mean,"rv_sd"=rv_sd,"rve_mean"=rve_mean,
     #             "rve_sd"=rve_sd,"NAs"=num_replicas - non_null_count))
-    return(list("power"=power,"power_01"=power_01,
-                "T_rv"=T_rv))
+    return(list("power"=power,"power_01"=power_01,"power_sp"=power_sp,"power_01_sp"=power_01_sp,
+                "T_rv"=T_rv,"T_rv_sp"=T_rv_sp))
 }
 # 
 # run_experiment_hypothesis (0,

@@ -147,10 +147,10 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 }
     
 fl_choice="6"
-num_indvs=500
+num_indvs=100
 number_basis=30
-boot_number=1000
-num_replications=1
+boot_number=50
+num_replications=10
 source("./source_code/R/time_track_function.R")
 exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
                  "\n timeserires_length:\t",timeseries_length,
@@ -185,20 +185,25 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
             
             T_stat=temp$T_statistics #scalar
             betahat=temp$betals[2:(number_basis+1)] #30 num_basis
-            mub_vector=temp$mub_vector #30 num_basis
-            DBB_matrix_vector=c(temp$DBB_matrix)#30*30
-            muD_vector=c(temp$muD)#30*30
+            
+            ##########
+            # mub_vector=temp$mub_vector #30 num_basis
+            # DBB_matrix_vector=c(temp$DBB_matrix)#30*30
+            # muD_vector=c(temp$muD)#30*30
             #1,2:31,32:61,62:961,962:1861
-            
+            #########
             #1862, 1863:1892
-            # T_stat_sp=temp$T_statistics_sp #scalar
-            # betahat_sp=temp$betals_sp[2:(number_basis+1)] #30 num_basis
-           
-            # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector,
-            #          T_stat_sp,betahat_sp))
-            
-            return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector
-                     ))
+             T_stat_sp=temp$T_statistics_sp #scalar
+             betahat_sp=temp$betals_sp[2:(number_basis+1)] #30 num_basis
+
+             # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector,
+             #          T_stat_sp,betahat_sp))
+             
+             return(c(T_stat,betahat, 
+                      T_stat_sp,betahat_sp))
+            # 
+            # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector
+            #          ))
         }
     T_rep <- do.call(rbind, T_rep)
     #three columns, T, and T_binary, T_binary0.1
@@ -206,7 +211,7 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
     }
 
 
-fl_choice="7"
+fl_choice="6"
 source("./source_code/R/time_track_function.R")
 exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
                  "\n timeserires_length:\t",timeseries_length,
@@ -215,6 +220,7 @@ exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
 writeLines(exp_str)
 timeKeeperStart(exp_str)
 num_replications=1000
+num_indvs=300
 time_interval=seq(start_time,end_time,length.out=timeseries_length)
 # n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                             time_interval=time_interval, fl_choice,num_replications,
