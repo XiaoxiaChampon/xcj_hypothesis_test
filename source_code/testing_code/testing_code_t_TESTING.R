@@ -33,6 +33,17 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
             WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                 time_interval, fl_choice, lp_intercept=0.9998364)
             
+            
+            #######
+            # time_interval_matrix=do.call("rbind", replicate(length(WY_sample$true$yis), time_interval, simplify = FALSE)) 
+            # logit_model_select=gam(WY_sample$true$yis~s(time_interval_matrix,by=WY_sample$true$TrueX2,bs = "tp", m = 0,k = number_basis)+
+            #                     s(time_interval_matrix,by=WY_sample$true$TrueX3,sp=10,k = number_basis,bs = "tp", m = 0),family = 'binomial',
+            #                 control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+            #                 optimizer=c("outer","bfgs"),method="ML")
+            # plot(logit_model_select$coefficients[2:31])
+            #######
+            
+            
            temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                       WY_sample$true$yis,time_interval,
                       number_basis =number_basis,est_choice="binomial" )
@@ -83,7 +94,7 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
            # cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
            #boot 1000 for 500 useres takes 1.598265
            
-           
+           #boot_number=1000
            start_time_boot=Sys.time()
            temp_series=foreach(this_col = 1:boot_number) %dorng%{
                
@@ -135,8 +146,8 @@ get_T_simulations=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
            # 95% 
            # 0.0002993409 
            
-           T_stat[2]=(T_stat>=quantile(temp_series, .95))[[1]]
-           T_stat[3]=(T_stat>=quantile(temp_series, .90))[[1]]
+           T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+           T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
            # T_rv_erv[2]=temp$rv_XF #1D vector
            # T_rv_erv[3]=temp$rv_E_PF #scalar
            return(T_stat)
@@ -198,7 +209,7 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
 
              # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector,
              #          T_stat_sp,betahat_sp))
-             
+             #1,2:31, 32, 33:62
              return(c(T_stat,betahat, 
                       T_stat_sp,betahat_sp))
             # 
@@ -211,16 +222,49 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
     }
 
 
+#visuallize the beta estimate
+
+
 fl_choice="6"
-source("./source_code/R/time_track_function.R")
-exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
-                 "\n timeserires_length:\t",timeseries_length,
-                 "\n fl_choice:\t",fl_choice
-)
-writeLines(exp_str)
-timeKeeperStart(exp_str)
+
 num_replications=1000
+
+
+
+time_interval=seq(start_time,end_time,length.out=timeseries_length)
+# n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+#                             time_interval=time_interval, fl_choice,num_replications,
+#                             lp_intercept=0.9998364)
+num_indvs=100
+n100_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                      time_interval=time_interval, fl_choice,num_replications,
+                                      lp_intercept=0.9998364)
 num_indvs=300
+n300_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                      time_interval=time_interval, fl_choice,num_replications,
+                                      lp_intercept=0.9998364)
+num_indvs=500
+n500_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
+                                      time_interval=time_interval, fl_choice,num_replications,
+                                      lp_intercept=0.9998364)
+
+par(mfrow=c(2,3))
+matplot(1:30,t(n100_rep[,2:31]),main="betal, n=100")
+matplot(1:30,t(n300_rep[,2:31]),main="betal, n=300")
+matplot(1:30,t(n500_rep[,2:31]),main="betal, n=500")
+hist(n100_rep[,1])
+hist(n300_rep[,1])
+hist(n500_rep[,1])
+
+matplot(1:30,t(n100_rep[,33:62]),main="betal sp=0,n=100")
+matplot(1:30,t(n300_rep[,33:62]),main="betal sp=0, n=300")
+matplot(1:30,t(n500_rep[,33:62]),main="betal sp=0, n=500")
+
+hist(n100_rep[,32])
+hist(n300_rep[,32])
+hist(n500_rep[,32])
+
+num_indvs=100
 time_interval=seq(start_time,end_time,length.out=timeseries_length)
 # n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                             time_interval=time_interval, fl_choice,num_replications,

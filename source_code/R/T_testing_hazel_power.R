@@ -92,7 +92,8 @@ if(run_parallel)
     {
         parallel::stopCluster(cl = my.cluster)
     }
-    n.cores <- parallel::detectCores()
+    #n.cores <- parallel::detectCores()
+    n.cores <- options$numcpus
     my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
     doParallel::registerDoParallel(cl = my.cluster)
     cat("Parellel Registered: ", foreach::getDoParRegistered(), " (num cores=", n.cores, ")\n")
@@ -147,7 +148,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             #W is t*n
             #categFD_est <- EstimateCategFuncDataX(est_choice, time_interval, WY_sample$true$Truecatcurve)
             
-            temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
+            temp=get_T_single(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                        WY_sample$true$yis,time_interval,
                        number_basis =number_basis,est_choice="binomial" )
             T_stat=array(0,3)
@@ -208,7 +209,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                 y_star=get_Y_star(WY_sample$true$TrueX2[boot_index,],
                                   WY_sample$true$TrueX3[boot_index,],
                                   betals,time_interval,num_indvs,number_basis)
-                temp_series[this_col ]=get_T(WY_sample$true$TrueX1[boot_index,],
+                temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
                                              WY_sample$true$TrueX2[boot_index,],
                                              WY_sample$true$TrueX3[boot_index,],
                                              y_star,time_interval,
@@ -221,8 +222,8 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
             
-            T_stat[2]=(T_stat>=quantile(temp_series, .95))[[1]]
-            T_stat[3]=(T_stat>=quantile(temp_series, .90))[[1]]
+            T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+            T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
             ################
             #T_star_series=temp_series
             ################
