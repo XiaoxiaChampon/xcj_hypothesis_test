@@ -203,3 +203,8 @@ print(stats)
 directory_path <- "./hazel_final_table_output/hazel16_100_1000_1000/"
 stats <- calculate_stats(directory_path)
 print(stats)
+
+#######partial 1000 users results
+directory_path <- "./hazel_final_table_output/"
+stats <- calculate_stats(directory_path)
+print(stats)
