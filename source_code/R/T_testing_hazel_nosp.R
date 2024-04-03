@@ -58,12 +58,24 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 options <- parse_args(parser)
 
+# options_jobid <- options$jobid
+# options_numcpus <- options$numcpus
+# options_replicas <- options$replicas
+# options_boots <- options$boots
+# options_subjects <- options$subjects
+
+options_jobid <- 1
+options_numcpus <- 12
+options_replicas <- 10
+options_boots <- 50
+options_subjects <- 100
+
 # Use the options
-cat("Job Idx:", options$jobid, "\n")
-cat("Num CPUs:", options$numcpus, "\n")
-cat("Num Replicas:", options$replicas, "\n")
-cat("Num Bootstraps:", options$boots, "\n")
-cat("Num Subjects:", options$subjects, "\n")
+cat("Job Idx:", options_jobid, "\n")
+cat("Num CPUs:", options_numcpus, "\n")
+cat("Num Replicas:", options_replicas, "\n")
+cat("Num Bootstraps:", options_boots, "\n")
+cat("Num Subjects:", options_subjects, "\n")
 
 ###########
 # ---- For: parallelization ----
@@ -87,7 +99,7 @@ if(run_parallel)
         parallel::stopCluster(cl = my.cluster)
     }
     # n.cores <- parallel::detectCores()
-    n.cores <- options$numcpus
+    n.cores <- options_numcpus
     my.cluster <- parallel::makeCluster(n.cores, type = "PSOCK")
     doParallel::registerDoParallel(cl = my.cluster)
     cat("Parellel Registered: ", foreach::getDoParRegistered(), " (num cores=", n.cores, ")\n")
@@ -101,7 +113,7 @@ if(run_parallel)
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
-                                  lp_intercept=0.9998364,boot_number=options$boots,shuffle_option=FALSE){
+                                  lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=FALSE){
     
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         
@@ -194,7 +206,7 @@ run_experiment_hypothesis <- function(exp_idx,
                                       num_indvs,
                                       timeseries_length,
                                       fl_choice,
-                                      num_replicas = options$replicas,
+                                      num_replicas = options_replicas,
                                       alpha = 0.05, 
                                       start_time=0.01,
                                       end_time=0.99,
@@ -218,7 +230,8 @@ run_experiment_hypothesis <- function(exp_idx,
                                              "_fl", fl_choice,
                                              "_n", num_indvs,
                                              "_tlen", timeseries_length,
-                                             options$jobid,"_",options$numcpus,
+                                             "_",options_numcpus,
+                                             "_",options_jobid,
                                              ".RData"))
   
     
@@ -246,7 +259,7 @@ run_experiment_hypothesis <- function(exp_idx,
 
 begin_exp_time <- Sys.time()
 
-set.seed(123456 + 10 * options$jobid)
+set.seed(123456 + 10 * options_jobid)
 
 
 generate_ed_table <- function(subjects_vector = c(500,300,100),
@@ -259,7 +272,7 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 
 ########
 #type I error rate
-ed_table1 <- generate_ed_table(subjects_vector = c(options$subjects),
+ed_table1 <- generate_ed_table(subjects_vector = c(options_subjects),
                                fl_choice_vector = c("6"),
                                time_length_vector = c(90),
                                test_type_vector = c("Inclusion"))
@@ -301,7 +314,8 @@ for (row_index in 1:dim(ed_table)[1]){
                                           
                                           "_n", num_indvs, 
                                           "_tlen", timeseries_length,
-                                          options$jobid,"_",options$numcpus,
+                                          "_", options_numcpus,
+                                          "_", options_jobid,
                                           ".RData"))
     all_experiment_outputs <- rbind(all_experiment_outputs, experiment_output)
 }
@@ -313,9 +327,11 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 save(final_table,file =paste0("./final_table_output/Hazel_outputsTbootstrap_",
-                              options$jobid,"_",options$numcpus,"_",options$subjects,"_",
-                              options$replicas,"_",
-                              options$boots,"_",".RData"))
+                              "_", options_subjects,
+                              "_", options_replicas,
+                              "_", options_boots,
+                              "_", options_numcpus,
+                              "_", options_jobid, ".RData"))
 
 end_exp_time <- Sys.time()
 
