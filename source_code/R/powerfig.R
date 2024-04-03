@@ -1331,7 +1331,7 @@ n100_5=final_table$power
 
 n_100_p=mean(unlist(c(n100_1,n100_2,n100_3,n100_4,n100_5)))
 n_100_p #0.049 #0.0472
-#[1] 0.048
+#[1] 0.048 #0.045
 
 n_100_se=sqrt(n_100_p*(1-n_100_p)/5000)
 n_100_se #0.003052835 [1] 0.003023111
@@ -1367,6 +1367,14 @@ n_300_se=sqrt(n_300_p*(1-n_300_p)/5000)
 n_300_se #0.003052835 #0.001448285
 
 ########
+load("./hazel_final_table_output/hazel16_500_250_1000/Hazel_outputsTbootstrap_3_16_500_250_1000_.RData")
+n500_1_16=final_table$power
+mean(unlist(n500_1_16))
+
+load("./hazel_final_table_output/hazel16_500_250_1000/Hazel_outputsTbootstrap_4_16_500_250_1000_.RData")
+n500_4_16=final_table$power
+mean(unlist(n500_4_16))
+
 # load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/testrun/Hazel_outputsTbootstrap_2_32500100100.RData")
 # mean(unlist(final_table$power))
 #[1] 0.05

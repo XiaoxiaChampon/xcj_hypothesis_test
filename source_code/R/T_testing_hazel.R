@@ -126,7 +126,7 @@ if(run_parallel)
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
                                   lp_intercept=0.9998364,boot_number=options$boots){
-    set.seed(123)
+  
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
     
         #T_rep <- foreach(this_row = 1:5) %dorng%
