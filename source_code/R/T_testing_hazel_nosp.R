@@ -58,17 +58,17 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 options <- parse_args(parser)
 
-# options_jobid <- options$jobid
-# options_numcpus <- options$numcpus
-# options_replicas <- options$replicas
-# options_boots <- options$boots
-# options_subjects <- options$subjects
+options_jobid <- options$jobid
+options_numcpus <- options$numcpus
+options_replicas <- options$replicas
+options_boots <- options$boots
+options_subjects <- options$subjects
 
-options_jobid <- 1
-options_numcpus <- 12
-options_replicas <- 10
-options_boots <- 50
-options_subjects <- 100
+# options_jobid <- 1
+# options_numcpus <- 10
+# options_replicas <- 10
+# options_boots <- 50
+# options_subjects <- 100
 
 # Use the options
 cat("Job Idx:", options_jobid, "\n")
@@ -150,7 +150,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             betal=betals[2:(number_basis+1)]*0
             betal3=betals[(number_basis+2):(2*number_basis+1)] 
             #get Y from X, and betals, betals 1: intercept, 2:31, 32:62
-        
+            
             temp_series=numeric(boot_number)
             #temp_series_sp=numeric(boot_number)
             for (this_col in 1:boot_number){
@@ -160,7 +160,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                     boot_index=sample(1:num_indvs, num_indvs,replace=T)
                     y_star=get_Y_star(WY_sample$true$TrueX2[boot_index,],
                                       WY_sample$true$TrueX3[boot_index,],
-                                      betals,time_interval,num_indvs,number_basis)
+                                      beta0,betal, betal3,time_interval,num_indvs,number_basis)
                     
                     #############
                     temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
@@ -171,7 +171,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                 }else{
                     y_star=get_Y_star(WY_sample$true$TrueX2,
                                       WY_sample$true$TrueX3,
-                                      betals,time_interval,num_indvs,number_basis)
+                                      beta0,betal, betal3,time_interval,num_indvs,number_basis)
                     
                     temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1,
                                                            WY_sample$true$TrueX2,
