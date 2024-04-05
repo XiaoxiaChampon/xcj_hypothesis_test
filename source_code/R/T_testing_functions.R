@@ -94,7 +94,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #     
         mub_vector=c(0)
         for(this_col in 1:number_col ){
-              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
+              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col],equi = TRUE, method = "TRAPZ")
         }
     #     ##################################################################################
     #  }
@@ -170,25 +170,13 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     for(row in 1:number_col){
         for(col in 1:number_col){
             #DBB_matrix[row,col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,row]*bspline[,col]))$value)*(cov(X_array[,,2])[row,col])
-            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col],equi = TRUE, method = "TRAPZ"))*(cov(X_array[,,2])[row,col])
         }
     }
     ###############################################################
-    # 
-    # logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cs", m = 2)+
-    #                     s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cs", m = 2),family = 'binomial',
-    #                 control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
-    #                 optimizer=c("outer","bfgs"),method="ML")
-    # 
     
-    # 
-    # logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m = 0)+
-    #                     s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m = 0),family = 'binomial',
-    #                 control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
-    #                 optimizer=c("outer","bfgs"),method="ML")
-    
-    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "tp", m = 0)+
-                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "tp", m = 0),family = 'binomial',
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m = 2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m = 2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
     
@@ -274,6 +262,12 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
 
 get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
     
+    # X_1t=WY_sample$true$TrueX1
+    # X_2t=WY_sample$true$TrueX2
+    # X_3t=WY_sample$true$TrueX3 
+    # Y=WY_sample$true$yis #time_interval
+    # 
+    
     num_indv <- nrow(X_2t)
     timeseries_length<- length(time_interval)
     
@@ -284,7 +278,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     number_col <- number_basis
     knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
     bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
-    mub_vector=c(0)
+    mub_vector=numeric(number_basis)
     for(this_col in 1:number_col ){
         mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
     }
@@ -294,20 +288,43 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
    
-    for(row in 1:number_col){
-        for(col in 1:number_col){
-           
-            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+    # for(row in 1:number_col){
+    #     for(col in 1:number_col){
+    #        
+    #         DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+    #     }
+    
+    # }
+    # 
+    
+
+    for (row in 1:number_col){
+        for (col in 1:number_col){
+            DTemp<-rep(0, length(time_interval))
+            for (i in 1:length(time_interval)){
+                DTemp[i]<-fda.usc::int.simpson2(time_interval, bspline[,row]*cov(X_array[,,2])[,i])
+            }
+            DBB_matrix[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
         }
     }
+    #####jake advice
+    # DBB_matrix_jake <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    # for (row in 1:number_col){
+    #     for (col in 1:number_col){
+    #         DTemp<-rep(0, length(time_interval))
+    #         for (i in 1:length(time_interval)){
+    #             DTemp[i]<-fda.usc::int.simpson2(time_interval, bspline[,row]*cov(X_array[,,2])[,i])
+    #         }
+    #         DBB_matrix_jake[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
+    #     }
+    # }
     
-    # logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "cr", m=2)+
-    #                     s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "cr", m=2),family = 'binomial',
-    #                 control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
-    #                 optimizer=c("outer","bfgs"),method="ML")
+    #######
     
-    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "tp", m=0)+
-                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "tp", m=0),family = 'binomial',
+    
+    
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m=2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
     
@@ -315,12 +332,37 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     betal= betals[2:(number_basis+1)]
     
     muD=mub_vector%*%t(mub_vector)+DBB_matrix
-    
     T_statistics=t(betal)%*%(muD)%*%(betal)
+    
+    # muD_jake=mub_vector%*%t(mub_vector)+DBB_matrix_jake
+    # 
+    # T_statistics_jake=t(betal)%*%(muD_jake)%*%(betal)
     return(list("betals"=betals,
                 "T_statistics"=T_statistics
     ))
 }
+
+get_Y_star=function( X_2t,X_3t,beta0,betal,betal3,time_interval,num_indvs,number_basis){
+    
+    vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
+    
+    
+    
+    knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
+    bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
+    
+    x1fl1 <- rep(beta0,num_indvs)
+    x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, X_2t[x,]*(bspline%*%betal), equi = TRUE, method = "TRAPZ")})
+    x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, X_3t[x,]*(bspline%*%betal3), equi = TRUE, method = "TRAPZ")})
+    
+    linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 )
+    y_star <- apply(linear_predictor, 1, function(x){ rbinom(1, 1, 1/(1+exp(-x))) })
+    
+    return(y_star)
+}
+
+
+
 #' Function to select 
 #' @param choice "probit", "binomial",  or "multinormial"
 #' @param timestamps01, 1D array, time interval that cfd is observed

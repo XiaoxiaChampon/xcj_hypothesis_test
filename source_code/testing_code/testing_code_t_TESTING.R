@@ -248,6 +248,8 @@ n500_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
                                       time_interval=time_interval, fl_choice,num_replications,
                                       lp_intercept=0.9998364)
 
+plot(unlist(apply(n100_rep[,2:31],2,mean)))
+
 par(mfrow=c(2,3))
 matplot(1:30,t(n100_rep[,2:31]),main="betal, n=100")
 matplot(1:30,t(n300_rep[,2:31]),main="betal, n=300")
@@ -255,6 +257,8 @@ matplot(1:30,t(n500_rep[,2:31]),main="betal, n=500")
 hist(n100_rep[,1])
 hist(n300_rep[,1])
 hist(n500_rep[,1])
+
+apply(n100_rep[,33:62],2,mean)
 
 matplot(1:30,t(n100_rep[,33:62]),main="betal sp=0,n=100")
 matplot(1:30,t(n300_rep[,33:62]),main="betal sp=0, n=300")
