@@ -298,26 +298,25 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     # 
     
     
-    # precompute
+    # Pre-computation of cov
     cov_x_array_2 <- cov(X_array[,,2])
-    precomp_bspline_cov <- array(NA, dim = c(number_col, length(time_interval), dim(bspline)[1]))
-    for (row in 1:number_col){
-      for (i in 1:length(time_interval)){
-        precomp_bspline_cov[row,i,] <- bspline[,row] * cov_x_array_2[,i]
+    DBB_matrix_cj <- matrix(0, nrow = number_col, ncol = number_col)
+    # Pre-compute bspline[, row] * cov_x_array_2[, i]
+    bsp_cov_matrix <- array(NA, dim = c(number_col, length(time_interval), dim(bspline)[1]))
+    for (row in 1:number_col) {
+      for (i in 1:length(time_interval)) {
+        bsp_cov_matrix[row, i, ] <- bspline[, row] * cov_x_array_2[, i]
       }
     }
-    # compute double integral
-    DBB_matrix_cj <- matrix(0,nrow=number_col,ncol=number_col) #empty
-    DTemp <- numeric(length(time_interval))
-    for (row in 1:number_col){
-        for (col in 1:number_col){
-            for (i in 1:length(time_interval)){
-              DTemp[i]<-fda.usc::int.simpson2(time_interval, precomp_bspline_cov[row,i,])
-            }
-            DBB_matrix_cj[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
-        }
+    for (row in 1:number_col) {
+      for (col in 1:number_col) {
+        # Used sapply function to reduce the inner loop
+        DTemp <- sapply(1:length(time_interval), function(i) fda.usc::int.simpson2(time_interval, bsp_cov_matrix[row, i, ]))
+        DBB_matrix_cj[row, col] <- fda.usc::int.simpson2(time_interval, DTemp * bspline[, col])
+      }
     }
     identical(DBB_matrix, DBB_matrix_cj)
+    
     
     #####jake advice
     # DBB_matrix_jake <- matrix(0,nrow=number_col,ncol=number_col) #empty
