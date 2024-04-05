@@ -264,7 +264,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     # X_1t=WY_sample$true$TrueX1
     # X_2t=WY_sample$true$TrueX2
-    # X_3t=WY_sample$true$TrueX3 
+    # X_3t=WY_sample$true$TrueX3
     # Y=WY_sample$true$yis #time_interval
     # 
     
@@ -286,7 +286,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
     
-    DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    # DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
    
     # for(row in 1:number_col){
     #     for(col in 1:number_col){
@@ -297,16 +297,28 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     # }
     # 
     
-
+    
+    # precompute
+    cov_x_array_2 <- cov(X_array[,,2])
+    precomp_bspline_cov <- array(NA, dim = c(number_col, length(time_interval), dim(bspline)[1]))
+    for (row in 1:number_col){
+      for (i in 1:length(time_interval)){
+        precomp_bspline_cov[row,i,] <- bspline[,row] * cov_x_array_2[,i]
+      }
+    }
+    # compute double integral
+    DBB_matrix_cj <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    DTemp <- numeric(length(time_interval))
     for (row in 1:number_col){
         for (col in 1:number_col){
-            DTemp<-rep(0, length(time_interval))
             for (i in 1:length(time_interval)){
-                DTemp[i]<-fda.usc::int.simpson2(time_interval, bspline[,row]*cov(X_array[,,2])[,i])
+              DTemp[i]<-fda.usc::int.simpson2(time_interval, precomp_bspline_cov[row,i,])
             }
-            DBB_matrix[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
+            DBB_matrix_cj[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
         }
     }
+    identical(DBB_matrix, DBB_matrix_cj)
+    
     #####jake advice
     # DBB_matrix_jake <- matrix(0,nrow=number_col,ncol=number_col) #empty
     # for (row in 1:number_col){
