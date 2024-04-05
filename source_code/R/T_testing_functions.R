@@ -94,7 +94,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #     
         mub_vector=c(0)
         for(this_col in 1:number_col ){
-              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
+              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col],equi = TRUE, method = "TRAPZ")
         }
     #     ##################################################################################
     #  }
@@ -170,7 +170,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     for(row in 1:number_col){
         for(col in 1:number_col){
             #DBB_matrix[row,col] <- (integral_penalty(time_interval,integral_function(time_interval,bspline[,row]*bspline[,col]))$value)*(cov(X_array[,,2])[row,col])
-            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col],equi = TRUE, method = "TRAPZ"))*(cov(X_array[,,2])[row,col])
         }
     }
     ###############################################################
@@ -262,6 +262,12 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
 
 get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
     
+    # X_1t=WY_sample$true$TrueX1
+    # X_2t=WY_sample$true$TrueX2
+    # X_3t=WY_sample$true$TrueX3 
+    # Y=WY_sample$true$yis #time_interval
+    # 
+    
     num_indv <- nrow(X_2t)
     timeseries_length<- length(time_interval)
     
@@ -282,12 +288,39 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
    
-    for(row in 1:number_col){
-        for(col in 1:number_col){
-           
-            DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+    # for(row in 1:number_col){
+    #     for(col in 1:number_col){
+    #        
+    #         DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+    #     }
+    
+    # }
+    # 
+    
+
+    for (row in 1:number_col){
+        for (col in 1:number_col){
+            DTemp<-rep(0, length(time_interval))
+            for (i in 1:length(time_interval)){
+                DTemp[i]<-fda.usc::int.simpson2(time_interval, bspline[,row]*cov(X_array[,,2])[,i])
+            }
+            DBB_matrix[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
         }
     }
+    #####jake advice
+    # DBB_matrix_jake <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    # for (row in 1:number_col){
+    #     for (col in 1:number_col){
+    #         DTemp<-rep(0, length(time_interval))
+    #         for (i in 1:length(time_interval)){
+    #             DTemp[i]<-fda.usc::int.simpson2(time_interval, bspline[,row]*cov(X_array[,,2])[,i])
+    #         }
+    #         DBB_matrix_jake[row,col]<-fda.usc::int.simpson2(time_interval, DTemp*bspline[,col])
+    #     }
+    # }
+    
+    #######
+    
     
     
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
@@ -299,8 +332,11 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     betal= betals[2:(number_basis+1)]
     
     muD=mub_vector%*%t(mub_vector)+DBB_matrix
-    
     T_statistics=t(betal)%*%(muD)%*%(betal)
+    
+    # muD_jake=mub_vector%*%t(mub_vector)+DBB_matrix_jake
+    # 
+    # T_statistics_jake=t(betal)%*%(muD_jake)%*%(betal)
     return(list("betals"=betals,
                 "T_statistics"=T_statistics
     ))

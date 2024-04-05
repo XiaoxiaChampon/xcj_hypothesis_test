@@ -150,9 +150,9 @@ cfd_hypothesis_test_twitter <- function(Y, cfd, time_interval, response_family, 
 # Y_real= read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/Real_data/Y_data114days.csv")
 
 #mixed, consistent, 114 days, June 1, Sep 23 (collection 9/12-10/27)
-W_real= read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/Real_data/W_sentiment_mix_type_matrix_f1D_mt10.csv")
-Y_real= read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/Real_data/Y_sentiment_mix_type_diff_f1D_mt10.csv")
-
+#mode, 14 days
+W_real= read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/Real_data/14_Mode/W_data_f1D_t20_y14_Mode.csv")
+Y_real= read.csv("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/Real_data/14_Mode/Y_data_y14_Mode.csv")
 
 
 #####try 102 days, June 1, to Sep 11
@@ -168,6 +168,15 @@ Y_label=Y_real$Y[user_index_intersect]
 # Y_label
 # 0        1 
 # 0.502924 0.497076
+#mode
+# 
+# Y_label
+# 0         1 
+# 0.7466063 0.2533937
+##14 mode
+# 
+# dim(W_final)
+# [1] 129 293
 W_final=t(W_real[user_index_intersect,-1])
 #######
 dim(W_final)
@@ -175,19 +184,26 @@ table(W_final)/sum(table(W_final))
 #W_final
 #0          1          2 
 #0.48155270 0.43999739 0.07844991 
+
+# 
+# W_final
+# 0          2          3          4 
+# 0.45064423 0.06648676 0.46678308 0.01608593 
 #######
 W_merge=W_final
-#W_merge[W_merge==4]=3
-#table(W_merge)/sum(table(W_merge))
-
+W_merge[W_merge==4]=3
+table(W_merge)/sum(table(W_merge))
+# W_merge
+# 0          2          3 
+# 0.45064423 0.06648676 0.48286901 
 table(W_merge)
 #W_merge
 #0     1     2 
 #29550 27000  4814
 ####
-
-W_merge=W_merge[1:104,]
-table(W_merge)
+# 
+# W_merge=W_merge[1:104,]
+# table(W_merge)
 # W_merge
 # 0     1     2 
 # 27041 23758  4217 
@@ -253,9 +269,39 @@ fl_gam30=gam(Y_label~s(time_interval_matrix,by=X_cfd_twitter[,,2],k = 30)+s(time
 # R-sq.(adj) =  0.00495   Deviance explained = 0.977%
 # UBRE = 0.39327  Scale est. = 1         n = 513
 
+
+
+# summary(fl_gam30)
+# 
+# Family: binomial 
+# Link function: logit 
+# 
+# Formula:
+#     Y_label ~ s(time_interval_matrix, by = X_cfd_twitter[, , 2], 
+#                 k = 30) + s(time_interval_matrix, by = X_cfd_twitter[, , 
+#                                                                      3], k = 30)
+# 
+# Parametric coefficients:
+#     Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)  -1.5504     0.3393   -4.57 4.89e-06 ***
+#     ---
+#     Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Approximate significance of smooth terms:
+#     edf Ref.df Chi.sq
+# s(time_interval_matrix):X_cfd_twitter[, , 2] 2.620  2.994  7.837
+# s(time_interval_matrix):X_cfd_twitter[, , 3] 2.919  3.353  9.314
+# p-value  
+# s(time_interval_matrix):X_cfd_twitter[, , 2]  0.0456 *
+#     s(time_interval_matrix):X_cfd_twitter[, , 3]  0.0374 *
+#     ---
+#     Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# R-sq.(adj) =  0.073   Deviance explained = 8.13%
+# UBRE = 0.099208  Scale est. = 1         n = 221
 ##############
 library(mgcViz)
-fl_gam_model=getViz(fl_gam)
+fl_gam_model=getViz(fl_gam30)
 print(plot(fl_gam_model, allTerms = T,xlab="Time",ylab="Value"), pages = 1)
 ##########
 check(fl_gam_model,
@@ -289,13 +335,19 @@ xlfl2plot + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0
 
 
 
+# 
+# Zmat_Inc2<-get_Zmatrix(X_cfd_twitter[,1:104,2],time_interval,test_type='Inclusion')
+# Zmat_Inc.mat2 <- Zmat_Inc2$Zmat
+# 
+# Zmat_Inc3<-get_Zmatrix(X_cfd_twitter[,1:104,3],time_interval,test_type='Inclusion')
+# Zmat_Inc.mat3 <- Zmat_Inc3$Zmat
 
-Zmat_Inc2<-get_Zmatrix(X_cfd_twitter[,1:104,2],time_interval,test_type='Inclusion')
+
+Zmat_Inc2<-get_Zmatrix(X_cfd_twitter[,,2],time_interval,test_type='Inclusion')
 Zmat_Inc.mat2 <- Zmat_Inc2$Zmat
 
-Zmat_Inc3<-get_Zmatrix(X_cfd_twitter[,1:104,3],time_interval,test_type='Inclusion')
+Zmat_Inc3<-get_Zmatrix(X_cfd_twitter[,,3],time_interval,test_type='Inclusion')
 Zmat_Inc.mat3 <- Zmat_Inc3$Zmat
-
 
 Xmat_Inc<-matrix(rep(1, num_indvs),ncol=1)
 
@@ -311,9 +363,9 @@ names(test_matrix) <- c('Y','X1',
                         #paste0('Z.test4',1:ncol(Zmat_Func4$Zmat)),
                         "ones")
 
-Zmat_Func2 <- get_Zmatrix(X_cfd_twitter[,1:104,2], time_interval, test_type="Functional")
+Zmat_Func2 <- get_Zmatrix(X_cfd_twitter[,,2], time_interval, test_type="Functional")
 #Zmat_Func3 <- get_Zmatrix(X_cfd_twitter[,,3], time_interval, test_type="Functional")
-Zmat_Func3 <- get_Zmatrix(X_cfd_twitter[,1:104,3], time_interval, test_type="Linearity")
+Zmat_Func3 <- get_Zmatrix(X_cfd_twitter[,,3], time_interval, test_type="Linearity")
 
 Zmat_Func.mat2=Zmat_Func2$Zmat
 Zmat_Func.mat3=Zmat_Func3$Zmat
@@ -332,6 +384,10 @@ gam.vcomp(gam_Inc )
 # gam.vcomp(gam_Inc )
 # s(Zmat_Inc.mat2) s(Zmat_Inc.mat3) 
 # 0.003202755      0.394893930
+
+# gam.vcomp(gam_Inc )
+# s(Zmat_Inc.mat2) s(Zmat_Inc.mat3) 
+# 2.1192987        0.7149128 
 
 summary(gam_Inc)
 
@@ -358,6 +414,37 @@ summary(gam_Inc)
 # Xmat_Inc s(Zmat_Inc.mat2).1 s(Zmat_Inc.mat3).1 
 # -2.821905e-02      -2.106267e-06       2.149345e-01
 
+#mode
+# gam.vcomp(gam_Inc )
+# s(Zmat_Inc.mat2) s(Zmat_Inc.mat3) 
+# 2.1192987        0.7149128 
+# > summary(gam_Inc)
+# 
+# Family: binomial 
+# Link function: logit 
+# 
+# Formula:
+#     cbind(Y_label, 1 - Y_label) ~ 0 + Xmat_Inc + s(Zmat_Inc.mat2, 
+#                                                    bs = "re") + s(Zmat_Inc.mat3, bs = "re")
+# 
+# Parametric coefficients:
+#     Estimate Std. Error z value Pr(>|z|)    
+# Xmat_Inc  -1.4691     0.2776  -5.292 1.21e-07 ***
+#     ---
+#     Signif. codes:  
+#     0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Approximate significance of smooth terms:
+#     edf Ref.df Chi.sq p-value  
+# s(Zmat_Inc.mat2) 0.8170      1  3.715  0.0391 *
+#     s(Zmat_Inc.mat3) 0.6814      1  2.097  0.1048  
+# ---
+#     Signif. codes:  
+#     0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# R-sq.(adj) =  0.0196   Deviance explained = 2.24%
+# UBRE = 0.12933  Scale est. = 1         n = 221
+
 
 # 
 # gam_Func <- try(gam(cbind(Y_label, 1- Y_label) ~ 0 + Xmat_Func + s(Zmat_Func.mat2, bs = 're')+
@@ -372,6 +459,10 @@ gam_Func_check <- gam(cbind(Y_label, 1- Y_label) ~ 0 + Xmat_Func + s(Zmat_Func.m
 # s(Zmat_Func.mat2) s(Zmat_Func.mat3) 
 # 1.2942934         0.0152765 
 
+# 
+# gam.vcomp(gam_Func )
+# s(Zmat_Func.mat2) s(Zmat_Func.mat3) 
+# 6.813743          1.151091 
 summary(gam_Func)
 
 # Family: binomial 
@@ -397,6 +488,41 @@ summary(gam_Func)
 # 
 # R-sq.(adj) =  0.00637   Deviance explained = 1.02%
 # UBRE = 0.3909  Scale est. = 1         n=513
+
+
+
+
+summary(gam_Func)
+
+# Family: binomial 
+# Link function: logit 
+# 
+# Formula:
+#     cbind(Y_label, 1 - Y_label) ~ 0 + Xmat_Func + s(Zmat_Func.mat2, 
+#                                                     bs = "re") + s(Zmat_Func.mat3, bs = "re")
+# 
+# Parametric coefficients:
+#     Estimate Std. Error z value Pr(>|z|)    
+# Xmat_Func          -1.5154     0.3404  -4.452 8.53e-06 ***
+#     Xmat_Func           2.3303     1.0902   2.138   0.0326 *  
+#     Xmat_Funcconstant  -5.7010     4.1872  -1.362   0.1734    
+# Xmat_Funclin        9.4339     8.5572   1.102   0.2703    
+# ---
+#     Signif. codes:  
+#     0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Approximate significance of smooth terms:
+#     edf Ref.df Chi.sq p-value  
+# s(Zmat_Func.mat2) 0.8273      1  4.390  0.0213 *
+#     s(Zmat_Func.mat3) 0.8141      1  4.158  0.0240 *
+#     ---
+#     Signif. codes:  
+#     0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# R-sq.(adj) =  0.0757   Deviance explained = 7.98%
+# UBRE = 0.09273  Scale est. = 1         n = 221
+
+
 
 gam_Func$coefficients
 # Xmat_Func           Xmat_Func   Xmat_Funcconstant 

@@ -208,3 +208,17 @@ print(stats)
 directory_path <- "./hazel_final_table_output/"
 stats <- calculate_stats(directory_path)
 print(stats)
+
+############no shuffle
+directory_path <- "./hazel_final_table_output/hazel_100_no_shuffle"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/hazel_300_no_shuffle"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/hazel_500_no_shuffle"
+stats <- calculate_stats(directory_path)
+print(stats)
+
