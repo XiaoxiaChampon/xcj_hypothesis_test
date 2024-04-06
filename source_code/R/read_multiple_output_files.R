@@ -37,6 +37,10 @@ calculate_stats <- function(directory_path) {
     power_values <- c()
     power_01_values <- c()
     
+    power_values2 <- c()
+    power_01_values2 <- c()
+    
+    
     # Get a list of all RData files in the specified directory by pattern
     files <- list.files(path = directory_path, pattern = "\\.RData$", full.names = TRUE)
     
@@ -44,6 +48,11 @@ calculate_stats <- function(directory_path) {
         load(file_path)
         power_values <- c(power_values, final_table$power[[1]])
         power_01_values <- c(power_01_values, final_table$power_01[[1]])
+        
+        ###add one more power
+        power_values2 <- c(power_values2, final_table$power2[[1]])
+        power_01_values2 <- c(power_01_values2, final_table$power_012[[1]])
+        ################################
     }
     
     cat("Total Length (power):", length(power_values))
@@ -52,7 +61,12 @@ calculate_stats <- function(directory_path) {
     power_values <- calculate_power_stats(power_values)
     power_01_values <- calculate_power_stats(power_01_values)
     
-    return(list(power=power_values, power_01=power_01_values))
+    ######################
+    power_values2 <- calculate_power_stats(power_values2)
+    power_01_values2 <- calculate_power_stats(power_01_values2)
+    #####################
+    return(list(power=power_values, power_01=power_01_values,
+                power2=power_values2, power_012=power_01_values2))
 }
 
 # Example usage
@@ -221,4 +235,8 @@ print(stats)
 directory_path <- "./hazel_final_table_output/hazel_500_no_shuffle"
 stats <- calculate_stats(directory_path)
 print(stats)
+
+# directory_path <- "/Users/xzhao17/Desktop/"
+# stats <- calculate_stats(directory_path)
+# print(stats)
 
