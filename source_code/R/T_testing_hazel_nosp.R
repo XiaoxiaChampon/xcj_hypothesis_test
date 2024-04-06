@@ -66,7 +66,7 @@ options_subjects <- options$subjects
 
 # options_jobid <- 1
 # options_numcpus <- 10
-# options_replicas <- 10
+# options_replicas <- 2
 # options_boots <- 50
 # options_subjects <- 100
 
@@ -136,11 +136,11 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             temp=get_T_single(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                        WY_sample$true$yis,time_interval,
                        number_basis =number_basis,est_choice="binomial" )
-            T_stat=numeric(3)
-            #T_stat=numeric(6)
+            #T_stat=numeric(3)
+            T_stat=numeric(6)
             T_stat[1] = temp$T_statistics #scalar
             betals=temp$betals
-            #T_stat[4]=temp$T_statistics_sp #scalar
+            T_stat[4]=temp$T_statistics2 #scalar
             #betals_sp=temp$betals_sp
             ####################
             #T_star_series=c(0)
@@ -152,7 +152,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             #get Y from X, and betals, betals 1: intercept, 2:31, 32:62
             
             temp_series=numeric(boot_number)
-            #temp_series_sp=numeric(boot_number)
+            temp_series2=numeric(boot_number)
             for (this_col in 1:boot_number){
                 
                 
@@ -168,6 +168,11 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                                                         WY_sample$true$TrueX3[boot_index,],
                                                         y_star,time_interval,
                                                         number_basis =number_basis,est_choice="binomial")$T_statistics
+                    temp_series2[this_col ]=get_T_single(WY_sample$true$TrueX1[boot_index,],
+                                                        WY_sample$true$TrueX2[boot_index,],
+                                                        WY_sample$true$TrueX3[boot_index,],
+                                                        y_star,time_interval,
+                                                        number_basis =number_basis,est_choice="binomial")$T_statistics2
                 }else{
                     y_star=get_Y_star(WY_sample$true$TrueX2,
                                       WY_sample$true$TrueX3,
@@ -178,6 +183,12 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                                                            WY_sample$true$TrueX3,
                                                            y_star,time_interval,
                                                            number_basis =number_basis,est_choice="binomial")$T_statistics
+                    
+                    temp_series2[this_col ]=get_T_single(WY_sample$true$TrueX1,
+                                                        WY_sample$true$TrueX2,
+                                                        WY_sample$true$TrueX3,
+                                                        y_star,time_interval,
+                                                        number_basis =number_basis,est_choice="binomial")$T_statistics2
                 }
                 
                
@@ -191,6 +202,9 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             
             T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
             T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
+            
+            T_stat[5]=(T_stat[4]>=quantile(temp_series2, .95))[[1]]
+            T_stat[6]=(T_stat[4]>=quantile(temp_series2, .90))[[1]]
         
             ######save T star series as well
             return(T_stat)
@@ -238,16 +252,21 @@ run_experiment_hypothesis <- function(exp_idx,
     power <- simulation_scenarios[,2] 
     power_01 <- simulation_scenarios[,3] 
     
+    power2 <- simulation_scenarios[,5] 
+    power_012 <- simulation_scenarios[,6] 
+    
  
     ##############
     T_rv= simulation_scenarios[,1]
+    T_rv2= simulation_scenarios[,4]
     
     ############
     # cat("\npower:", power,"\n", "power_se:", power_se, "\n")
     timeKeeperNext()
    
     return(list("power"=power,"power_01"=power_01,
-                "T_rv"=T_rv))
+                "power2"=power2,"power_012"=power_012,
+                "T_rv"=T_rv,"T_rv2"=T_rv2))
 }
 # 
 # run_experiment_hypothesis (0,
@@ -326,7 +345,7 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 #hist(final_table_rv$T_rv[[1]])
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table,file =paste0("./final_table_output/Hazel_outputsTbootstrap_",
+save(final_table,file =paste0("./final_table_output_n",options_subjects,"/Hazel_outputsTbootstrap_",
                               "_", options_subjects,
                               "_", options_replicas,
                               "_", options_boots,

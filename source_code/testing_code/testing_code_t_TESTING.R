@@ -190,7 +190,7 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
             WY_sample=GenerateCategoricalFDTest(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                 time_interval, fl_choice, lp_intercept=0.9998364)
           
-                temp=get_T(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
+                temp=get_T_single(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                            WY_sample$true$yis,time_interval,
                            number_basis =number_basis,est_choice="binomial" )  
             
@@ -210,8 +210,10 @@ get_T_distribution=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length
              # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector,
              #          T_stat_sp,betahat_sp))
              #1,2:31, 32, 33:62
-             return(c(T_stat,betahat, 
-                      T_stat_sp,betahat_sp))
+             # return(c(T_stat,betahat, 
+             #          T_stat_sp,betahat_sp))
+             
+             return(c(T_stat,betahat))
             # 
             # return(c(T_stat,betahat, mub_vector,DBB_matrix_vector,muD_vector
             #          ))
@@ -235,20 +237,45 @@ time_interval=seq(start_time,end_time,length.out=timeseries_length)
 # n500_rep_justT=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
 #                             time_interval=time_interval, fl_choice,num_replications,
 #                             lp_intercept=0.9998364)
+source("./source_code/R/time_track_function.R")
 num_indvs=100
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
+
 n100_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval=time_interval, fl_choice,num_replications,
                                       lp_intercept=0.9998364)
+timeKeeperNext()
 num_indvs=300
+source("./source_code/R/time_track_function.R")
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
 n300_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval=time_interval, fl_choice,num_replications,
                                       lp_intercept=0.9998364)
+timeKeeperNext()
 num_indvs=500
+source("./source_code/R/time_track_function.R")
+exp_str <- paste("Track time for \nNum Subjects:\t", num_indvs,
+                 "\n timeserires_length:\t",timeseries_length,
+                 "\n fl_choice:\t",fl_choice
+)
+writeLines(exp_str)
+timeKeeperStart(exp_str)
 n500_rep=get_T_distribution(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                       time_interval=time_interval, fl_choice,num_replications,
                                       lp_intercept=0.9998364)
-
-plot(unlist(apply(n100_rep[,2:31],2,mean)))
+timeKeeperNext()
+save(n100_rep,n300_rep,n500_rep,file="T_jake.RData")
+#plot(unlist(apply(n100_rep[,2:31],2,mean)))
 
 par(mfrow=c(2,3))
 matplot(1:30,t(n100_rep[,2:31]),main="betal, n=100")
@@ -258,6 +285,18 @@ hist(n100_rep[,1])
 hist(n300_rep[,1])
 hist(n500_rep[,1])
 
+summary(n100_rep[,1])
+# summary(n100_rep[,1])
+# Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+# 4.130e-08 1.758e-05 4.984e-05 8.916e-05 1.234e-04 7.957e-04 
+summary(n300_rep[,1])
+# summary(n300_rep[,1])
+# Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+# 2.248e-08 5.724e-06 1.502e-05 2.682e-05 3.394e-05 3.070e-04
+summary(n500_rep[,1])
+# summary(n500_rep[,1])
+# Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+# 1.917e-08 3.341e-06 8.303e-06 1.493e-05 2.060e-05 1.283e-04
 apply(n100_rep[,33:62],2,mean)
 
 matplot(1:30,t(n100_rep[,33:62]),main="betal sp=0,n=100")

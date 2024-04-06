@@ -286,16 +286,18 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
     
-    # DBB_matrix <- matrix(0,nrow=number_col,ncol=number_col) #empty
-   
+    # DBB_matrixb <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    # library(pracma)
     # for(row in 1:number_col){
     #     for(col in 1:number_col){
-    #        
-    #         DBB_matrix[row,col] <- (fda.usc::int.simpson2(time_interval,bspline[,row]*bspline[,col]))*(cov(X_array[,,2])[row,col])
+    #         # f=function(x,y){(x+y)^2}
+    #         # integral2(f, 0, 1, 0, 1, reltol = 1e-10)
+    #         DBB_matrixb[row,col] <- integral2(((bspline[,row]*bspline[,col])*(cov(X_array[,,2])[row,col])),
+    #                                           time_interval[1],tail(time_interval,1), time_interval[1],tail(time_interval,1),reltol = 1e-10)
     #     }
-    
-    # }
     # 
+    # }
+
     
     
     # Pre-computation of cov
@@ -329,8 +331,13 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     #     }
     # }
     
-    #######
-    
+    #######samsul
+    cvMAT<-cov(X_array[,,2])
+    DBB_matrix2<-Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(u){
+        Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(v){
+            cvMAT[u,v]*outer(bspline[u,],bspline[v,])
+        }))*(1/ncol(cvMAT))
+    }))*(1/nrow(cvMAT))
     
     
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
@@ -344,11 +351,15 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     muD=mub_vector%*%t(mub_vector)+DBB_matrix
     T_statistics=t(betal)%*%(muD)%*%(betal)
     
+    muD2=mub_vector%*%t(mub_vector)+DBB_matrix2
+    T_statistics2=t(betal)%*%(muD2)%*%(betal)
+    
     # muD_jake=mub_vector%*%t(mub_vector)+DBB_matrix_jake
     # 
     # T_statistics_jake=t(betal)%*%(muD_jake)%*%(betal)
     return(list("betals"=betals,
-                "T_statistics"=T_statistics
+                "T_statistics"=T_statistics,
+                "T_statistics2"=T_statistics2
     ))
 }
 
