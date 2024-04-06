@@ -223,9 +223,125 @@ X_cfd_twitter <- GetXFromW(W_merge)
 #> sum(X_cfd_twitter[,,3])
 #[1] 4814
 
+
 #time_interval=seq(0,1,length.out=dim(W_final)[1])
 time_interval=seq(0,1,length=dim(W_merge)[1])
 num_indvs <- length(Y_label)
+###########twitter using T
+source("./source_code/R/integral_penalty_function.R")
+source("./source_code/R/T_testing_functions.R")
+
+number_basis=30
+boot_number=1000
+temp=get_T_single(X_cfd_twitter[,,1],X_cfd_twitter[,,2],X_cfd_twitter[,,3], 
+                  Y_label,time_interval,
+                  number_basis =number_basis,est_choice="binomial" )
+#T_stat=numeric(3)
+T_stat=numeric(6)
+T_stat[1] = temp$T_statistics #scalar
+betals=temp$betals
+T_stat[4]=temp$T_statistics2 #scalar
+#betals_sp=temp$betals_sp
+####################
+#T_star_series=c(0)
+####################
+#########
+beta0=betals[1]
+betal=betals[2:(number_basis+1)]*0
+betal3=betals[(number_basis+2):(2*number_basis+1)] 
+#get Y from X, and betals, betals 1: intercept, 2:31, 32:62
+
+temp_series=numeric(boot_number)
+temp_series2=numeric(boot_number)
+shuffle_option=TRUE
+for (this_col in 1:boot_number){
+    
+    
+    if (shuffle_option){
+        boot_index=sample(1:num_indvs, num_indvs,replace=T)
+        y_star=get_Y_star(X_cfd_twitter[,,2][boot_index,],
+                          X_cfd_twitter[,,3][boot_index,],
+                          beta0,betal, betal3,time_interval,num_indvs,number_basis)
+        
+        #############
+        temp_series[this_col ]=get_T_single(X_cfd_twitter[,,1][boot_index,],
+                                            X_cfd_twitter[,,2][boot_index,],
+                                            X_cfd_twitter[,,3][boot_index,],
+                                            y_star,time_interval,
+                                            number_basis =number_basis,est_choice="binomial")$T_statistics
+        temp_series2[this_col ]=get_T_single(X_cfd_twitter[,,1][boot_index,],
+                                             X_cfd_twitter[,,2][boot_index,],
+                                             X_cfd_twitter[,,3][boot_index,],
+                                             y_star,time_interval,
+                                             number_basis =number_basis,est_choice="binomial")$T_statistics2
+    }else{
+        y_star=get_Y_star(WY_sample$true$TrueX2,
+                          WY_sample$true$TrueX3,
+                          beta0,betal, betal3,time_interval,num_indvs,number_basis)
+        
+        temp_series[this_col ]=get_T_single(WY_sample$true$TrueX1,
+                                            WY_sample$true$TrueX2,
+                                            WY_sample$true$TrueX3,
+                                            y_star,time_interval,
+                                            number_basis =number_basis,est_choice="binomial")$T_statistics
+        
+        temp_series2[this_col ]=get_T_single(WY_sample$true$TrueX1,
+                                             WY_sample$true$TrueX2,
+                                             WY_sample$true$TrueX3,
+                                             y_star,time_interval,
+                                             number_basis =number_basis,est_choice="binomial")$T_statistics2
+    }
+    
+    
+}
+# end_time_boot=Sys.time()
+# cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
+# boot 1000 for 500 useres takes 50.5146
+###############
+# T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
+# T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
+
+T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
+
+T_stat[5]=(T_stat[4]>=quantile(temp_series2, .95))[[1]]
+T_stat[6]=(T_stat[4]>=quantile(temp_series2, .90))[[1]]
+
+######save T star series as well
+T_stat
+# T_stat[1]
+# [1] 1.350126e-05
+# T_stat[2]
+#[1] 0
+
+# quantile(temp_series, .95)
+# 95% 
+# 1.827401e-05 
+
+# quantile(temp_series, .90)
+# 90% 
+# 1.240236e-05 
+
+# T_stat[3]
+# [1] 1
+
+# T_stat[4]
+# [1] 1.358464e-05
+
+# quantile(temp_series2, .95)
+# 95% 
+# 1.847738e-05
+
+# quantile(temp_series2, .90)
+# 90% 
+# 1.224484e-05 
+##############
+
+
+
+
+
+
 # num_indvs
 # [1] 529
 #Y_label
