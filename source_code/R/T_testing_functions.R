@@ -301,22 +301,22 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     
     # Pre-computation of cov
-    cov_x_array_2 <- cov(X_array[,,2])
-    DBB_matrix <- matrix(0, nrow = number_col, ncol = number_col)
-    # Pre-compute bspline[, row] * cov_x_array_2[, i]
-    bsp_cov_matrix <- array(NA, dim = c(number_col, length(time_interval), dim(bspline)[1]))
-    for (row in 1:number_col) {
-      for (i in 1:length(time_interval)) {
-        bsp_cov_matrix[row, i, ] <- bspline[, row] * cov_x_array_2[, i]
-      }
-    }
-    for (row in 1:number_col) {
-      for (col in 1:number_col) {
-        # Used sapply function to reduce the inner loop
-        DTemp <- sapply(1:length(time_interval), function(i) fda.usc::int.simpson2(time_interval, bsp_cov_matrix[row, i, ]))
-        DBB_matrix[row, col] <- fda.usc::int.simpson2(time_interval, DTemp * bspline[, col])
-      }
-    }
+    # cov_x_array_2 <- cov(X_array[,,2])
+    # DBB_matrix <- matrix(0, nrow = number_col, ncol = number_col)
+    # # Pre-compute bspline[, row] * cov_x_array_2[, i]
+    # bsp_cov_matrix <- array(NA, dim = c(number_col, length(time_interval), dim(bspline)[1]))
+    # for (row in 1:number_col) {
+    #   for (i in 1:length(time_interval)) {
+    #     bsp_cov_matrix[row, i, ] <- bspline[, row] * cov_x_array_2[, i]
+    #   }
+    # }
+    # for (row in 1:number_col) {
+    #   for (col in 1:number_col) {
+    #     # Used sapply function to reduce the inner loop
+    #     DTemp <- sapply(1:length(time_interval), function(i) fda.usc::int.simpson2(time_interval, bsp_cov_matrix[row, i, ]))
+    #     DBB_matrix[row, col] <- fda.usc::int.simpson2(time_interval, DTemp * bspline[, col])
+    #   }
+    # }
     
     
     #####jake advice
@@ -348,8 +348,8 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     betals=logit_model$coefficients
     betal= betals[2:(number_basis+1)]
     
-    muD=mub_vector%*%t(mub_vector)+DBB_matrix
-    T_statistics=t(betal)%*%(muD)%*%(betal)
+    # muD=mub_vector%*%t(mub_vector)+DBB_matrix
+    # T_statistics=t(betal)%*%(muD)%*%(betal)
     
     muD2=mub_vector%*%t(mub_vector)+DBB_matrix2
     T_statistics2=t(betal)%*%(muD2)%*%(betal)
@@ -357,9 +357,14 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     # muD_jake=mub_vector%*%t(mub_vector)+DBB_matrix_jake
     # 
     # T_statistics_jake=t(betal)%*%(muD_jake)%*%(betal)
+    # return(list("betals"=betals,
+    #             "T_statistics"=T_statistics,
+    #             "T_statistics2"=T_statistics2
+    # ))
+    
     return(list("betals"=betals,
-                "T_statistics"=T_statistics,
-                "T_statistics2"=T_statistics2
+                
+                "T_statistics"=T_statistics2
     ))
 }
 

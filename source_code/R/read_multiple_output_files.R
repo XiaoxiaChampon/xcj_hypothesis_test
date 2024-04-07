@@ -239,4 +239,76 @@ print(stats)
 # directory_path <- "/Users/xzhao17/Desktop/"
 # stats <- calculate_stats(directory_path)
 # print(stats)
+directory_path <- "./hazel_final_table_output/hazel_300_200_1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
 
+# Total Length (power): 4800
+# Total Length (power_01): 4800> print(stats)
+# $power
+# $power$mean
+# [1] 0.01458333
+# 
+# $power$standard_error
+# [1] 0.001730285
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.03354167
+# 
+# $power_01$standard_error
+# [1] 0.002598743
+# 
+# 
+# $power2
+# $power2$mean
+# [1] 0.014375
+# 
+# $power2$standard_error
+# [1] 0.001718063
+# 
+# 
+# $power_012
+# $power_012$mean
+# [1] 0.03291667
+# 
+# $power_012$standard_error
+# [1] 0.002575249
+
+directory_path <- "./hazel_final_table_output/hazel_500_100_1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+# Total Length (power): 5000
+# Total Length (power_01): 5000> print(stats)
+# $power
+# $power$mean
+# [1] 0.0176
+# 
+# $power$standard_error
+# [1] 0.001859583
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.044
+# 
+# $power_01$standard_error
+# [1] 0.002900483
+# 
+# 
+# $power2
+# $power2$mean
+# [1] 0.0178
+# 
+# $power2$standard_error
+# [1] 0.001869928
+# 
+# 
+# $power_012
+# $power_012$mean
+# [1] 0.0444
+# 
+# $power_012$standard_error
+# [1] 0.002913027
