@@ -37,8 +37,8 @@ calculate_stats <- function(directory_path) {
     power_values <- c()
     power_01_values <- c()
     
-    power_values2 <- c()
-    power_01_values2 <- c()
+    # power_values2 <- c()
+    # power_01_values2 <- c()
     
     
     # Get a list of all RData files in the specified directory by pattern
@@ -50,8 +50,8 @@ calculate_stats <- function(directory_path) {
         power_01_values <- c(power_01_values, final_table$power_01[[1]])
         
         ###add one more power
-        power_values2 <- c(power_values2, final_table$power2[[1]])
-        power_01_values2 <- c(power_01_values2, final_table$power_012[[1]])
+        # power_values2 <- c(power_values2, final_table$power2[[1]])
+        # power_01_values2 <- c(power_01_values2, final_table$power_012[[1]])
         ################################
     }
     
@@ -62,11 +62,14 @@ calculate_stats <- function(directory_path) {
     power_01_values <- calculate_power_stats(power_01_values)
     
     ######################
-    power_values2 <- calculate_power_stats(power_values2)
-    power_01_values2 <- calculate_power_stats(power_01_values2)
+    # power_values2 <- calculate_power_stats(power_values2)
+    # power_01_values2 <- calculate_power_stats(power_01_values2)
     #####################
-    return(list(power=power_values, power_01=power_01_values,
-                power2=power_values2, power_012=power_01_values2))
+    # return(list(power=power_values, power_01=power_01_values,
+    #             power2=power_values2, power_012=power_01_values2))
+    
+    return(list(power=power_values, power_01=power_01_values
+                ))
 }
 
 # Example usage
@@ -239,6 +242,7 @@ print(stats)
 # directory_path <- "/Users/xzhao17/Desktop/"
 # stats <- calculate_stats(directory_path)
 # print(stats)
+######April 7, 2024
 directory_path <- "./hazel_final_table_output/hazel_300_200_1000/"
 stats <- calculate_stats(directory_path)
 print(stats)
@@ -312,3 +316,46 @@ print(stats)
 # 
 # $power_012$standard_error
 # [1] 0.002913027
+
+
+directory_path <- "./hazel_final_table_output/hazel_100_250_1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0564
+# 
+# $power$standard_error
+# [1] 0.003262485
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0832
+# 
+# $power_01$standard_error
+# [1] 0.003905836
+
+directory_path <- "./hazel_final_table_output/hazel_1000_100_1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0242
+# 
+# $power$standard_error
+# [1] 0.002173217
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0628
+# 
+# $power_01$standard_error
+# [1] 0.003430923
+
+
+
+
+
+
