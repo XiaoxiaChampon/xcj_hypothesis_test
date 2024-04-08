@@ -60,19 +60,19 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 options <- parse_args(parser)
 
-# options_jobid <- options$jobid
-# options_numcpus <- options$numcpus
-# options_replicas <- options$replicas
-# options_boots <- options$boots
-# options_subjects <- options$subjects
-# options_flchoice <- options$flchoice
+options_jobid <- options$jobid
+options_numcpus <- options$numcpus
+options_replicas <- options$replicas
+options_boots <- options$boots
+options_subjects <- options$subjects
+options_flchoice <- options$flchoice
 
-options_jobid <- 1
-options_numcpus <- 10
-options_replicas <- 2
-options_boots <- 5
-options_subjects <- 100
-options_flchoice <- "8"
+# options_jobid <- 1
+# options_numcpus <- 10
+# options_replicas <- 2
+# options_boots <- 5
+# options_subjects <- 100
+# options_flchoice <- "8"
 
 # Use the options
 cat("Job Idx:", options_jobid, "\n")
@@ -125,10 +125,10 @@ ensure_dir_exist <- function(directory_path){
     }
 }
 
-scenario_folder = "outputsTbootstrap_power"
+scenario_folder = "outputsTbootstrap_power_shuffle"
 ensure_dir_exist(scenario_folder)
 
-final_table_folder = paste0("final_table_output_n", options_subjects,"_f", options_flchoice)
+final_table_folder = paste0("final_table_output_power_shuffle_n", options_subjects,"_f", options_flchoice)
 ensure_dir_exist(final_table_folder)
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
