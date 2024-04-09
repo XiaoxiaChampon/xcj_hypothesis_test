@@ -35,7 +35,7 @@ library(MASS)
 library(splines)
 library(parallel)
 library(stats)
-library(pracma)
+#library(pracma)
 
 
 ###########
@@ -66,9 +66,9 @@ options_boots <- options$boots
 options_subjects <- options$subjects
 
 # options_jobid <- 1
-# options_numcpus <- 10
+# options_numcpus <- 3
 # options_replicas <- 2
-# options_boots <- 50
+# options_boots <- 5
 # options_subjects <- 100
 
 # Use the options
@@ -109,12 +109,27 @@ if(run_parallel)
     # registerDoRNG(123) # ///<<<< THIS CREATES THE ERROR FOR FADPClust !!!
 }
 
+ensure_dir_exist <- function(directory_path){
+    # Check if the directory exists
+    if(!dir.exists(directory_path)) {
+        # Directory doesn't exist, so create it
+        dir.create(directory_path, recursive = TRUE)
+        cat("Directory created:", directory_path, "\n")
+    } else {
+        cat("Directory already exists:", directory_path, "\n")
+    }
+}
 
+scenario_folder = "outputsTbootstrap_p_staicu"
+ensure_dir_exist(scenario_folder)
+
+final_table_folder = paste0("final_table_output_p_staicu_n", options_subjects)
+ensure_dir_exist(final_table_folder)
 
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
-                                  lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=FALSE){
+                                  lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=TRUE){
     #num_replicas=6
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         
@@ -137,7 +152,8 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             temp=get_T_single(WY_sample$true$TrueX1,WY_sample$true$TrueX2,WY_sample$true$TrueX3, 
                        WY_sample$true$yis,time_interval,
                        number_basis =number_basis,est_choice="binomial" )
-            T_stat=numeric(3)
+            #T_stat=numeric(3)
+            T_stat=numeric(2)
             #T_stat=numeric(6)
             T_stat[1] = temp$T_statistics #scalar
             betals=temp$betals
@@ -205,8 +221,7 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
             # T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
             
-            T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
-            T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
+            T_stat[2]=mean(temp_series>=T_stat[1])
             
             # T_stat[5]=(T_stat[4]>=quantile(temp_series2, .95))[[1]]
             # T_stat[6]=(T_stat[4]>=quantile(temp_series2, .90))[[1]]
@@ -244,7 +259,7 @@ run_experiment_hypothesis <- function(exp_idx,
     simulation_scenarios <- cfd_T_testing_simulation (klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                                       time_interval, fl_choice,num_replicas, lp_intercept=0.9998364)
     #simulation_pvalues <- matrix(unlist(simulation_scenarios), nrow=3)
-    save(simulation_scenarios, file = paste0("./outputsTbootstrap/simpvals3",
+    save(simulation_scenarios, file = paste0("./", scenario_folder, "/simpvals3",
                                              "_i", exp_idx,
                                              "_fl", fl_choice,
                                              "_n", num_indvs,
@@ -255,7 +270,7 @@ run_experiment_hypothesis <- function(exp_idx,
   
     
     power <- simulation_scenarios[,2] 
-    power_01 <- simulation_scenarios[,3] 
+    #power_01 <- simulation_scenarios[,3] 
     
     # power2 <- simulation_scenarios[,5] 
     # power_012 <- simulation_scenarios[,6] 
@@ -273,8 +288,12 @@ run_experiment_hypothesis <- function(exp_idx,
     #             "power2"=power2,"power_012"=power_012,
     #             "T_rv"=T_rv,"T_rv2"=T_rv2))
     
+    # 
+    # return(list("power"=power,"power_01"=power_01,
+    #             
+    #             "T_rv"=T_rv))
     
-    return(list("power"=power,"power_01"=power_01,
+    return(list("power"=power,
                 
                 "T_rv"=T_rv))
 }
@@ -337,7 +356,7 @@ for (row_index in 1:dim(ed_table)[1]){
                                                     timeseries_length,
                                                     fl_choice
     )
-    save(experiment_output, file = paste0("./outputsTbootstrap/exp3_", 
+    save(experiment_output, file = paste0("./", scenario_folder, "/exp3_", 
                                           "_i", row_index, 
                                           "_fl", fl_choice, 
                                           
@@ -355,7 +374,7 @@ final_table <- cbind(ed_table, all_experiment_outputs)
 #hist(final_table_rv$T_rv[[1]])
 mu1_coef=c(-1.8270644 ,-2.4700275,  5.4299181)
 mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
-save(final_table,file =paste0("./final_table_output_n",options_subjects,"/Hazel_outputsTbootstrap_",
+save(final_table,file =paste0("./", final_table_folder, "/Hazel_outputsTbootstrap_",
                               "_", options_subjects,
                               "_", options_replicas,
                               "_", options_boots,
