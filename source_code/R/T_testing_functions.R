@@ -332,30 +332,30 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     # }
     
     #######samsul
-    # cvMAT<-cov(X_array[,,2])
-    # DBB_matrix2<-Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(u){
-    #     Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(v){
-    #         cvMAT[u,v]*outer(bspline[u,],bspline[v,])
-    #     }))*(1/ncol(cvMAT))
-    # }))*(1/nrow(cvMAT))
+    cvMAT<-cov(X_array[,,2])
+    DBB_matrix2<-Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(u){
+        Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(v){
+            cvMAT[u,v]*outer(bspline[u,],bspline[v,])
+        }))*(1/ncol(cvMAT))
+    }))*(1/nrow(cvMAT))
     
     
     ##boos
-    DBB_matrixb2 <- matrix(0,nrow=number_col,ncol=number_col) #empty
-    #library(pracma)
-    for(row in 1:number_col){
-        for(col in 1:number_col){
-            # f=function(x,y){(x+y)^2}
-            # integral2(f, 0, 1, 0, 1, reltol = 1e-10)
-            f_int2=function(row,col){(bspline[,row]*bspline[,col])*(cov(X_array[,,2])[row,col])}
-            DBB_matrixb2[row,col] <- integral2(f_int2,
-                                              time_interval[1],tail(time_interval,1),
-                                              time_interval[1],tail(time_interval,1),
-                                              reltol = 1e-10)
-        }
-
-    }
-    
+    # DBB_matrixb2 <- matrix(0,nrow=number_col,ncol=number_col) #empty
+    # #library(pracma)
+    # for(row in 1:number_col){
+    #     for(col in 1:number_col){
+    #         # f=function(x,y){(x+y)^2}
+    #         # integral2(f, 0, 1, 0, 1, reltol = 1e-10)
+    #         f_int2=function(row,col){(bspline[,row]*bspline[,col])*(cov(X_array[,,2])[row,col])}
+    #         DBB_matrixb2[row,col] <- integral2(f_int2,
+    #                                           time_interval[1],tail(time_interval,1),
+    #                                           time_interval[1],tail(time_interval,1),
+    #                                           reltol = 1e-10)
+    #     }
+    # 
+    # }
+    # 
 
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
                         s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m=2),family = 'binomial',
