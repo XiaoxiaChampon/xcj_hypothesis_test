@@ -35,6 +35,7 @@ library(MASS)
 library(splines)
 library(parallel)
 library(stats)
+library(pracma)
 
 
 ###########
@@ -114,7 +115,7 @@ if(run_parallel)
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
                                   lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=FALSE){
-    
+    #num_replicas=6
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         
         #T_rep <- foreach(this_row = 1:5) %dorng%
@@ -182,7 +183,8 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
                                                            WY_sample$true$TrueX2,
                                                            WY_sample$true$TrueX3,
                                                            y_star,time_interval,
-                                                           number_basis =number_basis,est_choice="binomial")$T_statistics
+                                                           number_basis =number_basis,
+                                                        est_choice="binomial")$T_statistics
                     
                     # temp_series2[this_col ]=get_T_single(WY_sample$true$TrueX1,
                     #                                     WY_sample$true$TrueX2,
@@ -199,6 +201,9 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             ###############
             # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
             # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
+            
+            # T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
+            # T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
             
             T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
             T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]

@@ -53,7 +53,9 @@ option_list <- list(
     make_option(c("-s", "--subjects"), type="integer", default=100,
                 help="Num Subjects/Individuals", metavar="NUMSUBJECTS"),
     make_option(c("-f", "--flchoice"), type="character", default="7",
-                help="fl_choice", metavar="FLCHOICE")
+                help="fl_choice", metavar="FLCHOICE"),
+    make_option(c("-t", "--timelen"), type="integer", default=90,
+                help="Time Length", metavar="TIMELEN")
 )
 
 # Create parser and parse options
@@ -66,6 +68,7 @@ options_replicas <- options$replicas
 options_boots <- options$boots
 options_subjects <- options$subjects
 options_flchoice <- options$flchoice
+options_timelen <- options$timelen
 
 # options_jobid <- 1
 # options_numcpus <- 10
@@ -81,6 +84,7 @@ cat("Num Replicas:", options_replicas, "\n")
 cat("Num Bootstraps:", options_boots, "\n")
 cat("Num Subjects:", options_subjects, "\n")
 cat("Fl choice:", options_flchoice, "\n")
+cat("Time Length:",options$timelen, "\n")
 
 ###########
 # ---- For: parallelization ----
@@ -317,7 +321,7 @@ generate_ed_table <- function(subjects_vector = c(500,300,100),
 #type I error rate
 ed_table1 <- generate_ed_table(subjects_vector = c(options_subjects),
                                fl_choice_vector = c(options_flchoice),
-                               time_length_vector = c(90),
+                               time_length_vector = c(options_timelen),
                                test_type_vector = c("Inclusion"))
 # ed_table2=generate_ed_table(subjects_vector = c(500),fl_choice_vector = c("200","7","21"),time_length_vector = c(90),
 #                                                          test_type_vector = c("Functional"))
@@ -373,12 +377,13 @@ mu2_coef=c(-2.9990822, -0.8243365,  3.9100000  )
 
 save(final_table,file =paste0("./", final_table_folder,
                               "/Hazel_outputsTbootstrap_",
-                              "_", options_subjects,
-                              "_", options_flchoice,
-                              "_", options_replicas,
-                              "_", options_boots,
-                              "_", options_numcpus,
-                              "_", options_jobid, ".RData"))
+                              "_sub", options_subjects,
+                              "_fl", options_flchoice,
+                              "_t", options_timelen,
+                              "_MC", options_replicas,
+                              "_boot", options_boots,
+                              "_core", options_numcpus,
+                              "_jid", options_jobid, ".RData"))
 
 end_exp_time <- Sys.time()
 
