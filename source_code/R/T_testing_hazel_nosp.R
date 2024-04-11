@@ -215,8 +215,6 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # cat("boot 1000 for 500 useres takes", end_time_boot-start_time_boot)
             # boot 1000 for 500 useres takes 50.5146
             ###############
-            # T_stat[2]=(T_stat<=quantile(temp_series, .05))[[1]]
-            # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
             
             # T_stat[2]=(T_stat[1]>=quantile(temp_series, .95))[[1]]
             # T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]

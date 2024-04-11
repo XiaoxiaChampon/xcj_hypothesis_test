@@ -27,15 +27,15 @@
 
 
 
-calculate_power_stats <- function(power_values){
-    power_mean <- mean(power_values)
+calculate_power_stats <- function(power_values,alpha_level){
+    power_mean <- mean(power_values<alpha_level)
     power_se <- sqrt(power_mean * (1 - power_mean) / length(power_values))
     return(list(mean = power_mean, standard_error = power_se))
 }
 
 calculate_stats <- function(directory_path) {
     power_values <- c()
-    power_01_values <- c()
+    T_variable=c()
     
     # power_values2 <- c()
     # power_01_values2 <- c()
@@ -46,8 +46,13 @@ calculate_stats <- function(directory_path) {
     
     for (file_path in files) {
         load(file_path)
+        #staicu
         power_values <- c(power_values, final_table$power[[1]])
-        power_01_values <- c(power_01_values, final_table$power_01[[1]])
+        T_values <- c(  T_variable, final_table$T_rv[[1]])
+        
+        
+        # power_values <- c(power_values, final_table$power[[1]])
+        # power_01_values <- c(power_01_values, final_table$power_01[[1]])
         
         ###add one more power
         # power_values2 <- c(power_values2, final_table$power2[[1]])
@@ -56,10 +61,11 @@ calculate_stats <- function(directory_path) {
     }
     
     cat("Total Length (power):", length(power_values))
-    cat("\nTotal Length (power_01):", length(power_01_values))
+    cat("\nTotal Length (power_01):", length(power_values))
     
-    power_values <- calculate_power_stats(power_values)
-    power_01_values <- calculate_power_stats(power_01_values)
+    power_values_0.05 <- calculate_power_stats(power_values,0.05)
+   # power_01_values <- calculate_power_stats(power_01_values)
+    power_01_values <- calculate_power_stats(power_values,0.1)
     
     ######################
     # power_values2 <- calculate_power_stats(power_values2)
@@ -68,7 +74,7 @@ calculate_stats <- function(directory_path) {
     # return(list(power=power_values, power_01=power_01_values,
     #             power2=power_values2, power_012=power_01_values2))
     
-    return(list(power=power_values, power_01=power_01_values
+    return(list(power=power_values_0.05, power_01=power_01_values
                 ))
 }
 
@@ -354,6 +360,161 @@ print(stats)
 # $power_01$standard_error
 # [1] 0.003430923
 
+##staicu
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_n100/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+# $power
+# $power$mean
+# [1] 0.055
+# 
+# $power$standard_error
+# [1] 0.003
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0802
+# 
+# $power_01$standard_error
+# [1] 0.0038
+
+
+load("./hazel_final_table_output/final_table_output_p_staicu_n100/Hazel_outputsTbootstrap__100_250_1000_16_1.RData")
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_n300/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0118
+# 
+# $power$standard_error
+# [1] 0.021597
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 1
+# 
+# $power_01$standard_error
+# [1] 0
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_n500/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0182
+# 
+# $power$standard_error
+# [1] 0.01890437
+# 
+# 
+
+# $power_01
+# $power_01$mean
+# [1] 0.0432
+# 
+# $power_01$standard_error
+# [1] 0.002875196
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_n1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.02265306
+# 
+# $power$standard_error
+# [1] 0.00212564
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.05979592
+# 
+# $power_01$standard_error
+# [1] 0.003387262
+
+########staicu no shuffle
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n100/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0552
+# 
+# $power$standard_error
+# [1] 0.003229643
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0824
+# 
+# $power_01$standard_error
+# [1] 0.003888708
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n300/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+# $power
+# $power$mean
+# [1] 0.0136
+# 
+# $power$standard_error
+# [1] 0.001637989
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0318
+# 
+# $power_01$standard_error
+# [1] 0.002481482
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n500/"
+stats <- calculate_stats(directory_path)
+print(stats)
+# $power
+# $power$mean
+# [1] 0.0172
+# 
+# $power$standard_error
+# [1] 0.001838704
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0434
+# 
+# $power_01$standard_error
+# [1] 0.002881543
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+# $power
+# $power$mean
+# [1] 0.0234
+# 
+# $power$standard_error
+# [1] 0.00213787
+# 
+# 
+# $power_01
+# $power_01$mean
+# [1] 0.0622
+# 
+# $power_01$standard_error
+# [1] 0.003415587
+
+##power 4/10/2024
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n1000/"
+stats <- calculate_stats(directory_path)
+print(stats)
 
 
 

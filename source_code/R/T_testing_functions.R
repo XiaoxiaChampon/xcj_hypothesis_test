@@ -339,6 +339,10 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
         }))*(1/ncol(cvMAT))
     }))*(1/nrow(cvMAT))
     
+    #use the 2nd moment only (is smooth everywhere except the diagonal), the 2nd order that is equal to the true 2nd moment
+    # smaller sample size, 
+    #500 users, do the smooth 2nd moment then do the calculation
+    
     
     ##boos
     # DBB_matrixb2 <- matrix(0,nrow=number_col,ncol=number_col) #empty
@@ -405,6 +409,59 @@ get_Y_star=function( X_2t,X_3t,beta0,betal,betal3,time_interval,num_indvs,number
 }
 
 
+
+get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3,boot_1=99){
+    
+    # X_1t=WY_sample$true$TrueX1
+    # X_2t=WY_sample$true$TrueX2
+    # X_3t=WY_sample$true$TrueX3
+    # Y=WY_sample$true$yis #time_interval
+    # 
+    
+    num_indv <- nrow(X_2t)
+    timeseries_length<- length(time_interval)
+    
+    X_array=array(c(X_1t,X_2t,X_3t),dim=c(num_indv,timeseries_length,category_count))
+    
+    
+    pl_vector=apply(X_array[,,category_count-1],2,mean)
+    number_col <- number_basis
+    knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
+    bspline <- splineDesign(knots=knots,x=time_interval,ord=4)
+    mub_vector=numeric(number_basis)
+    for(this_col in 1:number_col ){
+        mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
+    }
+    
+    
+    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
+    
+ 
+    #######samsul
+    cvMAT<-cov(X_array[,,2])
+    DBB_matrix2<-Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(u){
+        Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(v){
+            cvMAT[u,v]*outer(bspline[u,],bspline[v,])
+        }))*(1/ncol(cvMAT))
+    }))*(1/nrow(cvMAT))
+    
+   
+    logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
+                        s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m=2),family = 'binomial',
+                    control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
+                    optimizer=c("outer","bfgs"),method="ML")
+    
+    betals=logit_model$coefficients
+    betal= betals[2:(number_basis+1)]
+    
+    muD2=mub_vector%*%t(mub_vector)+DBB_matrix2
+    T_statistics2=t(betal)%*%(muD2)%*%(betal)
+    
+    return(list("betals"=betals,
+                
+                "T_statistics"=T_statistics2
+    ))
+}
 
 #' Function to select 
 #' @param choice "probit", "binomial",  or "multinormial"
