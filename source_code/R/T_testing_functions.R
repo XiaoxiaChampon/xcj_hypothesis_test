@@ -416,7 +416,7 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
     # X_2t=WY_sample$true$TrueX2
     # X_3t=WY_sample$true$TrueX3
     # Y=WY_sample$true$yis #time_interval
-    # 
+
     
     num_indv <- nrow(X_2t)
     timeseries_length<- length(time_interval)
@@ -434,7 +434,7 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
     }
     
     
-    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
+    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
     
  
     #######samsul
@@ -462,6 +462,119 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
                 "T_statistics"=T_statistics2
     ))
 }
+
+# -------------------- >>>
+
+calculate_betal <- function(Y, X_2t, X_3t, time_interval_matrix, number_basis){
+  
+  logit_model = gam(Y ~ s(time_interval_matrix, by=X_2t, k = number_basis, bs = "ps", m=2)+
+                      s(time_interval_matrix, by=X_3t, k = number_basis, bs = "ps", m=2), 
+                    family = 'binomial',
+                    control=list(maxit = 500, mgcv.tol=1e-4, epsilon = 1e-04),
+                    optimizer=c("outer","bfgs"), 
+                    method="ML")
+  
+  betals = logit_model$coefficients
+  
+  return(betals)
+}
+
+calculate_T <- function(Y, 
+                        X_2t, X_3t,
+                        boot_1,
+                        time_interval_matrix,
+                        number_basis,
+                        num_indvs){
+  
+  # Step 1 : Calculate beta_l
+  betals <- calculate_betal(Y, X_2t, X_3t, time_interval_matrix, number_basis)
+  
+  # Step 2: Calculate V_hat
+  beta_matrix <- matrix(0, nrow = boot_1, ncol = number_basis)
+  for (boot_1_idx in 1:boot_1) {
+    bsample_idx = sample(1:num_indvs, num_indvs,replace=T)
+    
+    beta_matrix[boot_1_idx, ] <- calculate_betal(Y[bsample_idx], 
+                                                 X_2t[bsample_idx,], 
+                                                 X_3t[bsample_idx,], 
+                                                 time_interval_matrix, 
+                                                 number_basis)[2:(number_basis+1)]
+  }
+  v_hat <- cov(beta_matrix)
+  
+  v_hat_inverse <- ginv(v_hat)
+  
+  # Step 3: Calculate T
+  betal <- betals[2:(number_basis+1)]
+  T_statistic <- t(betal) %*% v_hat_inverse %*% betal
+  
+  # Give error if T_statistic is not a 1x1 matrix
+  assert_that(all(dim(T_statistic) == 1))
+  
+  return(list(T_statistic=T_statistic, betals=betals))
+}
+
+calculate_double_boot_pvalue <- function(X_2t, X_3t, Y, time_interval,
+                                         boot_1, boot_2, number_basis =30, 
+                                         category_count=3){
+  
+  num_indv <- nrow(X_2t)
+  time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
+  
+  # Step 1: Calculate T
+  calc_T_result <- calculate_T(Y, X_2t, X_3t, boot_1, 
+                        time_interval_matrix, number_basis, num_indvs)
+  
+  # Step 2: Calculate T_star
+  T_star <- numeric(boot_2)
+  for (boot_2_idx in 1:boot_2) {
+    bsample2_idx <- sample(1:num_indvs, num_indvs, replace=T)
+    
+    y_star <- get_Y_star(X_2t[bsample2_idx,],
+                      X_3t[bsample2_idx,],
+                      calc_T_result$betals[1],
+                      rep(0, number_basis), 
+                      calc_T_result$betals[(number_basis+2):(2*number_basis+1)], 
+                      time_interval, 
+                      num_indvs, 
+                      number_basis)
+    
+    T_star[boot_2_idx] <- calculate_T(y_star, 
+                                      X_2t[bsample2_idx,], X_3t[bsample2_idx,], 
+                                      boot_1, time_interval_matrix, 
+                                      number_basis, num_indvs)$T_statistic
+  }
+  
+  # Step 5: Calculate p-value
+  p_value <- mean(T_star >= calc_T_result$T_statistic[1])
+  
+  return(p_value)
+}
+
+calculate_new_T <- function(X_1t, X_2t, X_3t, Y, time_interval, number_basis=30, 
+                            est_choice, category_count=3, 
+                            replicas=1000, boot_1=100,  boot_2=99){
+  p_values <- foreach(pval_idx = 1:replicas, .combine = 'c') %do% 
+    {
+      pval <- calculate_double_boot_pvalue(X_2t, X_3t, Y, 
+                                           time_interval, 
+                                           boot_1, boot_2, 
+                                           number_basis =30, 
+                                           category_count=3)
+      return(pval)
+    }
+  
+  return(p_values)
+  
+  # power_005 <- mean(p_values < 0.05)
+  # stderr_005 <- sqrt(power * (1-power) / replicas)
+  # power_01 <- mean(p_values < 0.1)
+  # stderr_01 <- sqrt(power_01 * (1-power_01) / replicas)
+  # 
+  # return(c(power_005, stderr_005, power_01, stderr_01))
+}
+
+# ----------------------------------- <<<
 
 #' Function to select 
 #' @param choice "probit", "binomial",  or "multinormial"
