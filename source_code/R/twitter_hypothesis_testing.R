@@ -240,7 +240,7 @@ temp=get_T_single(X_cfd_twitter[,,1],X_cfd_twitter[,,2],X_cfd_twitter[,,3],
 T_stat=numeric(6)
 T_stat[1] = temp$T_statistics #scalar
 betals=temp$betals
-T_stat[4]=temp$T_statistics2 #scalar
+#T_stat[4]=temp$T_statistics2 #scalar
 #betals_sp=temp$betals_sp
 ####################
 #T_star_series=c(0)
@@ -302,9 +302,9 @@ for (this_col in 1:boot_number){
 # T_stat[3]=(T_stat<=quantile(temp_series, .10))[[1]]
 
 T_stat[2]=mean(temp_series>T_stat[1])
-T_stat[2]>0.05
+T_stat[2]<0.05 # FALSE
 
-T_stat[2]>0.1
+T_stat[2]<0.1 #TRUE
 # T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
 
 # T_stat[5]=(T_stat[4]>=quantile(temp_series2, .95))[[1]]
