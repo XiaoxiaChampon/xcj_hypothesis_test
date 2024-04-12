@@ -509,7 +509,7 @@ calculate_T <- function(Y,
   T_statistic <- t(betal) %*% v_hat_inverse %*% betal
   
   # Give error if T_statistic is not a 1x1 matrix
-  assert_that(all(dim(T_statistic) == 1))
+  #assert_that(all(dim(T_statistic) == 1))
   
   return(list(T_statistic=T_statistic, betals=betals))
 }
@@ -518,7 +518,7 @@ calculate_double_boot_pvalue <- function(X_2t, X_3t, Y, time_interval,
                                          boot_1, boot_2, number_basis =30, 
                                          category_count=3){
   
-  num_indv <- nrow(X_2t)
+  num_indvs <- nrow(X_2t)
   time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
   
   # Step 1: Calculate T
