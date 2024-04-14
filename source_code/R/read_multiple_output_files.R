@@ -549,22 +549,29 @@ calculate_stats_boos <- function(directory_path) {
 
 #load("./hazel_final_table_output/final_table_output_p_boos_n100/Hazel_outputsTbootstrap__100_16_100_99_16_1.RData")
 
-directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n100/"
-stats <- calculate_stats_boos(directory_path)
-print(stats)
-
-#load("./hazel_final_table_output/final_table_output_p_boos_n300/Hazel_outputsTbootstrap__300_20_100_99_16_1.RData")
-directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n300/"
-stats <- calculate_stats_boos(directory_path)
-print(stats)
-
-directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n500/"
-stats <- calculate_stats_boos(directory_path)
-print(stats)
-
-directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n1000/"
-stats <- calculate_stats_boos(directory_path)
-print(stats)
+for(num_indvs in c(100, 300, 500))
+{
+    print("----------------")
+    directory_path <- paste0("./test/final_table_output_p_boos_n", num_indvs, "/")
+    print(directory_path)
+    stats <- calculate_stats_boos(directory_path)
+    print(paste0("", round(stats$power$mean, 3),
+                 "(", round(stats$power$standard_error, 3), ")",
+                 "    ", round(stats$power_01$mean, 3),
+                 "(", round(stats$power_01$standard_error, 3), ")"))
+    
+    for(flchoice in c(7,8,9,10))
+    {
+        directory_path <- paste0("./test/final_table_output_p_boos_n", num_indvs, "_f", flchoice, "/")
+        print(directory_path)
+        stats <- calculate_stats_boos(directory_path)
+        print(paste0("", round(stats$power$mean, 3),
+                    "(", round(stats$power$standard_error, 3), ")",
+                    "    ", round(stats$power_01$mean, 3),
+                    "(", round(stats$power_01$standard_error, 3), ")"))
+    }
+    print("================")
+}
 
 
 
