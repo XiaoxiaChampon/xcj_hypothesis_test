@@ -222,14 +222,14 @@ run_experiment_hypothesis <- function(exp_idx,
                                              ".RData"))
     
     
-    power_005 <- mean(simulation_scenarios < 0.05)
-    power_01 <- mean(simulation_scenarios < 0.1) 
-    
-    # power2 <- simulation_scenarios[,5] 
-    # power_012 <- simulation_scenarios[,6] 
-    stderr_005 <- sqrt(power_005 * (1-power_005) / num_replicas)
-     
-   stderr_01 <- sqrt(power_01 * (1-power_01) / num_replicas)
+   #  power_005 <- mean(simulation_scenarios < 0.05)
+   #  power_01 <- mean(simulation_scenarios < 0.1) 
+   #  
+   #  # power2 <- simulation_scenarios[,5] 
+   #  # power_012 <- simulation_scenarios[,6] 
+   #  stderr_005 <- sqrt(power_005 * (1-power_005) / num_replicas)
+   #   
+   # stderr_01 <- sqrt(power_01 * (1-power_01) / num_replicas)
     
     ##############
     #T_rv= simulation_scenarios[,1]
@@ -248,10 +248,12 @@ run_experiment_hypothesis <- function(exp_idx,
     #             
     #             "T_rv"=T_rv))
     
-    return(list("power_005"=power_005 ,"stderr_005"= stderr_005,
-                "power_01"= power_01,"stderr_01"=stderr_01
-                
-                ))
+    # return(list("power_005"=power_005 ,"stderr_005"= stderr_005,
+    #             "power_01"= power_01,"stderr_01"=stderr_01
+    #             
+    #             ))
+   
+   return("pvalues"=simulation_scenarios)
 }
 # 
 # run_experiment_hypothesis (0,

@@ -25,8 +25,6 @@
 #
 ##############################################################
 
-
-
 calculate_power_stats <- function(power_values,alpha_level){
     power_mean <- mean(power_values<alpha_level)
     power_se <- sqrt(power_mean * (1 - power_mean) / length(power_values))
@@ -515,6 +513,62 @@ print(stats)
 directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n1000/"
 stats <- calculate_stats(directory_path)
 print(stats)
+
+
+
+#####boos
+calculate_stats_boos <- function(directory_path) {
+    power_values <- c()
+    
+    # Get a list of all RData files in the specified directory by pattern
+    files <- list.files(path = directory_path, pattern = "\\.RData$", full.names = TRUE)
+    
+    for (file_path in files) {
+        load(file_path)
+        #staicu
+        power_values <- c(power_values, unlist(final_table)[5:length(unlist(final_table))])
+    }
+    
+    cat("Total Length (power):", length(power_values))
+    
+    power_values_0.05 <- calculate_power_stats(power_values,0.05)
+    # power_01_values <- calculate_power_stats(power_01_values)
+    power_01_values <- calculate_power_stats(power_values,0.1)
+    
+    ######################
+    # power_values2 <- calculate_power_stats(power_values2)
+    # power_01_values2 <- calculate_power_stats(power_01_values2)
+    #####################
+    # return(list(power=power_values, power_01=power_01_values,
+    #             power2=power_values2, power_012=power_01_values2))
+    
+    return(list(power=power_values_0.05, power_01=power_01_values
+    ))
+}
+
+
+#load("./hazel_final_table_output/final_table_output_p_boos_n100/Hazel_outputsTbootstrap__100_16_100_99_16_1.RData")
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n100/"
+stats <- calculate_stats_boos(directory_path)
+print(stats)
+
+#load("./hazel_final_table_output/final_table_output_p_boos_n300/Hazel_outputsTbootstrap__300_20_100_99_16_1.RData")
+directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n300/"
+stats <- calculate_stats_boos(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n500/"
+stats <- calculate_stats_boos(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_boos_n1000/"
+stats <- calculate_stats_boos(directory_path)
+print(stats)
+
+
+
+
 
 
 

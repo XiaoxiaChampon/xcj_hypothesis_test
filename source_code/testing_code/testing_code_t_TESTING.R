@@ -365,8 +365,13 @@ timeKeeperNext()
 # ====================
 
 #####################
-#save(T_star_1000,file ="T_star_1000.RData")
-#save(n500_rep_justT,file="n500_rep_justT.RData")
+save(T_star_1000,file ="T_star_1000.RData")
+load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/T_star_1000.RData")
+
+save(n500_rep_justT,file="n500_rep_justT.RData")
+
+load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/n500_rep_justT.RData")
+
 
 T_Tstar=data.frame(matrix(c(n500_rep_justT,T_star_1000),
                           ncol=1))
