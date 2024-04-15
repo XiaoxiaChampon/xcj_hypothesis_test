@@ -434,6 +434,13 @@ print(stats)
 # $power_01$standard_error
 # [1] 0.003387262
 
+#load("/Users/xzhao17/Documents/GitHub/xcj_hypothesis_test_cfd/hazel_final_table_output/final_table_output_p_staicu_n2000/Hazel_outputsTbootstrap__2000_40_1000_16_1.RData")
+##
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_n2000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+
 ########staicu no shuffle
 directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n100/"
 stats <- calculate_stats(directory_path)

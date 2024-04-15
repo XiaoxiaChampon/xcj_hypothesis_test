@@ -88,14 +88,14 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #         return(temp)
     #     }
     # mub_vector <- do.call(rbind, mub_vector)
-
+    
     # mu_st=Sys.time()
     #  for (i in 1:10000){
     #     
-        mub_vector=c(0)
-        for(this_col in 1:number_col ){
-              mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col],equi = TRUE, method = "TRAPZ")
-        }
+    mub_vector=c(0)
+    for(this_col in 1:number_col ){
+        mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col],equi = TRUE, method = "TRAPZ")
+    }
     #     ##################################################################################
     #  }
     # mu_et=Sys.time()
@@ -103,9 +103,9 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     
     #mu_st=Sys.time()
     # for (i in 1:10000){
-        ############################################################################
-        # mub_vector <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
-        ##################################################################################
+    ############################################################################
+    # mub_vector <- integral_penalty_matrix(time_interval,pl_vector*bspline)$value
+    ##################################################################################
     # }
     #mu_et=Sys.time()
     #cat("1000 for loop takes",mu_et-mu_st,"/n")
@@ -129,7 +129,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #   }
     # }
     
-  ##############################################################################################  
+    ##############################################################################################  
     # J_matrix <- foreach(this_row = 1:num_indv) %do%
     #     {
     #         source("./source_code/R/integral_penalty_function.R")
@@ -147,7 +147,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #     J_matrix[row,col] <- integral_penalty(time_interval,X_array[row,,2]*bspline[,col])$value
     #   }
     # }
-   ############################################################################################## 
+    ############################################################################################## 
     
     
     
@@ -180,9 +180,9 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
                     optimizer=c("outer","bfgs"),method="ML")
     
-
     
-  
+    
+    
     betals=logit_model$coefficients
     betal= betals[2:(number_basis+1)]
     
@@ -203,8 +203,8 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     #logit_model_p=gam(Y~s(time_interval_matrix,by=t(pl_matrix[,,2]),k = number_basis,bs = "cr", m=2)+
     #                     s(time_interval_matrix,by=t(pl_matrix[,,3]),k = number_basis,bs = "cr", m=2),family = 'binomial')
     #gammal=logit_model_p$coefficients[2:(number_basis+1)]
-   
-  
+    
+    
     
     ## 
     # T_vector <- foreach(this_row = 1:num_indv ) %do%
@@ -233,8 +233,8 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     
     #rv_XF=J_matrix%*%betal
     #rv_E_PF=mub_matrix%*%gammal
-   # rv_E_PF=mub_matrix%*%betal
-   # rv_E_PF=t(mub_vector)%*%betal
+    # rv_E_PF=mub_matrix%*%betal
+    # rv_E_PF=t(mub_vector)%*%betal
     
     
     
@@ -258,7 +258,7 @@ get_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,c
     return(list("betals"=betals,
                 "T_statistics"=T_statistics,"betals_sp"=betals_sp,"T_statistics_sp"=T_statistics_sp
     ))
-    }
+}
 
 get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choice,category_count=3){
     
@@ -273,7 +273,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     
     X_array=array(c(X_1t,X_2t,X_3t),dim=c(num_indv,timeseries_length,category_count))
     
-   
+    
     pl_vector=apply(X_array[,,category_count-1],2,mean)
     number_col <- number_basis
     knots <- construct.knots(time_interval,knots=(number_basis-3),knots.option='equally-spaced')
@@ -282,7 +282,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     for(this_col in 1:number_col ){
         mub_vector[this_col] <- fda.usc::int.simpson2(time_interval,pl_vector*bspline[,this_col])
     }
-  
+    
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE)) 
     
@@ -297,7 +297,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     #     }
     # 
     # }
-
+    
     
     
     # Pre-computation of cov
@@ -359,7 +359,7 @@ get_T_single <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_c
     # 
     # }
     # 
-
+    
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
                         s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m=2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
@@ -415,7 +415,7 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
     # X_2t=WY_sample$true$TrueX2
     # X_3t=WY_sample$true$TrueX3
     # Y=WY_sample$true$yis #time_interval
-
+    
     
     num_indv <- nrow(X_2t)
     timeseries_length<- length(time_interval)
@@ -435,7 +435,7 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
     
     time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
     
- 
+    
     #######samsul
     cvMAT<-cov(X_array[,,2])
     DBB_matrix2<-Reduce(`+`,lapply(seq_len(nrow(cvMAT)),function(u){
@@ -444,7 +444,7 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
         }))*(1/ncol(cvMAT))
     }))*(1/nrow(cvMAT))
     
-   
+    
     logit_model=gam(Y~s(time_interval_matrix,by=X_array[,,2],k = number_basis,bs = "ps", m=2)+
                         s(time_interval_matrix,by=X_array[,,3],k = number_basis,bs = "ps", m=2),family = 'binomial',
                     control=list(maxit = 500,mgcv.tol=1e-4,epsilon = 1e-04),
@@ -465,17 +465,17 @@ get_new_T <- function(X_1t,X_2t,X_3t ,Y,time_interval, number_basis =30,est_choi
 # -------------------- >>>
 
 calculate_betal <- function(Y, X_2t, X_3t, time_interval_matrix, number_basis){
-  
-  logit_model = gam(Y ~ s(time_interval_matrix, by=X_2t, k = number_basis, bs = "ps", m=2)+
-                      s(time_interval_matrix, by=X_3t, k = number_basis, bs = "ps", m=2), 
-                    family = 'binomial',
-                    control=list(maxit = 500, mgcv.tol=1e-4, epsilon = 1e-04),
-                    optimizer=c("outer","bfgs"), 
-                    method="ML")
-  
-  betals = logit_model$coefficients
-  
-  return(betals)
+    
+    logit_model = gam(Y ~ s(time_interval_matrix, by=X_2t, k = number_basis, bs = "ps", m=2)+
+                          s(time_interval_matrix, by=X_3t, k = number_basis, bs = "ps", m=2), 
+                      family = 'binomial',
+                      control=list(maxit = 500, mgcv.tol=1e-4, epsilon = 1e-04),
+                      optimizer=c("outer","bfgs"), 
+                      method="ML")
+    
+    betals = logit_model$coefficients
+    
+    return(betals)
 }
 
 calculate_T <- function(Y, 
@@ -484,93 +484,93 @@ calculate_T <- function(Y,
                         time_interval_matrix,
                         number_basis,
                         num_indvs){
-  
-  # Step 1 : Calculate beta_l
-  betals <- calculate_betal(Y, X_2t, X_3t, time_interval_matrix, number_basis)
-  
-  # Step 2: Calculate V_hat
-  beta_matrix <- matrix(0, nrow = boot_1, ncol = number_basis)
-  for (boot_1_idx in 1:boot_1) {
-    bsample_idx = sample(1:num_indvs, num_indvs,replace=T)
     
-    beta_matrix[boot_1_idx, ] <- calculate_betal(Y[bsample_idx], 
-                                                 X_2t[bsample_idx,], 
-                                                 X_3t[bsample_idx,], 
-                                                 time_interval_matrix, 
-                                                 number_basis)[2:(number_basis+1)]
-  }
-  v_hat <- cov(beta_matrix)
-  
-  v_hat_inverse <- ginv(v_hat)
-  
-  # Step 3: Calculate T
-  betal <- betals[2:(number_basis+1)]
-  T_statistic <- t(betal) %*% v_hat_inverse %*% betal
-  
-  # Give error if T_statistic is not a 1x1 matrix
-  #assert_that(all(dim(T_statistic) == 1))
-  
-  return(list(T_statistic=T_statistic, betals=betals))
+    # Step 1 : Calculate beta_l
+    betals <- calculate_betal(Y, X_2t, X_3t, time_interval_matrix, number_basis)
+    
+    # Step 2: Calculate V_hat
+    beta_matrix <- matrix(0, nrow = boot_1, ncol = number_basis)
+    for (boot_1_idx in 1:boot_1) {
+        bsample_idx = sample(1:num_indvs, num_indvs,replace=T)
+        
+        beta_matrix[boot_1_idx, ] <- calculate_betal(Y[bsample_idx], 
+                                                     X_2t[bsample_idx,], 
+                                                     X_3t[bsample_idx,], 
+                                                     time_interval_matrix, 
+                                                     number_basis)[2:(number_basis+1)]
+    }
+    v_hat <- cov(beta_matrix)
+    
+    v_hat_inverse <- ginv(v_hat)
+    
+    # Step 3: Calculate T
+    betal <- betals[2:(number_basis+1)]
+    T_statistic <- t(betal) %*% v_hat_inverse %*% betal
+    
+    # Give error if T_statistic is not a 1x1 matrix
+    #assert_that(all(dim(T_statistic) == 1))
+    
+    return(list(T_statistic=T_statistic, betals=betals))
 }
 
 calculate_double_boot_pvalue <- function(X_2t, X_3t, Y, time_interval,
                                          boot_1, boot_2, number_basis =30, 
                                          category_count=3){
-  
-  num_indvs <- nrow(X_2t)
-  time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
-  
-  # Step 1: Calculate T
-  calc_T_result <- calculate_T(Y, X_2t, X_3t, boot_1, 
-                        time_interval_matrix, number_basis, num_indvs)
-  
-  # Step 2: Calculate T_star
-  T_star <- numeric(boot_2)
-  for (boot_2_idx in 1:boot_2) {
-    bsample2_idx <- sample(1:num_indvs, num_indvs, replace=T)
     
-    y_star <- get_Y_star(X_2t[bsample2_idx,],
-                      X_3t[bsample2_idx,],
-                      calc_T_result$betals[1],
-                      rep(0, number_basis), 
-                      calc_T_result$betals[(number_basis+2):(2*number_basis+1)], 
-                      time_interval, 
-                      num_indvs, 
-                      number_basis)
+    num_indvs <- nrow(X_2t)
+    time_interval_matrix=do.call("rbind", replicate(length(Y), time_interval, simplify = FALSE))
     
-    T_star[boot_2_idx] <- calculate_T(y_star, 
-                                      X_2t[bsample2_idx,], X_3t[bsample2_idx,], 
-                                      boot_1, time_interval_matrix, 
-                                      number_basis, num_indvs)$T_statistic
-  }
-  
-  # Step 5: Calculate p-value
-  p_value <- mean(T_star >= calc_T_result$T_statistic[1])
-  
-  return(p_value)
+    # Step 1: Calculate T
+    calc_T_result <- calculate_T(Y, X_2t, X_3t, boot_1, 
+                                 time_interval_matrix, number_basis, num_indvs)
+    
+    # Step 2: Calculate T_star
+    T_star <- numeric(boot_2)
+    for (boot_2_idx in 1:boot_2) {
+        bsample2_idx <- sample(1:num_indvs, num_indvs, replace=T)
+        
+        y_star <- get_Y_star(X_2t[bsample2_idx,],
+                             X_3t[bsample2_idx,],
+                             calc_T_result$betals[1],
+                             rep(0, number_basis), 
+                             calc_T_result$betals[(number_basis+2):(2*number_basis+1)], 
+                             time_interval, 
+                             num_indvs, 
+                             number_basis)
+        
+        T_star[boot_2_idx] <- calculate_T(y_star, 
+                                          X_2t[bsample2_idx,], X_3t[bsample2_idx,], 
+                                          boot_1, time_interval_matrix, 
+                                          number_basis, num_indvs)$T_statistic
+    }
+    
+    # Step 5: Calculate p-value
+    p_value <- mean(T_star >= calc_T_result$T_statistic[1])
+    
+    return(p_value)
 }
 
 calculate_new_T <- function(X_1t, X_2t, X_3t, Y, time_interval, number_basis=30, 
                             est_choice, category_count=3, 
                             replicas=1000, boot_1=100,  boot_2=99){
-  p_values <- foreach(pval_idx = 1:replicas, .combine = 'c') %do% 
-    {
-      pval <- calculate_double_boot_pvalue(X_2t, X_3t, Y, 
-                                           time_interval, 
-                                           boot_1, boot_2, 
-                                           number_basis =30, 
-                                           category_count=3)
-      return(pval)
-    }
-  
-  return(p_values)
-  
-  # power_005 <- mean(p_values < 0.05)
-  # stderr_005 <- sqrt(power * (1-power) / replicas)
-  # power_01 <- mean(p_values < 0.1)
-  # stderr_01 <- sqrt(power_01 * (1-power_01) / replicas)
-  # 
-  # return(c(power_005, stderr_005, power_01, stderr_01))
+    p_values <- foreach(pval_idx = 1:replicas, .combine = 'c') %do% 
+        {
+            pval <- calculate_double_boot_pvalue(X_2t, X_3t, Y, 
+                                                 time_interval, 
+                                                 boot_1, boot_2, 
+                                                 number_basis =30, 
+                                                 category_count=3)
+            return(pval)
+        }
+    
+    return(p_values)
+    
+    # power_005 <- mean(p_values < 0.05)
+    # stderr_005 <- sqrt(power * (1-power) / replicas)
+    # power_01 <- mean(p_values < 0.1)
+    # stderr_01 <- sqrt(power_01 * (1-power_01) / replicas)
+    # 
+    # return(c(power_005, stderr_005, power_01, stderr_01))
 }
 
 # ----------------------------------- <<<
