@@ -516,6 +516,13 @@ print(stats)
 # $power_01$standard_error
 # [1] 0.003415587
 
+
+directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n2000/"
+stats <- calculate_stats(directory_path)
+print(stats)
+
+
+
 ##power 4/10/2024
 directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n1000/"
 stats <- calculate_stats(directory_path)
