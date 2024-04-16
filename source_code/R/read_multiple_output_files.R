@@ -721,7 +721,7 @@ for(num_indvs in c(100, 300, 500,1000))
     }
     print("================")
 }
-
+####table 2 first column
 # 1] "----------------"
 # [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100/"
 # Total Length (power): 0
@@ -791,12 +791,12 @@ for(num_indvs in c(100, 300, 500,1000))
 # Total Length (power_01): 1000[1] "0.999(0.001)    0.999(0.001)"
 # [1] "================"
 
-###RLRT
+###RLRT table 2 the 3rd column (only look at time points 90)
 ##march 26th, after the type I error
 #######################
 #load("EXP3_r5000_gampower90180inclusion.RData")
 # final_table[,1:8]
-# fl_choice test_type num_subjects num_timepoints  power           se power_01         se01
+#                       fl_choice test_type num_subjects num_timepoints  power           se power_01         se01
 # experiment_output            6 Inclusion         1000             90 0.0588  0.003326937   0.1122  0.004463433
 # experiment_output.1          7 Inclusion         1000             90 0.7934  0.005725669   0.8698  0.004759159
 # experiment_output.2          8 Inclusion         1000             90 0.9988 0.0004896039   0.9994 0.0003463062
