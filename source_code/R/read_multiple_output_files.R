@@ -76,6 +76,58 @@ calculate_stats <- function(directory_path) {
                 ))
 }
 
+
+calculate_stats_percentile <- function(directory_path) {
+    power_values <- c()
+    T_variable=c()
+    power_values_01 <- c()
+    # power_values2 <- c()
+    # power_01_values2 <- c()
+    
+    
+    # Get a list of all RData files in the specified directory by pattern
+    files <- list.files(path = directory_path, pattern = "\\.RData$", full.names = TRUE)
+    
+    for (file_path in files) {
+        load(file_path)
+        #staicu
+        power_values <- c(power_values, final_table$power[[1]])
+        power_values_01 <- c(power_values, final_table$power_01[[1]])
+        T_values <- c(  T_variable, final_table$T_rv[[1]])
+        
+        
+        # power_values <- c(power_values, final_table$power[[1]])
+        # power_01_values <- c(power_01_values, final_table$power_01[[1]])
+        
+        ###add one more power
+        # power_values2 <- c(power_values2, final_table$power2[[1]])
+        # power_01_values2 <- c(power_01_values2, final_table$power_012[[1]])
+        ################################
+    }
+    
+    cat("Total Length (power):", length(power_values))
+    cat("\nTotal Length (power_01):", length(power_values))
+    
+    power_values_0.05 <- calculate_power_stats_percentile(power_values)
+    # power_01_values <- calculate_power_stats(power_01_values)
+    power_01_values <- calculate_power_stats_percentile(power_values_01)
+    
+    ######################
+    # power_values2 <- calculate_power_stats(power_values2)
+    # power_01_values2 <- calculate_power_stats(power_01_values2)
+    #####################
+    # return(list(power=power_values, power_01=power_01_values,
+    #             power2=power_values2, power_012=power_01_values2))
+    
+    return(list(power=power_values_0.05, power_01=power_01_values
+    ))
+}
+calculate_power_stats_percentile <- function(power_values){
+    power_mean <- mean(power_values)
+    power_se <- sqrt(power_mean * (1 - power_mean) / length(power_values))
+    return(list(mean = power_mean, standard_error = power_se))
+}
+
 # Example usage
 directory_path <- "./hazel_final_table_output/hazel16_500_250_1000/"
 stats <- calculate_stats(directory_path)
@@ -522,13 +574,70 @@ stats <- calculate_stats(directory_path)
 print(stats)
 
 
-
+###################################
 ##power 4/10/2024
-directory_path <- "./hazel_final_table_output/final_table_output_p_staicu_noshffule_n1000/"
-stats <- calculate_stats(directory_path)
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n100_f7/"
+stats <- calculate_stats_percentile(directory_path)
 print(stats)
 
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n100_f8/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
 
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n100_f9/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n100_f10/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+####
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n300_f7/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n300_f8/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n300_f9/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n300_f10/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+#####
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n500_f7/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n500_f8/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n500_f9/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n500_f10/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+########
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f7/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f8/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f9/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+
+directory_path <- "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f10/"
+stats <- calculate_stats_percentile(directory_path)
+print(stats)
+###################################
 
 #####boos
 calculate_stats_boos <- function(directory_path) {
@@ -588,7 +697,99 @@ for(num_indvs in c(100, 300, 500))
 }
 
 
+#####
+for(num_indvs in c(100, 300, 500,1000))
+{
+    print("----------------")
+    directory_path <- paste0("./hazel_final_table_output/final_table_output_power_shuffle_n", num_indvs, "/")
+    print(directory_path)
+    stats <- calculate_stats_percentile(directory_path)
+    print(paste0("", round(stats$power$mean, 3),
+                 "(", round(stats$power$standard_error, 3), ")",
+                 "    ", round(stats$power_01$mean, 3),
+                 "(", round(stats$power_01$standard_error, 3), ")"))
+    
+    for(flchoice in c(7,8,9,10))
+    {
+        directory_path <- paste0("./hazel_final_table_output/final_table_output_power_shuffle_n", num_indvs, "_f", flchoice, "/")
+        print(directory_path)
+        stats <- calculate_stats_percentile(directory_path)
+        print(paste0("", round(stats$power$mean, 3),
+                     "(", round(stats$power$standard_error, 3), ")",
+                     "    ", round(stats$power_01$mean, 3),
+                     "(", round(stats$power_01$standard_error, 3), ")"))
+    }
+    print("================")
+}
 
+# 1] "----------------"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100/"
+# Total Length (power): 0
+# Total Length (power_01): 0[1] "NA(NA)    NA(NA)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100_f7/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.058(0.007)    0.059(0.007)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100_f8/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.144(0.011)    0.145(0.011)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100_f9/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.24(0.014)    0.242(0.013)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n100_f10/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.35(0.015)    0.357(0.015)"
+# [1] "================"
+# [1] "----------------"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n300/"
+# Total Length (power): 0
+# Total Length (power_01): 0[1] "NA(NA)    NA(NA)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n300_f7/"
+# Total Length (power): 950
+# Total Length (power_01): 950[1] "0.102(0.01)    0.11(0.01)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n300_f8/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.467(0.016)    0.477(0.015)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n300_f9/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.697(0.015)    0.7(0.014)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n300_f10/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.78(0.013)    0.785(0.013)"
+# [1] "================"
+# [1] "----------------"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n500/"
+# Total Length (power): 0
+# Total Length (power_01): 0[1] "NA(NA)    NA(NA)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n500_f7/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.259(0.014)    0.263(0.014)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n500_f8/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.745(0.014)    0.75(0.013)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n500_f9/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.917(0.009)    0.917(0.009)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n500_f10/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.93(0.008)    0.93(0.008)"
+# [1] "================"
+# [1] "----------------"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n1000/"
+# Total Length (power): 0
+# Total Length (power_01): 0[1] "NA(NA)    NA(NA)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f7/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.573(0.016)    0.578(0.015)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f8/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.964(0.006)    0.966(0.006)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f9/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.996(0.002)    0.996(0.002)"
+# [1] "./hazel_final_table_output/final_table_output_power_shuffle_n1000_f10/"
+# Total Length (power): 1000
+# Total Length (power_01): 1000[1] "0.999(0.001)    0.999(0.001)"
+# [1] "================"
 
 
 
