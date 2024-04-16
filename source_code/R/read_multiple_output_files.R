@@ -791,7 +791,52 @@ for(num_indvs in c(100, 300, 500,1000))
 # Total Length (power_01): 1000[1] "0.999(0.001)    0.999(0.001)"
 # [1] "================"
 
-
+###RLRT
+##march 26th, after the type I error
+#######################
+#load("EXP3_r5000_gampower90180inclusion.RData")
+# final_table[,1:8]
+# fl_choice test_type num_subjects num_timepoints  power           se power_01         se01
+# experiment_output            6 Inclusion         1000             90 0.0588  0.003326937   0.1122  0.004463433
+# experiment_output.1          7 Inclusion         1000             90 0.7934  0.005725669   0.8698  0.004759159
+# experiment_output.2          8 Inclusion         1000             90 0.9988 0.0004896039   0.9994 0.0003463062
+# experiment_output.3          9 Inclusion         1000             90      1            0        1            0
+# experiment_output.4         10 Inclusion         1000             90      1            0        1            0
+# experiment_output.5          6 Inclusion          500             90 0.0606  0.003374245   0.1116  0.004452986
+# experiment_output.6          7 Inclusion          500             90 0.5038  0.007070864   0.6302  0.006827122
+# experiment_output.7          8 Inclusion          500             90 0.9504    0.0030705   0.9766   0.00213787
+# experiment_output.8          9 Inclusion          500             90 0.9986 0.0005287797   0.9994 0.0003463062
+# experiment_output.9         10 Inclusion          500             90      1            0        1            0
+# experiment_output.10         6 Inclusion          300             90 0.0512  0.003117004   0.1028  0.004294931
+# experiment_output.11         7 Inclusion          300             90 0.3506  0.006748031   0.4696  0.007057986
+# experiment_output.12         8 Inclusion          300             90 0.7954  0.005705065   0.8736  0.004699426
+# experiment_output.13         9 Inclusion          300             90 0.9596  0.002784523   0.9792  0.002018284
+# experiment_output.14        10 Inclusion          300             90  0.994  0.001092154    0.998 0.0006318228
+# experiment_output.15         6 Inclusion          100             90 0.0576  0.003294912   0.1098  0.004421402
+# experiment_output.16         7 Inclusion          100             90  0.137  0.004862736   0.2302  0.005953284
+# experiment_output.17         8 Inclusion          100             90  0.368  0.006820205   0.4854  0.007068053
+# experiment_output.18         9 Inclusion          100             90  0.564  0.007012902   0.6926  0.006525416
+# experiment_output.19        10 Inclusion          100             90 0.7408  0.006197021   0.8298  0.005314733
+# experiment_output.20         6 Inclusion         1000            180 0.0606  0.003374245   0.1076  0.004382288
+# experiment_output.21         7 Inclusion         1000            180  0.567  0.007007296   0.6784  0.006605656
+# experiment_output.22         8 Inclusion         1000            180 0.9722  0.002324958   0.9866  0.001626065
+# experiment_output.23         9 Inclusion         1000            180 0.9998   0.00019998   0.9998   0.00019998
+# experiment_output.24        10 Inclusion         1000            180      1            0        1            0
+# experiment_output.25         6 Inclusion          500            180 0.0574  0.003289536   0.1124  0.004466906
+# experiment_output.26         7 Inclusion          500            180 0.3346  0.006672973    0.451  0.007037031
+# experiment_output.27         8 Inclusion          500            180  0.782   0.00583911   0.8602  0.004904201
+# experiment_output.28         9 Inclusion          500            180 0.9538  0.002968689   0.9776  0.002092761
+# experiment_output.29        10 Inclusion          500            180   0.99  0.001407125   0.9956 0.0009360171
+# experiment_output.30         6 Inclusion          300            180 0.0578  0.003300278   0.1092   0.00441079
+# experiment_output.31         7 Inclusion          300            180 0.2224  0.005881126   0.3256  0.006626985
+# experiment_output.32         8 Inclusion          300            180  0.564  0.007012902   0.6858  0.006564729
+# experiment_output.33         9 Inclusion          300            180   0.81  0.005547973     0.88   0.00459565
+# experiment_output.34        10 Inclusion          300            180 0.9192  0.003854124   0.9564  0.002887873
+# experiment_output.35         6 Inclusion          100            180 0.0582  0.003310974   0.1074  0.004378704
+# experiment_output.36         7 Inclusion          100            180 0.1106  0.004435485   0.1852   0.00549365
+# experiment_output.37         8 Inclusion          100            180 0.2386   0.00602777   0.3498  0.006744479
+# experiment_output.38         9 Inclusion          100            180 0.3806  0.006866493    0.506  0.007070559
+# experiment_output.39        10 Inclusion          100            180 0.5106  0.007069479   0.6436  0.006773168
 
 
 
