@@ -52,7 +52,7 @@ option_list <- list(
     make_option(c("-b", "--boots"), type="integer", default=100,
                 help="Num Bootstraps", metavar="NUMBOOTS"),
     make_option(c("-s", "--subjects"), type="integer", default=100,
-                help="Num Subjects/Individuals", metavar="NUMSUBJECTS")
+                help="Num Subjects/Individuals", metavar="NUMSUBJECTS"),
     make_option(c("-x", "--samplesize"), type="integer", default=100,
                 help="Num samples", metavar="SAMPLESIZE")
 )
