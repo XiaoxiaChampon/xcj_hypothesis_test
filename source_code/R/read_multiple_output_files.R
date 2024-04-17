@@ -672,7 +672,7 @@ calculate_stats_boos <- function(directory_path) {
 
 #load("./hazel_final_table_output/final_table_output_p_boos_n100/Hazel_outputsTbootstrap__100_16_100_99_16_1.RData")
 
-for(num_indvs in c(100, 300, 500))
+for(num_indvs in c(100, 300, 500, 1000))
 {
     print("----------------")
     directory_path <- paste0("./test/final_table_output_p_boos_n", num_indvs, "/")
@@ -698,7 +698,7 @@ for(num_indvs in c(100, 300, 500))
 
 
 #####
-for(num_indvs in c(100, 300, 500,1000))
+for(num_indvs in c(100, 300, 500, 1000))
 {
     print("----------------")
     directory_path <- paste0("./hazel_final_table_output/final_table_output_power_shuffle_n", num_indvs, "/")

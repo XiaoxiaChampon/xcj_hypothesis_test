@@ -53,6 +53,8 @@ option_list <- list(
                 help="Num Bootstraps", metavar="NUMBOOTS"),
     make_option(c("-s", "--subjects"), type="integer", default=100,
                 help="Num Subjects/Individuals", metavar="NUMSUBJECTS")
+    make_option(c("-x", "--samplesize"), type="integer", default=100,
+                help="Num samples", metavar="SAMPLESIZE")
 )
 
 # Create parser and parse options
@@ -64,12 +66,14 @@ options_numcpus <- options$numcpus
 options_replicas <- options$replicas
 options_boots <- options$boots
 options_subjects <- options$subjects
+options_samplesize <- options$samplesize
 
 # options_jobid <- 1
 # options_numcpus <- 3
 # options_replicas <- 2
 # options_boots <- 5
 # options_subjects <- 100
+# options_samplesize <- 275
 
 # Use the options
 cat("Job Idx:", options_jobid, "\n")
@@ -77,6 +81,7 @@ cat("Num CPUs:", options_numcpus, "\n")
 cat("Num Replicas:", options_replicas, "\n")
 cat("Num Bootstraps:", options_boots, "\n")
 cat("Num Subjects:", options_subjects, "\n")
+cat("Num samples:", options_samplesize, "\n")
 
 ###########
 # ---- For: parallelization ----
@@ -120,12 +125,31 @@ ensure_dir_exist <- function(directory_path){
     }
 }
 
-scenario_folder = "outputsTbootstrap_p_staicu"
+scenario_folder = "nosp_save"
 ensure_dir_exist(scenario_folder)
 
-final_table_folder = paste0("final_table_output_p_staicu_n", options_subjects)
+final_table_folder = paste0("final_table_output_nosp_save_n", options_subjects)
 ensure_dir_exist(final_table_folder)
 
+t_and_p_value_save = paste0("t_and_p_value_save_n", options_subjects)
+ensure_dir_exist(t_and_p_value_save)
+
+check_pleq_collected <- function(){
+    pattern_leq <- paste0("^t_and_p_n", options_subjects, "_pleq05_r_\\d+\\.RData$")
+    leqfiles = length( list.files(paste0("./",t_and_p_value_save), pattern = pattern_leq, full.names = TRUE) )
+    return(leqfiles >= options_samplesize)
+}
+
+check_npleq_collected <- function(){
+    pattern_nleq <- paste0("^t_and_p_n", options_subjects, "_pnleq05_r_\\d+\\.RData$")
+    nleqfiles = length( list.files(paste0("./",t_and_p_value_save), pattern = pattern_nleq, full.names = TRUE) )
+    return(nleqfiles >= options_samplesize)
+}
+
+check_sample_collected <- function()
+{
+    return(check_pleq_collected() && check_npleq_collected())
+}
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
@@ -134,11 +158,17 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         
         #T_rep <- foreach(this_row = 1:5) %dorng%
-        { source("./source_code/R/data_generator.R")
+        { 
+            source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
             source("./source_code/R/T_testing_functions.R")
             
             number_basis =30
+            
+            if (check_sample_collected())
+            {
+                return(NA)
+            }
             
             
             #T_rv_erv <- list()
@@ -220,6 +250,25 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             # T_stat[3]=(T_stat[1]>=quantile(temp_series, .90))[[1]]
             
             T_stat[2]=mean(temp_series>=T_stat[1])
+            
+            p_value <- T_stat[2]
+            T_value <- T_stat[1]
+            T_star_values <- temp_series
+            if (p_value < 0.05){
+                if(FALSE == check_pleq_collected()){
+                    save(p_value, T_value, T_star_values, 
+                         file = paste0("./",t_and_p_value_save,"/t_and_p_n", 
+                                       options_subjects, "_pleq05_r_", 
+                                       this_row, ".RData"))
+                }
+            } else {
+                if(FALSE == check_npleq_collected()){
+                    save(p_value, T_value, T_star_values, 
+                         file = paste0("./",t_and_p_value_save,"/t_and_p_n", 
+                                       options_subjects, "_pnleq05_r_", 
+                                       this_row, ".RData"))
+                }
+            }
             
             # T_stat[5]=(T_stat[4]>=quantile(temp_series2, .95))[[1]]
             # T_stat[6]=(T_stat[4]>=quantile(temp_series2, .90))[[1]]
