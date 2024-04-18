@@ -36,6 +36,7 @@ library(splines)
 library(parallel)
 library(stats)
 #library(pracma)
+library(matrixStats)
 
 
 ###########
@@ -61,19 +62,19 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 options <- parse_args(parser)
 
-options_jobid <- options$jobid
-options_numcpus <- options$numcpus
-options_replicas <- options$replicas
-options_boots <- options$boots
-options_subjects <- options$subjects
-options_samplesize <- options$samplesize
+# options_jobid <- options$jobid
+# options_numcpus <- options$numcpus
+# options_replicas <- options$replicas
+# options_boots <- options$boots
+# options_subjects <- options$subjects
+# options_samplesize <- options$samplesize
 
-# options_jobid <- 1
-# options_numcpus <- 3
-# options_replicas <- 2
-# options_boots <- 5
-# options_subjects <- 100
-# options_samplesize <- 275
+options_jobid <- 2
+options_numcpus <- 8
+options_replicas <- 5000
+options_boots <- 1000
+options_subjects <- 100
+options_samplesize <- 275
 
 # Use the options
 cat("Job Idx:", options_jobid, "\n")
@@ -134,38 +135,57 @@ ensure_dir_exist(final_table_folder)
 t_and_p_value_save = paste0("t_and_p_value_save_n", options_subjects)
 ensure_dir_exist(t_and_p_value_save)
 
-check_pleq_collected <- function(){
+check_pleq_collected <- function(options_subjects, options_samplesize){
     pattern_leq <- paste0("^t_and_p_n", options_subjects, "_pleq05_r_\\d+\\.RData$")
-    leqfiles = length( list.files(paste0("./",t_and_p_value_save), pattern = pattern_leq, full.names = TRUE) )
-    return(leqfiles >= options_samplesize)
+    leqfiles = length( list.files(paste0("./t_and_p_value_save_n", options_subjects), pattern = pattern_leq, full.names = TRUE) )
+    return(leqfiles > options_samplesize)
 }
 
-check_npleq_collected <- function(){
+check_npleq_collected <- function(options_subjects, options_samplesize){
     pattern_nleq <- paste0("^t_and_p_n", options_subjects, "_pnleq05_r_\\d+\\.RData$")
-    nleqfiles = length( list.files(paste0("./",t_and_p_value_save), pattern = pattern_nleq, full.names = TRUE) )
-    return(nleqfiles >= options_samplesize)
+    nleqfiles = length( list.files(paste0("./t_and_p_value_save_n", options_subjects), pattern = pattern_nleq, full.names = TRUE) )
+    return(nleqfiles > options_samplesize)
 }
 
-check_sample_collected <- function()
+check_sample_collected <- function(options_subjects, options_samplesize)
 {
-    return(check_pleq_collected() && check_npleq_collected())
+    return(check_pleq_collected(options_subjects, options_samplesize) && check_npleq_collected(options_subjects, options_samplesize))
 }
 
 cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
                                   time_interval, fl_choice,num_replicas, 
-                                  lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=TRUE){
+                                  lp_intercept=0.9998364,boot_number=options_boots,shuffle_option=TRUE,
+                                  options_samplesize=275){
+    
+    cat("Looking for: ", options_samplesize, "\n")
     #num_replicas=6
     T_rep <- foreach(this_row = 1:num_replicas ) %dorng%
         
         #T_rep <- foreach(this_row = 1:5) %dorng%
         { 
+            check_pleq_collected <- function(options_subjects, options_samplesize){
+                pattern_leq <- paste0("^t_and_p_n", options_subjects, "_pleq05_r_\\d+\\.RData$")
+                leqfiles = length( list.files(paste0("./t_and_p_value_save_n", options_subjects), pattern = pattern_leq, full.names = TRUE) )
+                return(leqfiles > options_samplesize)
+            }
+            
+            check_npleq_collected <- function(options_subjects, options_samplesize){
+                pattern_nleq <- paste0("^t_and_p_n", options_subjects, "_pnleq05_r_\\d+\\.RData$")
+                nleqfiles = length( list.files(paste0("./t_and_p_value_save_n", options_subjects), pattern = pattern_nleq, full.names = TRUE) )
+                return(nleqfiles > options_samplesize)
+            }
+            
+            check_sample_collected <- function(options_subjects, options_samplesize)
+            {
+                return(check_pleq_collected(options_subjects, options_samplesize) && check_npleq_collected(options_subjects, options_samplesize))
+            }
             source("./source_code/R/data_generator.R")
             source("./source_code/R/integral_penalty_function.R")
             source("./source_code/R/T_testing_functions.R")
             
             number_basis =30
             
-            if (check_sample_collected())
+            if (check_sample_collected(num_indvs, options_samplesize))
             {
                 return(NA)
             }
@@ -255,17 +275,17 @@ cfd_T_testing_simulation=function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_
             T_value <- T_stat[1]
             T_star_values <- temp_series
             if (p_value < 0.05){
-                if(FALSE == check_pleq_collected()){
+                if(FALSE == check_pleq_collected(num_indvs, options_samplesize)){
                     save(p_value, T_value, T_star_values, 
-                         file = paste0("./",t_and_p_value_save,"/t_and_p_n", 
-                                       options_subjects, "_pleq05_r_", 
+                         file = paste0("./t_and_p_value_save_n", num_indvs, "/t_and_p_n", 
+                                       num_indvs, "_pleq05_r_", 
                                        this_row, ".RData"))
                 }
             } else {
-                if(FALSE == check_npleq_collected()){
+                if(FALSE == check_npleq_collected(num_indvs, options_samplesize)){
                     save(p_value, T_value, T_star_values, 
-                         file = paste0("./",t_and_p_value_save,"/t_and_p_n", 
-                                       options_subjects, "_pnleq05_r_", 
+                         file = paste0("./t_and_p_value_save_n", num_indvs, "/t_and_p_n", 
+                                       num_indvs, "_pnleq05_r_", 
                                        this_row, ".RData"))
                 }
             }
@@ -354,7 +374,7 @@ run_experiment_hypothesis <- function(exp_idx,
 
 begin_exp_time <- Sys.time()
 
-set.seed(123456 + 10 * options_jobid)
+set.seed(1234567 + 10 * options_jobid)
 
 
 generate_ed_table <- function(subjects_vector = c(500,300,100),
@@ -447,3 +467,4 @@ if(run_parallel)
     parallel::stopCluster(cl = my.cluster)
     initialized_parallel <- FALSE
 }
+
