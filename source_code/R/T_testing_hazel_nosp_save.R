@@ -61,19 +61,19 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 options <- parse_args(parser)
 
-options_jobid <- options$jobid
-options_numcpus <- options$numcpus
-options_replicas <- options$replicas
-options_boots <- options$boots
-options_subjects <- options$subjects
-options_samplesize <- options$samplesize
+# options_jobid <- options$jobid
+# options_numcpus <- options$numcpus
+# options_replicas <- options$replicas
+# options_boots <- options$boots
+# options_subjects <- options$subjects
+# options_samplesize <- options$samplesize
 
-# options_jobid <- 1
-# options_numcpus <- 3
-# options_replicas <- 2
-# options_boots <- 5
-# options_subjects <- 100
-# options_samplesize <- 275
+options_jobid <- 1
+options_numcpus <- 10
+options_replicas <- 5000
+options_boots <- 1000
+options_subjects <- 100
+options_samplesize <- 275
 
 # Use the options
 cat("Job Idx:", options_jobid, "\n")
