@@ -652,7 +652,7 @@ calculate_stats_boos <- function(directory_path) {
         power_values <- c(power_values, unlist(final_table)[5:length(unlist(final_table))])
     }
     
-    cat("Total Length (power):", length(power_values))
+    cat("Total Length (power):", length(power_values), "\n")
     
     power_values_0.05 <- calculate_power_stats(power_values,0.05)
     # power_01_values <- calculate_power_stats(power_01_values)
