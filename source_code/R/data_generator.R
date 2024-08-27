@@ -253,8 +253,8 @@ flx456 <- function(t, x){
 }
 
 GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice, lp_intercept=0.9998364){
-  
+                                      time_interval, fl_choice, lp_intercept=3.562851){
+    # lp_intercept = 0.9998364
     mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
 
     generated_data <- GenerateDataTest(num_indvs = num_indvs,
@@ -351,7 +351,10 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
                             "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                   "26"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                             "fl2"=matrix(1+5*time_interval,nrow=timeseries_length,ncol=1),
-                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1))
+                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                  "30"=list("fl1"=rep(-0.2,timeseries_length),
+                            "fl2"=matrix(-21.59572 - 27.817999*sin(2*pi*time_interval),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1))
                    )
 
     vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
@@ -360,6 +363,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
     x2fl2 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,2]*(flfn$fl2), equi = TRUE, method = "TRAPZ")})
     x3fl3 <- apply(vec, 1, function(x) {fda.usc::int.simpson2(time_interval, cat_data$X[x,,3]*(flfn$fl3), equi = TRUE, method = "TRAPZ")})
     #lp_intercept= 0.6206897
+    lp_intercept <- 3.562851
     linear_predictor <- matrix(x1fl1 + x2fl2+ x3fl3 + lp_intercept )
     #linear_predictor_without <- matrix(x1fl1 + x3fl3+ lp_intercept )
    
@@ -408,7 +412,7 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
 }
 
 GenerateCategoricalFDTestIntercept <- function(klen, mu1_coef,mu2_coef,num_indvs, timeseries_length,
-                                      time_interval, fl_choice, intercept_opt){
+                                      time_interval, fl_choice, intercept_opt=3.562851){
   
   mns <- GetMuAndScore_2(klen,mu1_coef,mu2_coef)
   
@@ -506,7 +510,10 @@ GenerateCategoricalFDTestIntercept <- function(klen, mu1_coef,mu2_coef,num_indvs
                            "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
                  "26"=list("fl1"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)-0.09,
                            "fl2"=matrix(1+5*time_interval,nrow=timeseries_length,ncol=1),
-                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1))
+                           "fl3"=matrix(fl3fn(time_interval),nrow=timeseries_length,ncol=1)),
+                 "30"=list("fl1"=rep(-0.2,timeseries_length),
+                            "fl2"=matrix(-21.59572 - 27.817999*sin(2*pi*time_interval),nrow=timeseries_length,ncol=1),
+                            "fl3"=matrix(-20*sin((2*pi/25)*(time_interval-1))-6,nrow=timeseries_length,ncol=1))
   )
   
   vec <- matrix(1:num_indvs, nrow=num_indvs, ncol=1)
