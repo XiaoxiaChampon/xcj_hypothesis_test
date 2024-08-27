@@ -381,19 +381,12 @@ GenerateCategoricalFDTest <- function(klen, mu1_coef,mu2_coef,num_indvs, timeser
   return(truelist)
 }
 
-my_fitness <- function(mu1_coef, mu2_coef, intercept, flc, flparam){
-  timeseries_length <- 180
-  timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
-  # flc <- c("30")
-  # intercept <- 0.99
-  # flparam <- c(0.1, 0.2)
-  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 300, timeseries_length, timestamps01, flc, intercept, flparam)
-  
+calc_integral_penalty <- function(timeseries_length, timestamps01, results, flparam){
   flc2 <- results$flfn2
   cat_data_2 <- results$cat_data$X[,,2]
-  pl_vector <- apply(cat_data_2,2,mean)
+  pl_vector <- apply(cat_data_2, 2, mean)
   mean_val <- fda.usc::int.simpson2(timestamps01, pl_vector*flc2, equi = TRUE, method = "TRAPZ")
-  sq_mean_val <- mean_val ^ 2
+  sq_mean_val <- (mean_val ^ 2) / 5000.0
   
   var_temp <- rep(0, timeseries_length)
   for(time_idx in 1:timeseries_length){
@@ -404,6 +397,39 @@ my_fitness <- function(mu1_coef, mu2_coef, intercept, flc, flparam){
   if(var_penalty < 0){
     var_penalty <- 1000.0
   }
+  ret_vals <- list("sq_mean_val"=sq_mean_val, "mean_val"=mean_val, 
+                   "var_val"=var_val, "var_penalty"=var_penalty)
+  return(ret_vals)
+}
+
+my_fitness <- function(mu1_coef, mu2_coef, intercept, flc, flparam){
+  timeseries_length <- 180
+  timestamps01 <- seq(from = 0.01, to = 0.99, length=timeseries_length)
+  # flc <- c("30")
+  # intercept <- 0.99
+  # flparam <- c(0.1, 0.2)
+  results <- GenerateCategoricalFDTest(3, mu1_coef, mu2_coef, 300, timeseries_length, timestamps01, flc, intercept, flparam)
+  
+  # flc2 <- results$flfn2
+  # cat_data_2 <- results$cat_data$X[,,2]
+  
+  # pl_vector <- apply(cat_data_2,2,mean)
+  # mean_val <- fda.usc::int.simpson2(timestamps01, pl_vector*flc2, equi = TRUE, method = "TRAPZ")
+  # sq_mean_val <- mean_val ^ 2
+  # 
+  # var_temp <- rep(0, timeseries_length)
+  # for(time_idx in 1:timeseries_length){
+  #   var_temp[time_idx] <- fda.usc::int.simpson2(timestamps01, flc2 * cov(cat_data_2)[,time_idx])
+  # }
+  # var_val <- fda.usc::int.simpson2(timestamps01, var_temp * flc2)
+  # var_penalty <- var_val
+  # if(var_penalty < 0){
+  #   var_penalty <- 1000.0
+  # }
+  
+  int_pen <- calc_integral_penalty(timeseries_length, timestamps01, results, flparam)
+  sq_mean_val <- int_pen$sq_mean_val
+  var_penalty <- int_pen$var_penalty
   
   tab_y <- table(results$yis)
   tab_y <- tab_y / sum(tab_y)

@@ -16,7 +16,7 @@ if(run_parallel)
   library(doParallel)
   
   # For: %dorng% or registerDoRNG for reproducable parallel random number generation
-  # library(doRNG)
+  library(doRNG)
   
   if(exists("initialized_parallel") && initialized_parallel == TRUE)
   {
@@ -45,7 +45,9 @@ test_run <- function(x){
   results <- NULL
   for (flc in c("30")) {
     cat("\tFL Choice:",flc,"\n")
-    res <- GenerateCategoricalFDTest(3, x[1:3], x[4:6], 300, timeseries_length, timestamps01, flc, x[7])
+    res <- GenerateCategoricalFDTest(3, x[1:3], x[4:6], 300, timeseries_length, timestamps01, flc, x[7], x[8:9])
+    intpen <- calc_integral_penalty(timeseries_length, timestamps01, res, x[8:9])
+    print(intpen)
     
     tab_y_raw <- table(res$yis)
     tab_y <- tab_y_raw / sum(tab_y_raw)
@@ -81,36 +83,33 @@ fitness_func <- function(x){
   }
   print(t(x))
   
-  flcs <- c("6", "7","8", "9","10")
-  num_fls <- 5
-  num_replications <- 3
-  rng <- rngtools::RNGseq( num_fls * num_replications, 1234)
+  flcs <- c("30")
+  num_replications <- 5
   
-  flc_result3 <- foreach(flcidx = 1:num_fls, .combine = rbind) %:%
-    foreach(replica_num = 1:num_replications, .combine = cbind, r=rng[(flcidx-1)*num_fls + 1:num_fls]) %dopar% {
-        rngtools::setRNG(r)
-        source("source_code/R/optimize_essentials.R")
-        my_fitness(x[1:3], x[4:6], x[7], flcs[flcidx])
-      }
+  flc_result3 <- foreach(replica_num = 1:num_replications, .combine = cbind) %dorng% {
+        source("source_code/R/optimize_essentials_02.R")
+        my_fitness(x[1:3], x[4:6], x[7], flcs[1], x[8:9])
+  }
   
-  median_fitness <- apply(matrix(apply(flc_result3, 2, mean), ncol=3), 1, max)
-  print(median_fitness)
+  median_fitness <- apply(matrix(apply(flc_result3, 2, mean), ncol=num_replications), 1, max)
   
   return(median_fitness)
 }
 
-known_candidates <- rbind(cbind(-40.2339963, -5.3899194, -3.1525938, 40.3651894, -38.1102743, 1.0417336, 0.2908304),
-                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 0.1),
-                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 1.0),
-                          cbind(1,2,3,1,2,3,1),
-                          cbind(1,2,3,1,2,3,0),
-                          cbind(-53.46193, 9.838961, -30.932283, 0.1438664, -60.11443, -8.940435, 0.9943165),
-                          cbind(-59.93567, 10.020723, 9.866337, 0.1438664, -69.19495, -14.787011, 1.3283204),
-                          cbind(-72.68827, 10.256293, 4.410807, 0.1438664, -63.97833, 2.120423, 1.3169213),
-                          cbind(-72.67520, -25.894426, 5.453164, 0.1438664, -63.97833, 2.120423, 1.3169213),
-                          cbind(-72.67520, -25.894426, 53.902214, 0.1438664, -63.97833, 2.120423, 1.3169213),
-                          cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095),
-                          cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095))
+known_candidates <- rbind(cbind(-40.2339963, -5.3899194, -3.1525938, 40.3651894, -38.1102743, 1.0417336, 0.2908304, 1.0, 1.0),
+                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 0.1, 1.0, 1.0),
+                          cbind(-6.67, -2.47, 5.42, -3.14, -0.99, 3.91, 1.0, 1.0, 1.0),
+                          cbind(1,2,3,1,2,3,1, 1.0, 1.0),
+                          cbind(1,2,3,1,2,3,0, 1.0, 1.0),
+                          cbind(-53.46193, 9.838961, -30.932283, 0.1438664, -60.11443, -8.940435, 0.9943165, 1.0, 1.0),
+                          cbind(-59.93567, 10.020723, 9.866337, 0.1438664, -69.19495, -14.787011, 1.3283204, 1.0, 1.0),
+                          cbind(-72.68827, 10.256293, 4.410807, 0.1438664, -63.97833, 2.120423, 1.3169213, 1.0, 1.0),
+                          cbind(-72.67520, -25.894426, 5.453164, 0.1438664, -63.97833, 2.120423, 1.3169213, 1.0, 1.0),
+                          cbind(-72.67520, -25.894426, 53.902214, 0.1438664, -63.97833, 2.120423, 1.3169213, 1.0, 1.0),
+                          cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095, 1.0, 1.0),
+                          cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095, 1.0, 1.0))
+
+known_candidates <- NULL
 
 begin_exp_time <- Sys.time()
 
@@ -118,10 +117,10 @@ set.seed(123)
 
 ga <- nsga2(type = "real-valued",
              fitness = fitness_func,
-             nObj = 2,
-             lower = rep(-100.0,7),
-             upper = rep(100.0,7),
-             popSize = 100,
+             nObj = 4,
+             lower = rep(-100.0,9),
+             upper = rep(100.0,9),
+             popSize = 200,
              summary = FALSE,
              parallel = FALSE,
              #monitor=FALSE,
@@ -130,8 +129,8 @@ ga <- nsga2(type = "real-valued",
 
 summary(ga)
 plot(ga)
-ga_params = list("flcs"= c("6", "7","8", "9","10"), "popSize"=100, "num_indv"=300, "maxiter"=100, "method"="max of medians", "count_iter_indv"=100)
-save(ga, ga_params, file="ga_run.RData")
+ga_params = list("flcs"= c("30"), "popSize"=100, "num_indv"=300, "maxiter"=100, "method"="max of medians", "count_iter_indv"=100)
+save(ga, ga_params, file="ga_run_02.RData")
 
 end_exp_time <- Sys.time()
 
