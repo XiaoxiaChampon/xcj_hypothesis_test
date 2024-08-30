@@ -386,7 +386,7 @@ calc_integral_penalty <- function(timeseries_length, timestamps01, results){
   cat_data_2 <- results$cat_data$X[,,2]
   pl_vector <- apply(cat_data_2, 2, mean)
   mean_val <- fda.usc::int.simpson2(timestamps01, pl_vector*flc2, equi = TRUE, method = "TRAPZ")
-  sq_mean_val <- (mean_val ^ 2) / 5000.0
+  sq_mean_val <- abs(mean_val)
   
   var_temp <- rep(0, timeseries_length)
   for(time_idx in 1:timeseries_length){

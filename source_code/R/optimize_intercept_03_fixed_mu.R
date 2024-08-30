@@ -52,7 +52,7 @@ test_run <- function(x){
   for (flc in c("30")) {
     cat("\tFL Choice:",flc,"\n")
     res <- GenerateCategoricalFDTest(3, mu1, mu2, 300, timeseries_length, timestamps01, flc, lpintercept, flparam)
-    intpen <- calc_integral_penalty(timeseries_length, timestamps01, res, x[8:9])
+    intpen <- calc_integral_penalty(timeseries_length, timestamps01, res)
     print(intpen)
     
     tab_y_raw <- table(res$yis)
@@ -120,7 +120,8 @@ fitness_func <- function(x){
 #                           cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095, 1.0, 1.0),
 #                           cbind(-60.45411, 9.838961, 9.658552, 0.1438664, -69.19495, -14.787011, 1.3403095, 1.0, 1.0))
 
-known_candidates <- NULL
+known_candidates <- rbind(cbind(-18.25199, -7.33696, 17.11208),
+                          cbind(-17.821314,  -7.516867, 16.270043))
 
 begin_exp_time <- Sys.time()
 
@@ -131,12 +132,12 @@ ga <- nsga2(type = "real-valued",
              nObj = 2,
              lower = rep(-100.0, 3),
              upper = rep(100.0, 3),
-             popSize = 200,
+             popSize = 100,
              summary = FALSE,
              parallel = FALSE,
              #monitor=FALSE,
-             #suggestions = known_candidates,
-             maxiter = 100)
+             suggestions = known_candidates,
+             maxiter = 50)
 
 summary(ga)
 plot(ga)
@@ -150,8 +151,8 @@ cat("\n====================\n",
     "\n====================\n")
 
 
-good_idxs <- intersect(which(ga@fitness[,1] < 0.4), which(ga@fitness[,2] < -0.8))
-cat("\nGood ones at:", good_idxs, "\n")
+good_idxs <- union( which(ga@fitness[,2] == min(ga@fitness[,2])), which(ga@fitness[,1] == min(ga@fitness[,1])) )
+cat("\nExtreme cases at:", good_idxs, "\n")
 print(data.frame(ga@population)[good_idxs,])
 
 if(run_parallel)
